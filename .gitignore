@@ -3,6 +3,10 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# R documents
+*.Rproj
+*.R
+
 # C extensions
 *.so
 
@@ -102,3 +106,4 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+.Rproj.user
