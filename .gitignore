@@ -6,6 +6,19 @@ __pycache__/
 # R documents
 *.Rproj
 *.R
+.Rhistory
+*.Rproj.user
+*.Rhistory
+*.RData
+*.Ruserdata
+*.html
+*.nb.html
+.DS_Store
+data/* # Remove data
+inst/* # Remov template
+vignettes/*.html
+vignettes/*.R
+output/report/script/data/*
 
 # C extensions
 *.so
@@ -75,6 +88,7 @@ target/
 
 # Jupyter Notebook
 .ipynb_checkpoints
+CommunityLevelSelection_V6_Experiment2.ipynb
 
 # pyenv
 .python-version
