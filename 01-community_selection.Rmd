@@ -29,18 +29,8 @@ reticulate::use_python('~/anaconda3/bin/python3.7m') # Use this python version
 
 # Local directory and functions
 root <- rprojroot::is_r_package # Package root
-source(root$find_file("misc/utils.R"))
-source(root$find_file("misc/network_functions.R"))
 write_all_csv <- TRUE
 write_all_pdf <- TRUE
-
-# Data
-isolates <- fread(root$find_file("data/output/isolates.csv"))
-pairs <- fread(root$find_file("data/output/pairs.csv"))
-communities <- fread(root$find_file("data/temp/communities.csv"))
-communities_name <- communities$Community
-communities_size <- communities$CommunitySize
-communities_name_pool <- c(paste0("C", 1:12, "Rpool"), paste0("C", rep(1:12, each = 8), "R", rep(1:8, 12)))
 ```
 
 ```{python}
@@ -81,22 +71,128 @@ Essential functions for community self-assembly
 
 - Additive trait $\sum{\lambda_i n_i}$
 
-- Complex trait $\sum{\lambda_i n_i} + \sum{\lambda_{ij} n_{ij}}$
+- Complex trait $\sum{\lambda_i n_i} + \sum{\lambda_{ij} n_i n_j}$
 
 - Additive trait with saturation $\sum{\frac{\lambda_i n_i}{n_i+k_i}}$
 
-- Complex trait with saturation $\sum{\frac{\lambda_i n_i}{n_i+k_i}} + \sum{\frac{\lambda_{ij} n_{ij}}{n_i n _j+k_{ij}}}$
+- Complex trait with saturation $\sum{\frac{\lambda_i n_i}{n_i+k_i}} + \sum{\frac{\lambda_{ij} n_i n_j}{n_i n _j+k_{ij}}}$
 
 
 **Resources**
 
 - Additive trait $\sum{\lambda_i R_i}$
 
-- Complex trait $\sum{\lambda_i R_i} + \sum{\lambda_{ij} R_{ij}}$
+- Complex trait $\sum{\lambda_i R_i} + \sum{\lambda_{ij} R_i R_j}$
 
 - Additive trait with saturation $\sum{\frac{\lambda_i R_i}{R_i+k_i}}$
 
-- Complex trait with saturation $\sum{\frac{\lambda_i R_i}{R_i+k_i}} + \sum{\frac{\lambda_{ij} R_{ij}}{R_i R_j+k_{ij}}}$
+- Complex trait with saturation $\sum{\frac{\lambda_i R_i}{R_i+k_i}} + \sum{\frac{\lambda_{ij} R_i R_j}{R_i R_j+k_{ij}}}$
+
+
+```{python}
+def dNdt(N,R,params):
+    return MakeConsumerDynamics(assumptions)(N,R,params)
+def dRdt(N,R,params):
+    return MakeResourceDynamics(assumptions)(N,R,params)
+dynamics = [dNdt,dRdt]
+
+# Make initial state
+assumptions = a_default.copy()
+params = MakeParams(assumptions)
+init_state = MakeInitialState(assumptions)
+
+# Make plate
+plate = Community(init_state, dynamics, params, scale = 10**6, parallel = True) 
+```
+
+
+```{python}
+n = 210
+species_function = np.random.normal(0, 1, size = n)
+
+def community_function_additive(plate, species_function):
+    """
+    Additive community function
+    
+    plate = plate object from package
+    species_function = an 1-D array with the length of the size of species pool
+    """
+    assert len(species_function) == plate.N.shape[0], "Length of species_function does not match species number in plate."
+    
+    community_function = np.sum(plate.N.values * species_function[:,None],axis=0)
+    
+    return community_function
+
+community_function_additive(plate, np.random.normal(0, 1, size = 210))
+```
+
+
+```{python}
+np.random.seed(0)
+n = 210
+species_function = np.array(np.random.normal(0, 1, size = n * n)).reshape(n,n)
+
+def community_function_complex(plate, species_function):
+    """
+    Complex community function
+    
+    plate = plate object from package
+    species_function = a n by n 2-D array; n is the size of species pool
+    """
+    assert len(species_function) == plate.N.shape[0], "Length of species_function does not match species number in plate."
+    
+    # Additive term; diagonal of the species function matrix
+    additive_term = np.sum(plate.N.values * np.diag(species_function)[:,None], axis=0)
+
+    # Interaction term
+    from itertools import combinations 
+    
+    ## Upper triangle in the species function matrix; Excluding the diagonal 
+    function_upper_triangle = np.triu(species_function, k = 1)
+    ## Flatten the 2D array into an 1D array without 0
+    function_upper_triangle = function_upper_triangle.flatten()
+    function_interaction = [value for value in function_upper_triangle if value != 0]
+    
+    # 
+    interaction_term = np.zeros(plate.N.shape[1])
+    for i in range(plate.N.shape[1]):
+        combn = list(combinations(plate.N.iloc[:,i], 2))
+        interaction_term[i] = pd.DataFrame({"function": function_interaction, "n1": [element[0] for element in combn], "n2": [element[1] for element in combn]})
+    
+
+    
+    # for i in range(len(species_function)):
+    #     for j in range(len(species_function)):
+    #         if i > j: # Only use the upper triangle
+    #             np.sum(plate.N.values * )
+    
+    
+    return additive_term + interaction_term
+
+
+#community_function_complex(plate, species_function)
+
+# 
+S_tot = plate.N.shape[0]
+
+for w in range(plate.N.shape[1]):
+    # Indicex of alive species
+    alive_species = np.where(plate.N.iloc[:,w] != 0)
+
+"complex community trait"
+#     for p in range()
+# interaction_term = np.zeros(plate.N.shape[1])
+# for i in range(plate.N.shape[1]):
+#     combn = list(combinations(plate.N.iloc[:,i], 2))
+#     print ([element[0] for element in combn])
+    #interaction_term[i] = pd.DataFrame({"function": function_interaction, "n1": [element[0] for element in combn], "n2": [element[1] for element in combn]})
+```
+
+
+```{python}
+ll = [0, 3,5,8,0, 4,6]
+[element for element in ll if element != 0]
+```
 
 
 ## Selection algorithms
