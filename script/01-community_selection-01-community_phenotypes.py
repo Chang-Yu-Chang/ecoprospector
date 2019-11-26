@@ -4,10 +4,6 @@ Python functions for computing the community-level phenotypes
 """
 
 # Consumer community composition
-## Additive function
-np.random.seed(0)
-n = 210
-species_function = np.random.normal(0, 1, size = n)
 
 def community_function_additive(plate, species_function):
     """
@@ -23,12 +19,8 @@ def community_function_additive(plate, species_function):
     
     return community_function
 
-community_function_additive(plate, species_function = np.random.normal(0, 1, size = 210))
 
-## Additive function with saturation
-np.random.seed(0)
-n = 210
-species_function = np.random.normal(0, 1, size = n)
+
 
 def community_function_additive_saturation(plate, species_function, k = np.zeros(210)):
     """
@@ -45,12 +37,6 @@ def community_function_additive_saturation(plate, species_function, k = np.zeros
 
     return community_function
 
-community_function_additive_saturation(plate, species_function = np.random.normal(0, 1, size = 210), k = np.ones(210))
-
-## Complex community function (interaction terms)
-np.random.seed(0)
-n = 210
-species_function = np.array(np.random.normal(0, 1, size = n * n)).reshape(n,n)
 
 def community_function_complex(plate, species_function):
     """
@@ -76,12 +62,6 @@ def community_function_complex(plate, species_function):
     
     return additive_term + interaction_term
 
-community_function_complex(plate, species_function)
-
-## Complex community function with saturation factor
-np.random.seed(0)
-n = 210
-species_function = np.array(np.random.normal(0, 1, size = n * n)).reshape(n,n)
 
 def community_function_complex_saturation(plate, species_function, k = np.zeros([n, n])):
     """
@@ -108,8 +88,6 @@ def community_function_complex_saturation(plate, species_function, k = np.zeros(
 
     
     return additive_term + interaction_term
-
-community_function_complex_saturation(plate, species_function = species_function, k = np.ones([n, n]))
 
 
 # Resource function
