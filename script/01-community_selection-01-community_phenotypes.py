@@ -1,108 +1,10 @@
----
-title: "Community function for selection"
-author: "Chang-Yu Chang"
-date: "`r Sys.Date()`"
-output:
-  html_notebook:
-    number_sections: no
-    toc: yes
-linkcolor: red
-fontsize: 12pt
-urlcolor: blue
----
+"""
+Python functions for computing the community-level phenotypes
 
-```{r setup, include = FALSE}
-# Knitr options
-knitr::opts_chunk$set(
-  cache = FALSE, 
-  echo = FALSE,
-	fig.align = "center",
-	fig.height = 3,
-	fig.width = 3)
+"""
 
-# Packages
-library(tidyverse)
-library(data.table)
-library(invnet)
-library(reticulate) # Python interface
-reticulate::use_python('~/anaconda3/bin/python3.7m') # Use this python version
-
-# Local directory and functions
-root <- rprojroot::is_r_package # Package root
-write_all_csv <- TRUE
-write_all_pdf <- TRUE
-```
-
-```{python echo = T}
-import sys
-print(sys.version)
-```
-
-# Settings
-
-## Import packages
-
-```{python echo = T}
-from IPython.display import Image
-from community_simulator import *
-from community_simulator.usertools import *
-from community_simulator.visualization import *
-import seaborn as sns
-import matplotlib.pyplot as plt
-from matplotlib.backends import backend_pdf as bpdf
-#colors = sns.color_palette()
-#%matplotlib inline
-```
-
-
-# Community functions
-
-```{r}
-source_python("script/01-community_selection-01-community_phenotypes.py")
-```
-
-
-**Consumers**
-
-- Additive trait $\sum{\lambda_i n_i}$
-
-- Complex trait $\sum{\lambda_i n_i} + \sum{\lambda_{ij} n_i n_j}$
-
-- Additive trait with saturation $\sum{\frac{\lambda_i n_i}{n_i+k_i}}$
-
-- Complex trait with saturation $\sum{\frac{\lambda_i n_i}{n_i+k_i}} + \sum{\frac{\lambda_{ij} n_i n_j}{n_i n _j+k_{ij}}}$
-
-
-**Resources**
-
-- Additive trait $\sum{\lambda_i R_i}$
-
-- Complex trait $\sum{\lambda_i R_i} + \sum{\lambda_{ij} R_i R_j}$
-
-- Additive trait with saturation $\sum{\frac{\lambda_i R_i}{R_i+k_i}}$
-
-- Complex trait with saturation $\sum{\frac{\lambda_i R_i}{R_i+k_i}} + \sum{\frac{\lambda_{ij} R_i R_j}{R_i R_j+k_{ij}}}$
-
-
-```{python}
-def dNdt(N,R,params):
-    return MakeConsumerDynamics(assumptions)(N,R,params)
-def dRdt(N,R,params):
-    return MakeResourceDynamics(assumptions)(N,R,params)
-dynamics = [dNdt,dRdt]
-
-# Make initial state
-assumptions = a_default.copy()
-params = MakeParams(assumptions)
-init_state = MakeInitialState(assumptions)
-
-# Make plate
-plate = Community(init_state, dynamics, params, scale = 10**6, parallel = True) 
-```
-
-Additive function
-
-```{python}
+# Consumer community composition
+## Additive function
 np.random.seed(0)
 n = 210
 species_function = np.random.normal(0, 1, size = n)
@@ -122,11 +24,8 @@ def community_function_additive(plate, species_function):
     return community_function
 
 community_function_additive(plate, species_function = np.random.normal(0, 1, size = 210))
-```
 
-Additive function with saturation
-
-```{python}
+## Additive function with saturation
 np.random.seed(0)
 n = 210
 species_function = np.random.normal(0, 1, size = n)
@@ -144,34 +43,11 @@ def community_function_additive_saturation(plate, species_function, k = np.zeros
     
     community_function = np.nansum((plate.N.values * (species_function[:,None]) / (plate.N.values + k[:, None])), axis = 0)
 
-    # community_function = np.sum(plate.N.values * species_function[:,None], axis = 0)
-    
     return community_function
 
 community_function_additive_saturation(plate, species_function = np.random.normal(0, 1, size = 210), k = np.ones(210))
-```
 
-Saturation with different k
-
-```{r}
-x <- seq(-1, 20, .01)
-
-ff <- function (x, k) x / (x + k)
-
-tibble(x = x, `1` = ff(x, 1), `2` = ff(x, 2), `3` = ff(x, 3), `0` = ff(x, 0)) %>%
-  pivot_longer(-x, names_to = "k", values_to = "y") %>%
-  ggplot(aes(x = x, y = y, color = k)) +
-  #geom_point() + 
-  geom_line() +
-  scale_y_continuous(limits = c(-1, 1)) +
-  theme_bw()
-```
-
-
-
-Complex community function (interaction terms)
-
-```{python}
+## Complex community function (interaction terms)
 np.random.seed(0)
 n = 210
 species_function = np.array(np.random.normal(0, 1, size = n * n)).reshape(n,n)
@@ -201,11 +77,8 @@ def community_function_complex(plate, species_function):
     return additive_term + interaction_term
 
 community_function_complex(plate, species_function)
-```
 
-Complex community function with saturation factor
-
-```{python echo = T}
+## Complex community function with saturation factor
 np.random.seed(0)
 n = 210
 species_function = np.array(np.random.normal(0, 1, size = n * n)).reshape(n,n)
@@ -237,49 +110,92 @@ def community_function_complex_saturation(plate, species_function, k = np.zeros(
     return additive_term + interaction_term
 
 community_function_complex_saturation(plate, species_function = species_function, k = np.ones([n, n]))
-```
+
+
+# Resource function
+def resource_additive(plate, resource_function):
+    """
+    Additive community function with saturation
+    
+    plate = plate object from package
+    resource_function = an 1-D n-length array; n is the number of available resources
+    k = an 1-D array of saturation factors. set k = np.zeros(n) for binary function (species presence or absense)
+    """
+    assert len(resource_function) == plate.R.shape[0], "Length of resource_function does not match species number in plate."
+
+    community_function = np.sum(plate.R.values * resource_function[:,None], axis = 0)
+    
+    return community_function
 
 
 
-```{r include = F}
+def resource_additive_saturation(plate, resource_function, k = np.zeros(90)):
+    """
+    Additive community function with saturation
+    
+    plate = plate object from package
+    resource_function = an 1-D n-length array; n is the number of available resources
+    k = an 1-D array of saturation factors. set k = np.zeros(n) for binary function (species presence or absense)
+    """
+    assert len(resource_function) == plate.R.shape[0], "Length of resource_function does not match species number in plate."
+    assert len(k) == plate.N.shape[0], "Length of k does not match species number in plate."
+    
+    community_function = np.nansum((plate.R.values * (resource_function[:,None]) / (plate.R.values + k[:, None])), axis = 0)
 
-## Selection algorithms
-"
-Students will work on putting together what literature has proposed
-
-The proposed algorithm using perturbated migration
-
-1. Find the best
-
-2. Let it propagate to equilibrium
-
-3. Keep it
-
-4. Perturbate it by migration
-
-
-# Simulation regions
-
-210 speices in the universe of simulation
-
-96 wells/replicate community
-
-10 metacommunities, within which there are 96 species pools (soil samples) that has different power-law distribution for 210 species
-
-8 community functions
-
-10 selection algorithms
-
-Run 4 replicate for each of the combinations
-
-In total the number of wells is 
-
-(10*8*10*4*96)
-"
-```
+    return community_function
 
 
+def resource_additive(plate, resource_function):
+    """
+    Complex community function
+    
+    plate = plate object from package
+    resource_function = a n by n 2-D array; n is the number of available resources
+    """
+    assert len(resource_function) == plate.R.shape[0], "Length of resource_function does not match species number in plate."
+    
+    # Number of species in the pool 
+    R_tot = plate.R.shape[0]
+    
+    # Additive term; diagonal of the species function matrix
+    additive_term = np.sum(plate.R.values * np.diag(resource_function)[:,None], axis=0)
 
+    # Interaction term; matrix multiplication
+    community_composition = np.array(plate.R.iloc[:,0]).reshape(R_tot, 1)
+    community_composition_square = np.multiply(community_composition, community_composition.reshape(1, R_tot))
+    
+    interaction_term = np.sum(community_composition_square * resource_function)
+
+    
+    return additive_term + interaction_term
+
+
+
+def resource_complex_saturation(plate, resource_function, k = np.zeros([90, 90])):
+    """
+    Complex community function
+    
+    plate = plate object from package
+    resource_function = a n by n 2-D array; n is the number of available resources
+    k = an 2-D array of saturation factors. set k = np.zeros([n, n]) for binary function (species presence or absense)
+ 
+    """
+    assert resource_function.shape[0] == plate.R.shape[0], "Length of resource_function does not match species number in plate."
+    
+    # Number of species in the pool 
+    R_tot = plate.R.shape[0]
+    
+    # Additive term; diagonal of the species function matrix
+    additive_term = np.nansum((plate.R.values * np.diag(resource_function)[:,None]) / (plate.R.values + np.diag(k)[:, None]), axis = 0)
+
+    # Interaction term; matrix multiplication
+    community_composition = np.array(plate.R.iloc[:,0]).reshape(R_tot, 1)
+    community_composition_square = np.multiply(community_composition, community_composition.reshape(1, R_tot))
+
+    interaction_term = np.nansum(community_composition_square * resource_function / ( community_composition_square + k))
+
+    
+    return additive_term + interaction_term
 
 
 
