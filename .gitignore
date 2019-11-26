@@ -19,6 +19,7 @@ inst/* # Remov template
 vignettes/*.html
 vignettes/*.R
 output/report/script/data/*
+*.Rmd
 
 # C extensions
 *.so

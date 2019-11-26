@@ -1,6 +1,12 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Nov 26 2019
+@author: changyuchang
+"""
+
 """
 Python functions for computing the community-level phenotypes
-
 """
 
 # Consumer community composition
@@ -18,8 +24,6 @@ def community_function_additive(plate, species_function):
     community_function = np.sum(plate.N.values * species_function[:,None], axis = 0)
     
     return community_function
-
-
 
 
 def community_function_additive_saturation(plate, species_function, k = np.zeros(210)):
@@ -90,6 +94,7 @@ def community_function_complex_saturation(plate, species_function, k = np.zeros(
     return additive_term + interaction_term
 
 
+
 # Resource function
 def resource_additive(plate, resource_function):
     """
@@ -143,7 +148,6 @@ def resource_additive(plate, resource_function):
     community_composition_square = np.multiply(community_composition, community_composition.reshape(1, R_tot))
     
     interaction_term = np.sum(community_composition_square * resource_function)
-
     
     return additive_term + interaction_term
 
