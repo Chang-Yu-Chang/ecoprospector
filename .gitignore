@@ -3,6 +3,11 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Python notebook
+EEB279_Exercise_5.ipynb
+CommunityLevelSelection_V6_Experiment1.ipynb
+01-community_selection.Rmd
+
 # R documents
 *.Rproj
 *.R
@@ -20,6 +25,7 @@ vignettes/*.html
 vignettes/*.R
 output/report/script/data/*
 *.Rmd
+script/
 
 # C extensions
 *.so

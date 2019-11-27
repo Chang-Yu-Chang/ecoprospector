@@ -9,9 +9,24 @@ Created on Nov 26 2019
 Python functions for computing the community-level phenotypes
 """
 
-# Consumer community composition
+import numpy as np
+import scipy as sp
 
-def community_function_additive(plate, species_function):
+# Compute the distances from the target resource 
+# This function is from Jean
+def resource_distance_community_function(plate,R_target,sigma = 0.01): # Sigma is the measurement error
+    R_tot = plate.R.shape[0]
+    well_tot = plate.R.shape[1]
+    relative_resource = np.array(plate.R) #Load plate resource data
+    relative_resource[0,:]  = 0.0 #Set supplied resource to 0
+    relative_resource = relative_resource/relative_resource.sum(0)  #Look at relative abundance of remaining resource
+    R_dist = np.sqrt(np.sum(np.array((np.tile(R_target,(well_tot,1)) - relative_resource.T)**2)[:,1:],axis=1))
+    return (np.array(R_dist.T)* -1) * (1+ np.random.normal(0,sigma,well_tot))#(so we select for positive community function)
+
+
+
+# Consumer community composition
+def community_function_additive(plate, species_function = np.random.normal(0, 1, size = 210)):
     """
     Additive community function with saturation
     
@@ -26,7 +41,7 @@ def community_function_additive(plate, species_function):
     return community_function
 
 
-def community_function_additive_saturation(plate, species_function, k = np.zeros(210)):
+def community_function_additive_saturation(plate, species_function = np.random.normal(0, 1, size = 210), k = np.zeros(210)):
     """
     Additive community function with saturation
     
@@ -40,7 +55,6 @@ def community_function_additive_saturation(plate, species_function, k = np.zeros
     community_function = np.nansum((plate.N.values * (species_function[:,None]) / (plate.N.values + k[:, None])), axis = 0)
 
     return community_function
-
 
 def community_function_complex(plate, species_function):
     """
@@ -67,7 +81,7 @@ def community_function_complex(plate, species_function):
     return additive_term + interaction_term
 
 
-def community_function_complex_saturation(plate, species_function, k = np.zeros([n, n])):
+def community_function_complex_saturation(plate, species_function, k):
     """
     Complex community function
     
@@ -112,7 +126,7 @@ def resource_additive(plate, resource_function):
 
 
 
-def resource_additive_saturation(plate, resource_function, k = np.zeros(90)):
+def resource_additive_saturation(plate, resource_function, k):
     """
     Additive community function with saturation
     
@@ -153,7 +167,7 @@ def resource_additive(plate, resource_function):
 
 
 
-def resource_complex_saturation(plate, resource_function, k = np.zeros([90, 90])):
+def resource_complex_saturation(plate, resource_function, k):
     """
     Complex community function
     

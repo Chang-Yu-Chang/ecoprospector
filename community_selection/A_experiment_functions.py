@@ -9,17 +9,27 @@ Created on Nov 26 2019
 Python functions for simulation in self-assembly, monoculture, and pairwise competition. 
 """
 
-# Make dynanmics by default we will use the microbial consumer resource model
-def dNdt(N,R,params):
-    return MakeConsumerDynamics(assumptions)(N,R,params)
-def dRdt(N,R,params):
-    return MakeResourceDynamics(assumptions)(N,R,params)
-dynamics = [dNdt,dRdt]
+import numpy as np
+import scipy as sp
+import pandas as pd
+import matplotlib.pyplot as plt
+from community_simulator import *
+from community_simulator.usertools import *
+from community_simulator.visualization import *
 
+# Import the algorithms
+from community_selection.B_community_phenotypes import *
+from community_selection.C_selection_algorithms import *
+from community_selection.D_migration_algorithms import *
+
+
+# Functions for experiment
 
 def make_regional_pool(assumptions):
     """
     Create a regional species pool
+    
+    assumptions = dictionary of metaparameters from community-simulator
     """
     # Total number of species (specialist + generalist)
     S_tot = int(np.sum(assumptions['SA']) + assumptions['Sgen']) 
@@ -51,20 +61,34 @@ def prepare_experiment(assumptions):
 def sample_from_pool(plate_N, pool, scale=10**6, inocula=10**6):
     """
     Sample communities from regional species pool
-    
+
+    plate_N = consumer data.frame
+    pool = 1-D array that defines the species relative abundances in the pool
     """
-    N0 = np.zeros((plate_N.shape))
+    S_tot = plate_N.shape[0] # Total number of species in the pool
+    N0 = np.zeros((plate_N.shape)) # Make empty plate
     consumer_index = plate_N.index
     well_names = plate_N.columns
-    
+
+    # Sample initial community for each well
+    # The part is from Jean's code
     for k in range(plate_N.shape[1]):
-        species_list = np.random.choice(len(pool), size=len(pool), replace=True, p=pool)
-        my_tab = pd.crosstab(index=species_list, columns="count") # Calculate the biomass count
-        N0[my_tab.index.values,k] = np.ravel(my_tab.values / np.sum(my_tab.values) * inocula / scale) # Scale to sum
+        pool = np.random.power(1, size  = S_tot) #* PA_vector
+        pool = pool/np.sum(pool)
+        consumer_list = np.random.choice(len(pool), size=inocula, replace=True, p=pool)
+        my_tab = pd.crosstab(index=consumer_list, columns="count") # Calculate the cell count
+        N0[my_tab.index.values,k] = np.ravel(my_tab.values / scale) # Scale to biomass
+    
+    # for k in range(plate_N.shape[1]):
+    #     species_list = np.random.choice(len(pool), size=len(pool), replace=True, p=pool)
+    #     my_tab = pd.crosstab(index=species_list, columns="count") # Calculate the biomass count
+    #     N0[my_tab.index.values,k] = np.ravel(my_tab.values / np.sum(my_tab.values) * inocula / scale) # Scale to sum
 
     # Make data.frame
-    N0 = pd.DataFrame(N0,index=consumer_index,columns=well_names)
+    N0 = pd.DataFrame(N0, index = consumer_index, columns = well_names)
+
     return N0
+
     
 
 # Make initial state
@@ -219,47 +243,66 @@ params_simulation = {
     "dilution": 1/125, # Dilution factor for transfer
 }
 
-## Simulate community
-def simulate_community(plate, assumptions, params_simulation, file_name = "data/self_assembly-community", write_composition = False):
+## Main function for simulating community
+def simulate_community(plate, params_simulation, params_algorithm, file_name = "data/self_assembly-community", write_composition = False):
     """
     Simulate community dynamics by given experimental regimes
     
     plate = plate
-    assumptions = dictionary of metaparameters from community-simulator
     params_simulation = dictionary of parameters for running experiment
+    params_algorithm = dictionary of algorithms that determine the selection regime, migration regime, and community pheotypes
     
-    return
-    
+    Return:
+    community_composition = concatenated, melted panda dataframe of community and resource composition in each transfer
+    community_function = melted panda dataframe of community function
     """
-    np.random.seed(0) # Global random seed (i.e all participants)
+    # Empty list for saving data
+    plate_data_list = list()
+    community_function_list = list()
 
     # Save the inocula composition
-    plate_data = reshape_plate_data(plate, transfer_loop_index = 0) 
-    plate_data.to_csv(file_name + "-T" + "{:02d}".format(0) + ".txt", index = False)
+    plate_data = reshape_plate_data(plate, transfer_loop_index = 0) # Initial state
+    plate_data_list.append(plate_data)
+    
+    # Output the file if write_composition set True
+    if write_composition == True:
+        plate_data.to_csv(file_name + "-T" + "{:02d}".format(0) + ".txt", index = False)
 
     # Run simulation
     for i in range(0, params_simulation["n_transfer"]):
+        
         # Propagation
         plate.Propagate(params_simulation["n_propagation"])
-        
-        # Save composition to an empty data
-        if write_composition == True:
-            # Convert commnity_function into a df and melt the df
-            plate_data = reshape_plate_data(plate, transfer_loop_index = i + 1)
-            plate_data.to_csv(file_name + "-T" + "{:02d}".format(i+1) + ".txt", index = False)
-            print("Species and resource composition saved")
+    
+        # Append the composition to a list
+        plate_data = reshape_plate_data(plate, transfer_loop_index = i + 1)
+        plate_data_list.append(plate_data)
 
-        # Transfer/passage by usigg transfer matrix. For simple passage, the transfer matrix is an identity matrix
-        transfer_matrix = np.eye(plate.N.shape[1]) * params_simulation["dilution"]
-        plate.Passage(transfer_matrix)
+        ## Output the file if write_composition set True
+        if write_composition == True:
+            plate_data.to_csv(file_name + "-T" + "{:02d}".format(i+1) + ".txt", index = False)
+        
+        # Community phenotype
+        community_function = globals()[params_algorithm["community_phenotype"]](plate)
+        community_function_list.append(reshape_function_data(community_function, transfer_loop_index = i + 1))
+
+        # Passage and tranfer matrix
+        transfer_matrix = globals()[params_algorithm["selection_algorithm"]](community_function)
+        plate.Passage(transfer_matrix * params_simulation["dilution"])
+        
+        # Migration
+        m = globals()[params_algorithm["migration_algorithm"]](community_function) 
+        plate.N = migrate_from_pool(plate, params_simulation["pool"], m)
         
         # Print the propagation progress
-        print("propagation: " + str(i+1)) 
+        print("Transfer " + str(i+1) + " done.") 
+        
     
-
-## Higher function that simlate pairs
-
-
+    # Concatenate datafrom from different transfers
+    plate_data_con = pd.concat(plate_data_list)
+    community_function_con = pd.concat(community_function_list)
+    
+    return plate_data_con, community_function_con
 
 
 ## Reshape the plate resource and consumer matrix for saving into a txt file
@@ -293,4 +336,87 @@ def reshape_plate_data(plate, transfer_loop_index):
     merged_df.set_index("Index", inplace = True)
 
     return merged_df # Return concatenated dataframe
+
+def reshape_function_data(community_function, transfer_loop_index):
+    temp_vector = community_function.copy()
+    # Number of wells
+    number_well = len(community_function)
+    # Make data.frame
+    temp_df = pd.DataFrame({"Transfer": np.repeat(str(transfer_loop_index), number_well), "Well": ["W" + str(i) for i in range(number_well)], "CommunityPhenotype": temp_vector})
+    # Turn the transfer columns as numeric
+    temp_df[["Transfer"]] = temp_df[["Transfer"]].apply(pd.to_numeric)
+    
+    return temp_df 
+ 
+
+# Make library of algorithms
+def make_algorithm_library():
+    import re
+    import pandas as pd
+    
+    # Find directory of community_selection modultes
+    import community_selection
+    module_dir = community_selection.__file__
+    module_dir = re.sub("__init__.py", "", module_dir) 
+    
+    # 
+    algorithm_types = ["community_phenotypes", "selection_algorithms", "migration_algorithms"]
+    algorithms = list()
+    
+    for i in range(len(algorithm_types)):
+    
+        # Open files
+        file_algorithm_phenotype = open(module_dir + ["B", "C", "D"][i] + "_" + algorithm_types[i] + ".py", "r")
+        
+        # Read lines
+        line_list = list()
+        line = file_algorithm_phenotype.readline()
+        cnt = 1
+        
+        while line:
+            line = file_algorithm_phenotype.readline()
+            line_list.append(line.strip())
+            cnt += 1
+        
+        # Regular expression
+        algorithm_names = re.findall("def \w+", " ".join(line_list))
+        list_algorithm = [re.sub("^def ", "", x) for x in algorithm_names]
+        
+        # Write the files
+        algorithms.append(pd.DataFrame({"AlgorithmType": re.sub("s$", "", algorithm_types[i]), "AlgorithmName": list_algorithm}))
+     
+    return pd.concat(algorithms)
+
+
+## Migrate from species pool to the plate 
+def migrate_from_pool(plate, pool, migration_factor = 1):
+    # Migration plate
+    migration_plate = sample_from_pool(plate.N, pool) * migration_factor
+    
+    # Migration
+    plate_migrated = plate.N + migration_plate 
+
+    return plate_migrated
+
+## Plot community_function
+def plot_community_function(function_df):
+    function_df.plot.scatter(x = "Transfer", y = "CommunityPhenotype")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
