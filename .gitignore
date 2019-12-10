@@ -7,8 +7,10 @@ __pycache__/
 EEB279_Exercise_5.ipynb
 CommunityLevelSelection_V6_Experiment1.ipynb
 01-community_selection.Rmd
+community_coalescence_3.ipynb
 
 # R documents
+data/*
 *.Rproj
 *.R
 .Rhistory

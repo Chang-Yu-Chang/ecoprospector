@@ -133,7 +133,7 @@ def make_synthetic_community(species_list, assumptions, number_species = 2, init
     N0 = initial consumer populations
     """
     # Stopifnot
-    assert max(species_list) <= len(species_pool), "Some species in the list are not in the pool."
+#    assert max(species_list) <= len(species_pool), "Some species in the list are not in the pool."
     assert len(species_list) >= number_species, "Cannot make pair from one species."
     assert any(list((sum(x) == 1 for x in initial_frequency))), "Sum of initial frequencies is not equal to 1."
     assert any(list((len(x) == number_species for x in initial_frequency))), "Length of initial frequencies is not equal to number of species."
@@ -280,7 +280,7 @@ def simulate_community(plate, params_simulation, params_algorithm, file_name = "
 
         ## Output the file if write_composition set True
         if write_composition == True:
-            plate_data.to_csv(file_name + "-T" + "{:02d}".format(i+1) + ".txt", index = False)
+            plate_data.to_csv(file_name + "-T" + "{:02d}".format(i+1), index = False)
         
         # Community phenotype
         community_function = globals()[params_algorithm["community_phenotype"]](plate)
