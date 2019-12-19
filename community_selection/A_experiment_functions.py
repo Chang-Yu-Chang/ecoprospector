@@ -249,6 +249,7 @@ def simulate_community(
     params_simulation, 
     params_algorithm = {"community_phenotype": "community_function_additive", "selection_algorithm": "no_selection", "migration_algorithm": "no_migration"}, 
     file_name = "data/self_assembly-community", 
+    assembly_type = "self_assembly",
     write_composition = False):
 
     """
@@ -267,7 +268,7 @@ def simulate_community(
     community_function_list = list()
 
     # Save the inocula composition
-    plate_data = reshape_plate_data(plate, transfer_loop_index = 0) # Initial state
+    plate_data = reshape_plate_data(plate, transfer_loop_index = 0, assembly_type = assembly_type) # Initial state
     plate_data_list.append(plate_data)
     
     # Output the file if write_composition set True
@@ -281,7 +282,7 @@ def simulate_community(
         plate.Propagate(params_simulation["n_propagation"])
     
         # Append the composition to a list
-        plate_data = reshape_plate_data(plate, transfer_loop_index = i + 1)
+        plate_data = reshape_plate_data(plate, transfer_loop_index = (i + 1), assembly_type = assembly_type)
         plate_data_list.append(plate_data)
 
         ## Output the file if write_composition set True
@@ -312,7 +313,7 @@ def simulate_community(
 
 
 ## Reshape the plate resource and consumer matrix for saving into a txt file
-def reshape_plate_data(plate, transfer_loop_index):
+def reshape_plate_data(plate, transfer_loop_index, assembly_type):
     # Temporary function for adding variables to and melting df
     def melt_df(plate_df, data_type = "consumer"):
         # Consumers
@@ -323,7 +324,7 @@ def reshape_plate_data(plate, transfer_loop_index):
         temp_df["Type"] = np.repeat(data_type, total_number)
         temp_df["ID"] = range(total_number)
         temp_df["Transfer"] = np.repeat(str(transfer_loop_index), total_number)
-        temp_df["Assembly"] = np.repeat("self-assembly", total_number)
+        temp_df["Assembly"] = np.repeat(assembly_type, total_number)
         
         ## Melt the df
         temp_df = pd.melt(temp_df, id_vars = ["Transfer", "Assembly", "Type", "ID"], var_name = "Well", value_name = "Abundance")
