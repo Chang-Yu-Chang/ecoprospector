@@ -244,7 +244,13 @@ params_simulation = {
 }
 
 ## Main function for simulating community
-def simulate_community(plate, params_simulation, params_algorithm, file_name = "data/self_assembly-community", write_composition = False):
+def simulate_community(
+    plate, 
+    params_simulation, 
+    params_algorithm = {"community_phenotype": "community_function_additive", "selection_algorithm": "no_selection", "migration_algorithm": "no_migration"}, 
+    file_name = "data/self_assembly-community", 
+    write_composition = False):
+
     """
     Simulate community dynamics by given experimental regimes
     
@@ -280,7 +286,7 @@ def simulate_community(plate, params_simulation, params_algorithm, file_name = "
 
         ## Output the file if write_composition set True
         if write_composition == True:
-            plate_data.to_csv(file_name + "-T" + "{:02d}".format(i+1), index = False)
+            plate_data.to_csv(file_name + "-T" + "{:02d}".format(i+1) + ".txt", index = False)
         
         # Community phenotype
         community_function = globals()[params_algorithm["community_phenotype"]](plate)
@@ -295,7 +301,7 @@ def simulate_community(plate, params_simulation, params_algorithm, file_name = "
         plate.N = migrate_from_pool(plate, params_simulation["pool"], m)
         
         # Print the propagation progress
-        print("Transfer " + str(i+1) + " done.") 
+        print("Transfer " + str(i+1) + " done") 
         
     
     # Concatenate datafrom from different transfers
