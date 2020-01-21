@@ -23,39 +23,68 @@ from community_selection.C_selection_algorithms import *
 from community_selection.D_migration_algorithms import *
 
 
-# Functions for experiment
-
+# Functions for experimental setup
 def make_regional_pool(assumptions):
     """
-    Create a regional species pool
+    Create a regional species pool that has each species' relative abundance
     
     assumptions = dictionary of metaparameters from community-simulator
+
     """
     # Total number of species (specialist + generalist)
     S_tot = int(np.sum(assumptions['SA']) + assumptions['Sgen']) 
+
     # Assign drawn values based on power-law distribution
-    pool = np.random.power(1, size  = S_tot)  # Creating an array with M rows an n_wells columns with 0 entries
-    return pool/np.sum(pool)  # Relative species abundance in regional pool
+    pool = np.random.power(1, size  = S_tot)
+    
+    # Relative species abundance in regional pool
+    pool = pool/np.sum(pool)
+    
+    return pool
+    
 
-
-def prepare_experiment(assumptions):
+def draw_species_function(assumptions):
     """
-    Prepare the experimental setting shared by self assembly and paiwise competition  
+    Draw species-specific functions
     
     assumptions = dictionary of metaparameters from community-simulator
     
     Return:
-    params, species_pool
+    function_species, function_interaction
+    """
+    # Total number of species in the pool
+    S_tot = int(np.sum(assumptions['SA']) + assumptions['Sgen']) 
+    
+    # Species-specific function, 1-D array
+    function_species = np.random.normal(0, assumptions["sigma"], size = S_tot)
+    
+    # Interaction-specific function, 2-D n by n array
+    function_interaction = np.array(np.random.normal(0, assumptions["sigma"] * assumptions["alpha"], size = S_tot * S_tot)).reshape(S_tot, S_tot)
+
+    return function_species, function_interaction
+
+
+def prepare_experiment(assumptions):
+    """
+    Prepare the experimental setting shared by all assembly experiments
+    
+    assumptions = dictionary of metaparameters from community-simulator
+    
+    Return:
+    species_pool
     """
     np.random.seed(0) 
     
     # Make parameters
-    params = MakeParams(assumptions)
+    params = MakeParams(assumptions) 
     
-    # Generate a species pool
+    # Generate a species pool with the species abundance
     species_pool = make_regional_pool(assumptions) 
     
-    return params, species_pool
+    # Generate species function
+    function_species, function_interaction = draw_species_function(assumptions)
+    
+    return params, species_pool, function_species, function_interaction
 
 
 def sample_from_pool(plate_N, pool, scale=10**6, inocula=10**6):
@@ -129,15 +158,15 @@ def make_synthetic_community(species_list, assumptions, number_species = 2, init
     number_species = number of species in a community. Set to 2 for pairs, 3 for trios, etc
     initial_frequency = list of pair frequencies
 
-    Return:
-    N0 = initial consumer populations
+    Return: N0 = initial consumer populations
     """
     # Stopifnot
-#    assert max(species_list) <= len(species_pool), "Some species in the list are not in the pool."
+    #assert max(species_list) <= len(species_pool), "Some species in the list are not in the pool."
     assert len(species_list) >= number_species, "Cannot make pair from one species."
     assert any(list((sum(x) == 1 for x in initial_frequency))), "Sum of initial frequencies is not equal to 1."
     assert any(list((len(x) == number_species for x in initial_frequency))), "Length of initial frequencies is not equal to number of species."
     
+
     # All possible combinations of species for given number of species added to a well
     from itertools import combinations
     consumer_pairs = list(combinations(species_list, number_species))
@@ -146,7 +175,7 @@ def make_synthetic_community(species_list, assumptions, number_species = 2, init
     S_tot = int(np.sum(assumptions['SA'])+assumptions['Sgen'])
     F = len(assumptions['SA'])
     
-    # Construct lists of names of resources, consumers, resource types, consumer families and wells:
+    # Construct lists of names of resources, consumers, resource types, consumer families and wells
     family_names = ['F'+str(k) for k in range(F)]
     consumer_names = ['S'+str(k) for k in range(S_tot)]
     consumer_index = [[family_names[m] for m in range(F) for k in range(assumptions['SA'][m])]
@@ -166,6 +195,7 @@ def make_synthetic_community(species_list, assumptions, number_species = 2, init
     N0 = pd.DataFrame(N0, index = consumer_index, columns = well_names)
 
     return N0
+
 
 ## Make initial state. Function added from Bobby's code 
 def make_initial_state(assumptions, N0):
@@ -257,9 +287,9 @@ def simulate_community(
     
     plate = plate
     params_simulation = dictionary of parameters for running experiment
-    params_algorithm = dictionary of algorithms that determine the selection regime, migration regime, and community pheotypes
+    params_algorithm = dictionary of algorithms that determine the selection regime, migration regime, and community pheotypes of interest
     
-    Return:
+    Return
     community_composition = concatenated, melted panda dataframe of community and resource composition in each transfer
     community_function = melted panda dataframe of community function
     """
@@ -270,6 +300,7 @@ def simulate_community(
     # Save the inocula composition
     plate_data = reshape_plate_data(plate, transfer_loop_index = 0, assembly_type = assembly_type) # Initial state
     plate_data_list.append(plate_data)
+
     
     # Output the file if write_composition set True
     if write_composition == True:
@@ -282,16 +313,16 @@ def simulate_community(
         plate.Propagate(params_simulation["n_propagation"])
     
         # Append the composition to a list
-        plate_data = reshape_plate_data(plate, transfer_loop_index = (i + 1), assembly_type = assembly_type)
+        plate_data = reshape_plate_data(plate, transfer_loop_index = i, assembly_type = assembly_type) # Transfer = 0 means that it's before selection regime works upon
         plate_data_list.append(plate_data)
 
         ## Output the file if write_composition set True
         if write_composition == True:
-            plate_data.to_csv(file_name + "-T" + "{:02d}".format(i+1) + ".txt", index = False)
-        
+            plate_data.to_csv(file_name + "-T" + "{:02d}".format(i) + ".txt", index = False) # Transfer = 0 means that it's before selection regime works upon
+
         # Community phenotype
         community_function = globals()[params_algorithm["community_phenotype"]](plate)
-        community_function_list.append(reshape_function_data(community_function, transfer_loop_index = i + 1))
+        community_function_list.append(reshape_function_data(community_function, transfer_loop_index = i)) # Transfer = 0 means that it's before selection regime works upon
 
         # Passage and tranfer matrix
         transfer_matrix = globals()[params_algorithm["selection_algorithm"]](community_function)
@@ -382,11 +413,14 @@ def make_algorithm_library():
         
         while line:
             line = file_algorithm_phenotype.readline()
-            line_list.append(line.strip())
+            # Only count non-commented-out functions
+            if line.startswith("#") == False: 
+                line_list.append(line.strip())
             cnt += 1
         
         # Regular expression
         algorithm_names = re.findall("def \w+", " ".join(line_list))
+        
         list_algorithm = [re.sub("^def ", "", x) for x in algorithm_names]
         
         # Write the files
