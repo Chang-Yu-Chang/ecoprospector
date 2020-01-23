@@ -11,6 +11,9 @@ Python functions for computing the community-level phenotypes
 
 import numpy as np
 import scipy as sp
+from community_selection.A_experiment_functions import *
+
+
 
 # Consumer community composition
 
@@ -98,17 +101,73 @@ def f4_community_function_interaction_binary(plate):
     return additive_term + interaction_term
 
 
+def f5_invasion_growth(plate):
+    """
+    Quantifying how much the invasive species can grow in a resident community 
+    
+    """
+    
+    # Mean biomass for communities being selected
+    mean_community_biomass = int(round(np.average(np.sum(plate.N, axis = 0)))) # Round up to integer
+    
+    # Number of and species and community
+    S_tot = plate.N.shape[0]
+    n_wells = plate.N.shape[1]
+    
+    # Make a monoculuture community 
+    plate_invasion = plate.copy()
+    plate_invasion.N.iloc[1:S_tot,:] = 0 
+    plate_invasion.N.iloc[0:S_tot,:] = mean_community_biomass * 0.01 # Always use the invasive species with biomass ~1% of the resident community
+    
+    # Coalesce the community 
+    plate_test = plate.copy()
+    plate_test.N = plate_test.N + plate_invasion.N
+    
+    # Dilute the community 
+    plate_test.Passage(np.eye(n_wells) * 1/1000)
+    
+    # Grow the coalesced communities
+    plate_test.Propagate(24)
+    
+    # Calculate the function by dividing the final x(t) with x(o) 
+    function_resistance = plate_test.N.iloc[0] / plate_invasion.N.iloc[0]
+    
+    return function_resistance
 
-def f5_community_resistence(plate):
+
+def f6_resident_growth(plate):
     """
     Quantifying how resistant the community is to an external species invasion
     
     """
-    plate
+    # Number of and species and community
+    S_tot = plate.N.shape[0]
+    n_wells = plate.N.shape[1]
+    
+    # Make a plate with monoculuture community 
+    # Set seed
+    "How to draw a community from the speceis pool"
+    plate_invasion = plate.copy()
+    plate_invasion.N = sample_from_pool(plate, pool, scale = 10**6, inocula = 10**6)
+#    plate_invasion.N.iloc[1:S_tot,:] = 0 
+#    plate_invasion.N.iloc[0:S_tot,:] = mean_community_biomass * 0.01 
+    
+    # Coalesce the community 
+    # plate_test = plate.copy()
+    # plate_test.N = plate_test.N + plate_invasion.N
+    # 
+    # # Dilute the community 
+    # plate_test.Passage(np.eye(n_wells) * 1/1000)
+    # 
+    # # Grow the coalesced communities
+    # plate_test.Propagate(24)
+    # 
+    # # Calculate the function by dividing the final x(t) with x(o) 
+    # function_resistance = plate_test.N.iloc[0] / plate_invasion.N.iloc[0]
+    # 
+    return plate_invasion
 
 
-
-# 
 # 
 # def f1_community_function_additive(plate, species_function = np.random.normal(0, 1, size = 210)):
 #     """

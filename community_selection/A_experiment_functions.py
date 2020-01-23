@@ -87,20 +87,20 @@ def prepare_experiment(assumptions):
     return params, species_pool, function_species, function_interaction
 
 
-def sample_from_pool(plate_N, pool, scale=10**6, inocula=10**6):
+def sample_from_pool(plate_N, pool, scale = 10**6, inocula = 10**6):
     """
     Sample communities from regional species pool
 
-    plate_N = consumer data.frame
+    plate_N = consumer data frame
     pool = 1-D array that defines the species relative abundances in the pool
     """
+    
     S_tot = plate_N.shape[0] # Total number of species in the pool
     N0 = np.zeros((plate_N.shape)) # Make empty plate
-    consumer_index = plate_N.index
+    consumer_index = plate_N.index 
     well_names = plate_N.columns
 
-    # Sample initial community for each well
-    # The part is from Jean's code
+    # Sample initial community for each well; the part is from Jean's code
     for k in range(plate_N.shape[1]):
         pool = np.random.power(1, size  = S_tot) #* PA_vector
         pool = pool/np.sum(pool)
@@ -108,11 +108,6 @@ def sample_from_pool(plate_N, pool, scale=10**6, inocula=10**6):
         my_tab = pd.crosstab(index=consumer_list, columns="count") # Calculate the cell count
         N0[my_tab.index.values,k] = np.ravel(my_tab.values / scale) # Scale to biomass
     
-    # for k in range(plate_N.shape[1]):
-    #     species_list = np.random.choice(len(pool), size=len(pool), replace=True, p=pool)
-    #     my_tab = pd.crosstab(index=species_list, columns="count") # Calculate the biomass count
-    #     N0[my_tab.index.values,k] = np.ravel(my_tab.values / np.sum(my_tab.values) * inocula / scale) # Scale to sum
-
     # Make data.frame
     N0 = pd.DataFrame(N0, index = consumer_index, columns = well_names)
 
@@ -124,7 +119,7 @@ def sample_from_pool(plate_N, pool, scale=10**6, inocula=10**6):
 ## Make monos
 def make_synthetic_mono(assumptions):
     """
-    Make the synthetic community inocula
+    Make the synthetic monoculture with all community in the pool
     
     assumptions = dictionary of metaparameters
     
@@ -132,10 +127,10 @@ def make_synthetic_mono(assumptions):
     N0 = initial consumer populations
     """
     # Extract parameters from assumption
-    S_tot = int(np.sum(assumptions['SA'])+assumptions['Sgen'])
+    S_tot = int(np.sum(assumptions['SA']) + assumptions['Sgen'])
     F = len(assumptions['SA'])
     
-    # Construct lists of names of resources, consumers, resource types, consumer families and wells:
+    # Construct lists of names of resources, consumers, resource types, consumer families and wells
     family_names = ['F'+str(k) for k in range(F)]
     consumer_names = ['S'+str(k) for k in range(S_tot)]
     consumer_index = [[family_names[m] for m in range(F) for k in range(assumptions['SA'][m])]
@@ -145,11 +140,11 @@ def make_synthetic_mono(assumptions):
     # Make data.frame for community-simulator input
     N0 = np.eye(S_tot)
     N0 = pd.DataFrame(N0, index = consumer_index, columns = well_names)
-    
+
     return N0
 
-## Make synthetic pairs
-def make_synthetic_community(species_list, assumptions, number_species = 2, initial_frequency = [[0.5, 0.5], [0.95, 0.05]]):
+## Make synthetic community with given ratios
+def make_synthetic_community(assumptions, species_list, number_species = 2, initial_frequency = [[0.5, 0.5], [0.95, 0.05]]):
     """
     Make synthetic community inocula of all pairwise combination
     
@@ -265,6 +260,19 @@ def make_initial_state(assumptions, N0):
 
     return N0, R0
 
+
+# Coalesce communities 
+def coalesce_communities(plate_N1, plate_N2):
+    """
+    Coalesce two communities together with the plate layout
+    
+    """
+    plate_N1_test = plate_N1.copy()
+    plate_N2_test = plate_N1.copy()
+    
+    return plate_N1_test + plate_N2_test 
+    
+
 # Simulate community dynamics
 ## Simulation parameters
 params_simulation = {
@@ -273,7 +281,7 @@ params_simulation = {
     "dilution": 1/125, # Dilution factor for transfer
 }
 
-## Main function for simulating community
+## Main function for simulatij ng community
 def simulate_community(
     plate, 
     params_simulation, 
