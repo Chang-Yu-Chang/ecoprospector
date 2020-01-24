@@ -7,22 +7,37 @@ Created on Nov 27 2019
 
 """
 Python functions for selection algorithms during plate passage in 96-well plates.
+- It takes the community_function
+- It takes the communtiy function to growht 
+
 """
 
 import numpy as np
 import scipy as sp
 
 
-# Chang-Yu Chang ----
+# Control: no selection 
+
+def no_selection(community_function):
+    """
+    Direct well-to-well transfer without selection
+    """
+    # Read number of wells 
+    n = len(community_function)
+    return np.eye(n)
+
 
 def select_best_n(community_function, n_select=0.25):
+    """
+    Select the top n% of the community  
+    """
     # Read number of wells 
     n = len(community_function)
     
     # Community function per transfer
     sorted_community_function = np.sort(community_function)
     
-    # 25% cutoff for selecting communities
+    # n% cutoff for selecting communities
     cut_off = sorted_community_function[int(np.round(len(community_function)*(1-n_select))) - 1]
     
     # Winner wells
@@ -40,68 +55,105 @@ def select_best_n(community_function, n_select=0.25):
   
     return t
 
-def no_selection(community_function):
-    # Read number of wells 
-    n = len(community_function)
-    return np.eye(n)
-
-
-# Jean Vila ----
-
-def mixing_matrix(n_wells,n_mix):
-    '''
-    Generates a transfer matrix with the following  rule every community is transfered to itself and combined with 
-    n_mix other randomly chosen communities. Mixing is done in equal proportions
-    '''
-    TM = np.eye(n_wells)
-    for i in range(0,np.shape(TM)[0]):
-        r = np.random.choice(np.arange(0,np.shape(TM)[1]-1),n_mix,replace=False)
-        for j in r:
-            if j < i:
-                TM[i,j] = 1
-            else:
-                TM[i,j+1]  = 1
-    return(TM/(n_mix+1))
 
 
 
 
-# Xinwen Zhu ----
-
-def pairwise_XZ(community_function, dilution=1/125):
-    import itertools
-    n = len(community_function)
-    # Community function per transfer
-    sorted_community_function = np.sort(community_function)
-    # cutoff top ten 
-    top_10 = sorted_community_function[86]
-    winner_index = np.where(community_function >= top_10)
-    pairwise = list(itertools.combinations(winner_index[0], 2))
-    # Empty transfer matrix
-    t = np.zeros((n, n))
-    c=0
-    for i in range (0,90): #populate rows one by one
-        t[i,pairwise[c][0]]=1
-        t[i,pairwise[c][1]]=1
-        c = c+1
-        if c == 45:
-            c = 0
-    c=0
-    for i in range (90,96): 
-        t[i,winner_index[0][c]]=1
-        c = c+1
-    return t
-    
-def mate_top_XZ(community_function,dilution=1/125):
-    n = len(community_function)
-    sorted_community_function = np.sort(community_function)
-    top_index = np.where(community_function >= sorted_community_function[n-1])
-    t = np.eye(n)
-    t[:,top_index] =1
-    return t
 
 
 
+
+
+
+# # Chang-Yu Chang ----
+# 
+# def select_best_n(community_function, n_select=0.25):
+#     # Read number of wells 
+#     n = len(community_function)
+#     
+#     # Community function per transfer
+#     sorted_community_function = np.sort(community_function)
+#     
+#     # 25% cutoff for selecting communities
+#     cut_off = sorted_community_function[int(np.round(len(community_function)*(1-n_select))) - 1]
+#     
+#     # Winner wells
+#     winner_index = np.where(community_function >= cut_off)
+#     
+#     # Empty transfer matrix
+#     t = np.zeros((n, n))
+#     t_x = range(n)
+#     t_y = np.repeat(winner_index, int(np.round(1/n_select)))
+#     t_y = t_y[:n]
+#     
+#     # Fill in the transfer matrix
+#     for i in range(len(t_x)):
+#         t[t_x[i], t_y[i]] = 1
+#   
+#     return t
+# 
+# def no_selection(community_function):
+#     # Read number of wells 
+#     n = len(community_function)
+#     return np.eye(n)
+
+# 
+# # Jean Vila ----
+# 
+# def mixing_matrix(n_wells,n_mix):
+#     '''
+#     Generates a transfer matrix with the following  rule every community is transfered to itself and combined with 
+#     n_mix other randomly chosen communities. Mixing is done in equal proportions
+#     '''
+#     TM = np.eye(n_wells)
+#     for i in range(0,np.shape(TM)[0]):
+#         r = np.random.choice(np.arange(0,np.shape(TM)[1]-1),n_mix,replace=False)
+#         for j in r:
+#             if j < i:
+#                 TM[i,j] = 1
+#             else:
+#                 TM[i,j+1]  = 1
+#     return(TM/(n_mix+1))
+# 
+# 
+# 
+# 
+# # Xinwen Zhu ----
+# 
+# def pairwise_XZ(community_function, dilution=1/125):
+#     import itertools
+#     n = len(community_function)
+#     # Community function per transfer
+#     sorted_community_function = np.sort(community_function)
+#     # cutoff top ten 
+#     top_10 = sorted_community_function[86]
+#     winner_index = np.where(community_function >= top_10)
+#     pairwise = list(itertools.combinations(winner_index[0], 2))
+#     # Empty transfer matrix
+#     t = np.zeros((n, n))
+#     c=0
+#     for i in range (0,90): #populate rows one by one
+#         t[i,pairwise[c][0]]=1
+#         t[i,pairwise[c][1]]=1
+#         c = c+1
+#         if c == 45:
+#             c = 0
+#     c=0
+#     for i in range (90,96): 
+#         t[i,winner_index[0][c]]=1
+#         c = c+1
+#     return t
+#     
+# def mate_top_XZ(community_function,dilution=1/125):
+#     n = len(community_function)
+#     sorted_community_function = np.sort(community_function)
+#     top_index = np.where(community_function >= sorted_community_function[n-1])
+#     t = np.eye(n)
+#     t[:,top_index] =1
+#     return t
+# 
+# 
+# 
 
 # 
 # # Rachael Waymack ----

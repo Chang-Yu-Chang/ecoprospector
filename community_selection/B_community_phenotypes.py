@@ -64,8 +64,6 @@ def f3_community_function_additive_binary(plate, assumptions):
     plate = plate object from package
     species_function = a n by n 2-D array; n is the size of species pool
     """
-    assert len(species_function) == plate.N.shape[0], "Length of species_function does not match species number in plate."
-
     # Convert the community composition to binary (presence = 1, absense = 0)
     plate_temp = plate.copy()
     plate_temp.N = (plate_temp.N > 0) * 1
@@ -172,13 +170,13 @@ def f6_resident_growth(plate, assumptions):
     # Coalesce the community 
     plate_test.N = 0.5 * plate_test.N + 0.5 * plate_resident.N
     
-    # Dilute the coalsced community
+    # Dilute the coalesced community
     plate_test.Passage(np.eye(n_wells) * 1/1000)
     
     # Grow the coalesced communities
     plate_test.Propagate(24)
      
-    # Calculate the function by dividing the final x(t) with x(o) 
+    # Calculate the function by dividing how much the pathogen in the resident community grow 
     function_growth = plate_test.N.iloc[0] / plate_resident.N.iloc[0]
      
     return function_growth
