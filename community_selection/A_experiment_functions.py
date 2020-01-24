@@ -284,8 +284,9 @@ params_simulation = {
 ## Main function for simulatij ng community
 def simulate_community(
     plate, 
+    assumptions,
     params_simulation, 
-    params_algorithm = {"community_phenotype": "community_function_additive", "selection_algorithm": "no_selection", "migration_algorithm": "no_migration"}, 
+    params_algorithm = {"community_phenotype": "f1_community_function_additive", "selection_algorithm": "no_selection", "migration_algorithm": "no_migration"}, 
     file_name = "data/self_assembly-community", 
     assembly_type = "self_assembly",
     write_composition = False):
@@ -329,7 +330,7 @@ def simulate_community(
             plate_data.to_csv(file_name + "-T" + "{:02d}".format(i) + ".txt", index = False) # Transfer = 0 means that it's before selection regime works upon
 
         # Community phenotype
-        community_function = globals()[params_algorithm["community_phenotype"]](plate)
+        community_function = globals()[params_algorithm["community_phenotype"]](plate, assumptions = assumptions)
         community_function_list.append(reshape_function_data(community_function, transfer_loop_index = i)) # Transfer = 0 means that it's before selection regime works upon
 
         # Passage and tranfer matrix

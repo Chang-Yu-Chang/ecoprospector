@@ -11,13 +11,16 @@ Python functions for computing the community-level phenotypes
 
 import numpy as np
 import scipy as sp
-from community_selection.A_experiment_functions import *
 
+from community_simulator import *
+from community_simulator.usertools import *
+from community_simulator.visualization import *
+from community_selection.A_experiment_functions import *
 
 
 # Consumer community composition
 
-def f1_community_function_additive(plate):
+def f1_community_function_additive(plate, assumptions):
     """
     Additive community function(F1)
     
@@ -30,7 +33,7 @@ def f1_community_function_additive(plate):
     return community_function
 
 
-def f2_community_function_interaction(plate):
+def f2_community_function_interaction(plate, assumptions):
     """
     Additive community function with interaction (F2)
     
@@ -54,7 +57,7 @@ def f2_community_function_interaction(plate):
     return additive_term + interaction_term
 
 
-def f3_community_function_additive_binary(plate):
+def f3_community_function_additive_binary(plate, assumptions):
     """
     Additive community function with interaction, binary (F3)
     
@@ -74,7 +77,7 @@ def f3_community_function_additive_binary(plate):
 
 
 
-def f4_community_function_interaction_binary(plate):
+def f4_community_function_interaction_binary(plate, assumptions):
     """
     Additive community function with interaction, binary (F4)
     
@@ -101,7 +104,7 @@ def f4_community_function_interaction_binary(plate):
     return additive_term + interaction_term
 
 
-def f5_invasion_growth(plate):
+def f5_invasion_growth(plate, assumptions):
     """
     Quantifying how much the invasive species can grow in a resident community 
     
@@ -130,42 +133,56 @@ def f5_invasion_growth(plate):
     plate_test.Propagate(24)
     
     # Calculate the function by dividing the final x(t) with x(o) 
-    function_resistance = plate_test.N.iloc[0] / plate_invasion.N.iloc[0]
+    function_growth = plate_test.N.iloc[0] / plate_invasion.N.iloc[0]
     
-    return function_resistance
+    return function_growth
 
 
-def f6_resident_growth(plate):
+def f6_resident_growth(plate, assumptions):
     """
     Quantifying how resistant the community is to an external species invasion
     
     """
+
     # Number of and species and community
     S_tot = plate.N.shape[0]
     n_wells = plate.N.shape[1]
     
-    # Make a plate with monoculuture community 
-    # Set seed
-    "How to draw a community from the speceis pool"
-    plate_invasion = plate.copy()
-    plate_invasion.N = sample_from_pool(plate, pool, scale = 10**6, inocula = 10**6)
-#    plate_invasion.N.iloc[1:S_tot,:] = 0 
-#    plate_invasion.N.iloc[0:S_tot,:] = mean_community_biomass * 0.01 
+    # Make the tested community inocula
+    plate_test = plate.copy()
+    
+    # Make a plate with only single community replicates
+    ## Generate initial state
+    np.random.seed(1)
+    N0, R0 = MakeInitialState(assumptions) 
+    N0 = N0[["W0" for i in range(n_wells)]]; R0 = R0[["W0" for i in range(n_wells)]]
+    N0.columns = ["W" + str(i) for i in range(n_wells)]; R0.columns = ["W" + str(i) for i in range(n_wells)]
+    init_state = N0, R0
+    
+    ## Make essential arguments for making plate
+    params = MakeParams(assumptions) 
+    dynamics = [plate.dNdt, plate.dRdt]
+    
+    ## Make plate
+    plate_resident = Community(init_state, dynamics, params, scale = 10**6, parallel = True) 
+
+    ## Propagate
+    plate_resident.Propagate(24)
     
     # Coalesce the community 
-    # plate_test = plate.copy()
-    # plate_test.N = plate_test.N + plate_invasion.N
-    # 
-    # # Dilute the community 
-    # plate_test.Passage(np.eye(n_wells) * 1/1000)
-    # 
-    # # Grow the coalesced communities
-    # plate_test.Propagate(24)
-    # 
-    # # Calculate the function by dividing the final x(t) with x(o) 
-    # function_resistance = plate_test.N.iloc[0] / plate_invasion.N.iloc[0]
-    # 
-    return plate_invasion
+    plate_test.N = 0.5 * plate_test.N + 0.5 * plate_resident.N
+    
+    # Dilute the coalsced community
+    plate_test.Passage(np.eye(n_wells) * 1/1000)
+    
+    # Grow the coalesced communities
+    plate_test.Propagate(24)
+     
+    # Calculate the function by dividing the final x(t) with x(o) 
+    function_growth = plate_test.N.iloc[0] / plate_resident.N.iloc[0]
+     
+    return function_growth
+
 
 
 # 
