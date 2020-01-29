@@ -27,9 +27,9 @@ def no_selection(community_function):
     return np.eye(n)
 
 
-def select_best_n(community_function, n_select=0.25):
+def select_top25percent(community_function):
     """
-    Select the top n% of the community  
+    Select the top 25% of the community  
     """
     # Read number of wells 
     n = len(community_function)
@@ -38,7 +38,7 @@ def select_best_n(community_function, n_select=0.25):
     sorted_community_function = np.sort(community_function)
     
     # n% cutoff for selecting communities
-    cut_off = sorted_community_function[int(np.round(len(community_function)*(1-n_select))) - 1]
+    cut_off = sorted_community_function[int(np.round(len(community_function)*(1-0.25))) - 1]
     
     # Winner wells
     winner_index = np.where(community_function >= cut_off)
@@ -46,7 +46,7 @@ def select_best_n(community_function, n_select=0.25):
     # Empty transfer matrix
     t = np.zeros((n, n))
     t_x = range(n)
-    t_y = np.repeat(winner_index, int(np.round(1/n_select)))
+    t_y = np.repeat(winner_index, int(np.round(1/0.25)))
     t_y = t_y[:n]
     
     # Fill in the transfer matrix
@@ -55,6 +55,56 @@ def select_best_n(community_function, n_select=0.25):
   
     return t
 
+def select_bottom25percent(community_function):
+    """
+    Select the bottom 25% of the community  
+    """
+    # Read number of wells 
+    n = len(community_function)
+    
+    # Community function per transfer
+    sorted_community_function = np.sort(community_function)
+    
+    # n% cutoff for selecting communities
+    cut_off = sorted_community_function[int(np.round(len(community_function)*(0.25))) - 1]
+    
+    # Winner wells
+    winner_index = np.where(community_function <= cut_off)
+    
+    # Empty transfer matrix
+    t = np.zeros((n, n))
+    t_x = range(n)
+    t_y = np.repeat(winner_index, int(np.round(1/0.25)))
+    t_y = t_y[:n]
+    
+    # Fill in the transfer matrix
+    for i in range(len(t_x)):
+        t[t_x[i], t_y[i]] = 1
+  
+    return t
+
+
+def pool_top25percent(community_function):
+    """
+    Select the top 25% communities , pool them all, and replicate to all wells
+    """
+    # Read number of wells 
+    n = len(community_function)
+    
+    # Community function per transfer
+    sorted_community_function = np.sort(community_function)
+    
+    # n% cutoff for selecting communities
+    cut_off = sorted_community_function[int(np.round(len(community_function)*(1-0.25))) - 1]
+    
+    # Winner wells
+    winner_index = np.where(community_function >= cut_off)
+    
+    # Transfer matrix
+    t = np.zeros((n, n))
+    t[:winner_index] = 1
+
+    return t
 
 
 

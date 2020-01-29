@@ -18,7 +18,7 @@ from community_simulator.visualization import *
 from community_selection.A_experiment_functions import *
 
 
-# Consumer community composition
+# Community phenotypes
 
 def f1_community_function_additive(plate, assumptions):
     """
@@ -130,7 +130,7 @@ def f5_invasion_growth(plate, assumptions):
     # Grow the coalesced communities
     plate_test.Propagate(24)
     
-    # Calculate the function by dividing the final x(t) with x(o) 
+    # Calculate the function by dividing the final x(t) with x(o) of pathogen (species 0)
     function_growth = plate_test.N.iloc[0] / plate_invasion.N.iloc[0]
     
     return function_growth
@@ -176,7 +176,7 @@ def f6_resident_growth(plate, assumptions):
     # Grow the coalesced communities
     plate_test.Propagate(24)
      
-    # Calculate the function by dividing how much the pathogen in the resident community grow 
+    # Calculate the function by dividing how much the pathogen (species 0) in the resident community grow 
     function_growth = plate_test.N.iloc[0] / plate_resident.N.iloc[0]
      
     return function_growth

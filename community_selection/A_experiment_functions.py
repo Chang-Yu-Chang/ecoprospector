@@ -64,7 +64,7 @@ def draw_species_function(assumptions):
     return function_species, function_interaction
 
 
-def prepare_experiment(assumptions):
+def prepare_experiment(assumptions, seed = 1):
     """
     Prepare the experimental setting shared by all assembly experiments
     
@@ -73,7 +73,7 @@ def prepare_experiment(assumptions):
     Return:
     species_pool
     """
-    np.random.seed(0) 
+    np.random.seed(seed) 
     
     # Make parameters
     params = MakeParams(assumptions) 

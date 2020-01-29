@@ -2,6 +2,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
+execution1.py
 
 # Python notebook
 EEB279_Exercise_5.ipynb
