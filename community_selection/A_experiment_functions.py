@@ -455,6 +455,13 @@ def plot_community_function(function_df):
 
 
 
+def plot_transfer_matrix(transfer_matrix):
+    fig,ax=plt.subplots()
+    sns.heatmap(transfer_matrix,ax=ax)
+    ax.set_xlabel('Old well',fontsize=14)
+    ax.set_ylabel('New well',fontsize=14)
+    ax.set_title(r'Transfer Matrix',fontsize=14)
+    plt.show()
 
 
 

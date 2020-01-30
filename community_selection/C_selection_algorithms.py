@@ -15,9 +15,6 @@ Python functions for selection algorithms during plate passage in 96-well plates
 import numpy as np
 import scipy as sp
 
-
-# Control: no selection 
-
 def no_selection(community_function):
     """
     Direct well-to-well transfer without selection
@@ -25,89 +22,153 @@ def no_selection(community_function):
     # Read number of wells 
     n = len(community_function)
     return np.eye(n)
-
-
+    
 def select_top25percent(community_function):
     """
-    Select the top 25% of the community  
+    Select the top 25% communities 
     """
     # Read number of wells 
     n = len(community_function)
     
-    # Community function per transfer
+    # Sort the community function in this transfer
     sorted_community_function = np.sort(community_function)
     
-    # n% cutoff for selecting communities
+    # 25% cutoff for selecting communities
     cut_off = sorted_community_function[int(np.round(len(community_function)*(1-0.25))) - 1]
     
     # Winner wells
-    winner_index = np.where(community_function >= cut_off)
+    winner_index = np.where(community_function >= cut_off)[::-1] # Reverse the list so the higher 
     
-    # Empty transfer matrix
-    t = np.zeros((n, n))
-    t_x = range(n)
-    t_y = np.repeat(winner_index, int(np.round(1/0.25)))
-    t_y = t_y[:n]
-    
+    # Transfer matrix
+    transfer_matrix = np.zeros((n,n))
+    t_new = range(n) # New wells
+    t_old = np.repeat(winner_index, int(np.round(1/0.25)))[::-1] # Old wells
+    t_old = t_old[:n] # Slice the first n elements
+        
     # Fill in the transfer matrix
-    for i in range(len(t_x)):
-        t[t_x[i], t_y[i]] = 1
+    for i in range(n):
+        transfer_matrix[t_new[i], t_old[i]] = 1
   
-    return t
+    return transfer_matrix
+
+
+def select_top10percent(community_function):
+    """
+    Select the top 10% communities 
+    """
+    # Read number of wells 
+    n = len(community_function)
+    
+    # Sort the community function in this transfer
+    sorted_community_function = np.sort(community_function)
+    
+    # 25% cutoff for selecting communities
+    cut_off = sorted_community_function[int(np.round(len(community_function)*(1-0.1))) - 1]
+    
+    # Winner wells
+    winner_index = np.where(community_function >= cut_off)[::-1] # Reverse the list so the higher 
+    
+    # Transfer matrix
+    transfer_matrix = np.zeros((n,n))
+    t_new = range(n) # New wells
+    t_old = np.repeat(winner_index, int(np.round(1/0.1)))[::-1] # Old wells
+    t_old = t_old[:n] # Slice the first n elements
+        
+    # Fill in the transfer matrix
+    for i in range(n):
+        transfer_matrix[t_new[i], t_old[i]] = 1
+  
+    return transfer_matrix
 
 def select_bottom25percent(community_function):
     """
-    Select the bottom 25% of the community  
+    Select the bottom 25% communities
     """
     # Read number of wells 
     n = len(community_function)
     
-    # Community function per transfer
+    # Sort the community function in this transfer
     sorted_community_function = np.sort(community_function)
     
-    # n% cutoff for selecting communities
-    cut_off = sorted_community_function[int(np.round(len(community_function)*(0.25))) - 1]
+    # 25% cutoff for selecting communities
+    cut_off = sorted_community_function[int(np.round(len(community_function)*(0.25)))]
     
     # Winner wells
-    winner_index = np.where(community_function <= cut_off)
+    winner_index = np.where(community_function <= cut_off) # Reverse the list so the higher 
     
-    # Empty transfer matrix
-    t = np.zeros((n, n))
-    t_x = range(n)
-    t_y = np.repeat(winner_index, int(np.round(1/0.25)))
-    t_y = t_y[:n]
-    
+    # Transfer matrix
+    transfer_matrix = np.zeros((n,n))
+    t_new = range(n) # New wells
+    t_old = np.repeat(winner_index, int(np.round(1/0.25))) # Old wells
+    t_old = t_old[:n] # Slice the first n elements
+        
     # Fill in the transfer matrix
-    for i in range(len(t_x)):
-        t[t_x[i], t_y[i]] = 1
+    for i in range(n):
+        transfer_matrix[t_new[i], t_old[i]] = 1
   
-    return t
-
+    return transfer_matrix
 
 def pool_top25percent(community_function):
     """
-    Select the top 25% communities , pool them all, and replicate to all wells
-    """
+    Select the top 25% communities, pool them all together, and replicate to all the new wells
+    """    
     # Read number of wells 
     n = len(community_function)
     
-    # Community function per transfer
+    # Sort the community function in this transfer
     sorted_community_function = np.sort(community_function)
     
-    # n% cutoff for selecting communities
+    # 25% cutoff for selecting communities
     cut_off = sorted_community_function[int(np.round(len(community_function)*(1-0.25))) - 1]
     
     # Winner wells
-    winner_index = np.where(community_function >= cut_off)
+    winner_index = np.where(community_function > cut_off)[::-1] # Reverse the list so the higher 
     
     # Transfer matrix
-    t = np.zeros((n, n))
-    t[:winner_index] = 1
+    transfer_matrix = np.zeros((n,n))
+    transfer_matrix[:, winner_index] = 1
+  
+    return transfer_matrix 
 
-    return t
 
+def pair_top(community_function):
+    """
+    Pair the top communities. Each pairwise combination has two replicates
+    """
+    import itertools
+    
+    # Read number of wells
+    n = len(community_function)
 
+    # Compute the cutoff based on the number of wells
+    cut_off_percent = (np.sqrt(n))/n
 
+    # Sort the community function in this transfer
+    sorted_community_function = np.sort(community_function)
+    
+    # Community function value cutoff for selecting communities    
+    cut_off = sorted_community_function[int(np.round(len(community_function)*(1-cut_off_percent))) - 1]
+    
+    # Winner wells
+    winner_index = np.where(community_function > cut_off)[::-1] # Reverse the list so the higher 
+    pairs_list = list(itertools.combinations(winner_index[0], 2))
+    
+    # Transfer matrix
+    transfer_matrix = np.zeros((n,n))
+    t_new = range(n) # New wells
+    t_old = list(winner_index) + [pairs_list * int(np.round(1/cut_off_percent))] # Old wells
+    t_old2 = []
+    for i in t_old:
+        for j in i:
+            t_old2.append(j)
+    
+    t_old2 = t_old2[:n] # Slice the first n elements
+        
+    # Fill in the transfer matrix
+    for i in range(n):
+        transfer_matrix[t_new[i], t_old2[i]] = 1
+    
+    return transfer_matrix
 
 
 
@@ -171,28 +232,28 @@ def pool_top25percent(community_function):
 # # Xinwen Zhu ----
 # 
 # def pairwise_XZ(community_function, dilution=1/125):
-#     import itertools
-#     n = len(community_function)
-#     # Community function per transfer
-#     sorted_community_function = np.sort(community_function)
-#     # cutoff top ten 
-#     top_10 = sorted_community_function[86]
-#     winner_index = np.where(community_function >= top_10)
-#     pairwise = list(itertools.combinations(winner_index[0], 2))
-#     # Empty transfer matrix
-#     t = np.zeros((n, n))
-#     c=0
-#     for i in range (0,90): #populate rows one by one
-#         t[i,pairwise[c][0]]=1
-#         t[i,pairwise[c][1]]=1
-#         c = c+1
-#         if c == 45:
-#             c = 0
-#     c=0
-#     for i in range (90,96): 
-#         t[i,winner_index[0][c]]=1
-#         c = c+1
-#     return t
+    # import itertools
+    # n = len(community_function)
+    # # Community function per transfer
+    # sorted_community_function = np.sort(community_function)
+    # # cutoff top ten
+    # top_10 = sorted_community_function[86]
+    # winner_index = np.where(community_function >= top_10)
+    # pairwise = list(itertools.combinations(winner_index[0], 2))
+    # # Empty transfer matrix
+    # t = np.zeros((n, n))
+    # c=0
+    # for i in range (0,90): #populate rows one by one
+    #     t[i,pairwise[c][0]]=1
+    #     t[i,pairwise[c][1]]=1
+    #     c = c+1
+    #     if c == 45:
+    #         c = 0
+    # c=0
+    # for i in range (90,96):
+    #     t[i,winner_index[0][c]]=1
+    #     c = c+1
+    # return t
 #     
 # def mate_top_XZ(community_function,dilution=1/125):
 #     n = len(community_function)

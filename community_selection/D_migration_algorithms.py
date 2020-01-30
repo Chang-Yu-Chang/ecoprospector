@@ -17,6 +17,9 @@ import scipy as sp
 
 # Design migration_factor (a sequence of binary factors) 
 def no_migration(community_function, migration_type = 'no_migration'):
+    """
+    
+    """
     # Number of wells
     n_wells = len(community_function)
     
