@@ -11,6 +11,7 @@ CommunityLevelSelection_V6_Experiment1.ipynb
 community_coalescence_3.ipynb
 
 # R documents
+figure/*
 data/*
 *.Rproj
 *.R

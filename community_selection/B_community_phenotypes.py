@@ -20,7 +20,7 @@ from community_selection.A_experiment_functions import *
 
 # Community phenotypes
 
-def f1_community_function_additive(plate, assumptions):
+def f1_additive(plate, assumptions):
     """
     Additive community function(F1)
     
@@ -33,7 +33,7 @@ def f1_community_function_additive(plate, assumptions):
     return community_function
 
 
-def f2_community_function_interaction(plate, assumptions):
+def f2_interaction(plate, assumptions):
     """
     Additive community function with interaction (F2)
     
@@ -57,7 +57,7 @@ def f2_community_function_interaction(plate, assumptions):
     return additive_term + interaction_term
 
 
-def f3_community_function_additive_binary(plate, assumptions):
+def f3_additive_binary(plate, assumptions):
     """
     Additive community function with interaction, binary (F3)
     
@@ -75,7 +75,7 @@ def f3_community_function_additive_binary(plate, assumptions):
 
 
 
-def f4_community_function_interaction_binary(plate, assumptions):
+def f4_interaction_binary(plate, assumptions):
     """
     Additive community function with interaction, binary (F4)
     
