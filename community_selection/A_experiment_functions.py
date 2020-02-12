@@ -86,16 +86,18 @@ def prepare_experiment(assumptions, seed = 1):
     
     return params, species_pool, function_species, function_interaction
 
-def sample_from_pool(plate_N, scale = 10**6, inocula = 10**6):
+def sample_from_pool(plate_N, scale = 10**6, inocula = 10**6, initial_inocula_pool = True):
     """
-    Sample communities from regional species pool
+    Sample communities from regional species pool.
+    In order to create variability in the pool, split the species pool into two pools, one for initial inocula and one migration.
+    For initial inocula, use the even number species, whereas for initla pool, use odds number species.
 
     plate_N = consumer data frame
     pool = 1-D array that defines the species relative abundances in the pool
     """
-    
     # Total number of species in this universe
     S_tot = plate_N.shape[0] 
+    S_half = int(np.round(S_tot/2))
     
     # Make empty plate
     N0 = np.zeros((plate_N.shape)) # Make empty plate
@@ -107,40 +109,61 @@ def sample_from_pool(plate_N, scale = 10**6, inocula = 10**6):
     well_names = plate_N.columns
 
     # Sample initial community for each well; the part is from Jean's code
-    for k in range(plate_N.shape[1]):
-        # For each well, sample community from different microbiome sample
-        np.random.seed(k + 1) 
-        pool = np.random.power(1, size  = S_tot) # Power-law distribution
-        pool = pool/np.sum(pool) # Normalize the pool
-        consumer_list = np.random.choice(len(pool), size = inocula, replace = True, p = pool) # Draw from the pool
-        my_tab = pd.crosstab(index = consumer_list, columns = "count") # Calculate the cell count
-        N0[my_tab.index.values,k] = np.ravel(my_tab.values / scale) # Scale to biomass
-    
+    if initial_inocula_pool == True:
+        for k in range(plate_N.shape[1]):
+            # For each well, sample community from different microbiome sample
+            np.random.seed(k + 1) 
+            pool = np.random.power(1, size  = S_half) # Power-law distribution
+    #        pool = pool * np.random.binomial(1, 0.5, size = S_tot) # Add additional varaibility here by randomly choosing half of the species and set the probabilities of drawing them to 0 
+            pool = pool/np.sum(pool) # Normalize the pool
+            consumer_list = np.random.choice(np.array(range(0, S_tot, 2)), size = inocula, replace = True, p = pool) # Draw from the pool
+            my_tab = pd.crosstab(index = consumer_list, columns = "count") # Calculate the cell count
+            N0[my_tab.index.values,k] = np.ravel(my_tab.values / scale) # Scale to biomass
+    elif initial_inocula_pool == False:
+        for k in range(plate_N.shape[1]):
+            np.random.seed(k + 1) 
+            pool = np.random.power(1, size  = S_half) # Power-law distribution
+            pool = pool/np.sum(pool) # Normalize the pool
+            consumer_list = np.random.choice(np.array(range(1, S_tot, 2)), size = inocula, replace = True, p = pool) # Draw from the pool
+            my_tab = pd.crosstab(index = consumer_list, columns = "count") # Calculate the cell count
+            N0[my_tab.index.values,k] = np.ravel(my_tab.values / scale) # Scale to biomass
+            # Test migration with large inocula biomass
+            N0[:,k] = N0[:,k]/sum(N0[:,k]) * 100 
+        
+
     # Make data.frame
     N0 = pd.DataFrame(N0, index = consumer_index, columns = well_names)
 
     return N0
 
-
-# def sample_from_pool(plate_N, pool, scale = 10**6, inocula = 10**6):
+# def sample_from_pool(plate_N, scale = 10**6, inocula = 10**6, initial_inocula_pool = True):
 #     """
 #     Sample communities from regional species pool
 # 
 #     plate_N = consumer data frame
 #     pool = 1-D array that defines the species relative abundances in the pool
 #     """
+#     # Total number of species in this universe
+#     S_tot = plate_N.shape[0] 
 #     
-#     S_tot = plate_N.shape[0] # Total number of species in the pool
+#     # Make empty plate
 #     N0 = np.zeros((plate_N.shape)) # Make empty plate
+#     
+#     # Consumer index
 #     consumer_index = plate_N.index 
+#     
+#     # Well index
 #     well_names = plate_N.columns
 # 
 #     # Sample initial community for each well; the part is from Jean's code
 #     for k in range(plate_N.shape[1]):
-#         pool = np.random.power(1, size  = S_tot) #* PA_vector
-#         pool = pool/np.sum(pool)
-#         consumer_list = np.random.choice(len(pool), size=inocula, replace=True, p=pool)
-#         my_tab = pd.crosstab(index=consumer_list, columns="count") # Calculate the cell count
+#         # For each well, sample community from different microbiome sample
+#         np.random.seed(k + 1) 
+#         pool = np.random.power(1, size  = S_tot) # Power-law distribution
+# #        pool = pool * np.random.binomial(1, 0.5, size = S_tot) # Add additional varaibility here by randomly choosing half of the species and set the probabilities of drawing them to 0 
+#         pool = pool/np.sum(pool) # Normalize the pool
+#         consumer_list = np.random.choice(len(pool), size = inocula, replace = True, p = pool) # Draw from the pool
+#         my_tab = pd.crosstab(index = consumer_list, columns = "count") # Calculate the cell count
 #         N0[my_tab.index.values,k] = np.ravel(my_tab.values / scale) # Scale to biomass
 #     
 #     # Make data.frame
@@ -148,7 +171,6 @@ def sample_from_pool(plate_N, scale = 10**6, inocula = 10**6):
 # 
 #     return N0
 
-    
 
 # Make initial state
 ## Make monos
@@ -308,19 +330,18 @@ def coalesce_communities(plate_N1, plate_N2):
     
 
 # Main function for simulating community
-def simulate_community(
-    plate, 
+def simulate_community( 
     assumptions,
-    params_simulation, 
-    params_algorithm, 
-    file_name = "data/self_assembly-community", 
+    params,
+    dynamics,
+    params_simulation,
+    params_algorithm,
+    file_name = "data/",
     assembly_type = "self_assembly",
     write_composition = False):
-
     """
     Simulate community dynamics by given experimental regimes
     
-    plate = plate
     params_simulation = dictionary of parameters for running experiment
     params_algorithm = dictionary of algorithms that determine the selection regime, migration regime, and community pheotypes of interest
     
@@ -328,53 +349,90 @@ def simulate_community(
     community_composition = concatenated, melted panda dataframe of community and resource composition in each transfer
     community_function = melted panda dataframe of community function
     """
+
+    # Print out the algorithms
+    print("\nAlgorithm: "+ params_algorithm["algorithm_name"][0])
+    print("\n")
+    print(params_algorithm[["transfer", "community_phenotype", "selection_algorithm", "migration_algorithm"]].to_string(index = False))
+
+    # Set seeds
+    np.random.seed(2)
+    
+    # Make initial state
+    init_state = MakeInitialState(assumptions)
+
+    # Make plate
+    plate = Community(init_state, dynamics, params, scale = assumptions["scale"], parallel = True) 
+    setattr(plate, "species_function", params_simulation["species_function"]) # Add the species function to the plate attributes
+    setattr(plate, "interaction_function", params_simulation["interaction_function"])
+    
+    # Update the community composition by sampling from the pool
+    print("\nGenerating initial plate")
+    plate.N = sample_from_pool(plate.N, scale = assumptions["scale"], inocula = params_simulation["n_inoc"], initial_inocula_pool = True)
+    
     # Empty list for saving data
-    plate_data_list = list() # Plate information
+    plate_data_list = list() # Plate composition
     community_function_list = list() # Community function
-    richness_function_list = list() # Richness
-    biomass_list = list() # Biomass
 
     # Save the inocula composition
-    plate_data = reshape_plate_data(plate, transfer_loop_index = 0, assembly_type = assembly_type) # Initial state
+    plate_data = reshape_plate_data(plate, transfer_loop_index = 0, assembly_type = assembly_type, community_function_name = params_algorithm["community_phenotype"][0]) # Initial state
     plate_data_list.append(plate_data)
+    
+    # Save the initial function
+    community_function = globals()[params_algorithm["community_phenotype"][0]](plate, assumptions = assumptions) # Community phenotype
+    richness = np.sum(plate.N >= 1/assumptions["scale"], axis = 0) # Richness
+    biomass = list(np.sum(plate.N, axis = 0)) # Biomass
+    function_data = reshape_function_data(community_function_name = params_algorithm["community_phenotype"][0], community_function = community_function, richness = richness, biomass = biomass, transfer_loop_index = 0, assembly_type = assembly_type)        
+    community_function_list.append(function_data) # Transfer = 0 means that it's before selection regime works upon
 
     
-    # Output the file if write_composition set True
+    # Output the plate composition and community functions if write_composition set True
     if write_composition == True:
-        plate_data.to_csv(file_name + "-T" + "{:02d}".format(0) + ".txt", index = False)
+        plate_data.to_csv(file_name + "-" + params_algorithm["community_phenotype"][0] + "-T" + "{:02d}".format(0) + "-composition.txt", index = False)
+        function_data.to_csv(file_name + "-" + params_algorithm["community_phenotype"][0] + "-T" + "{:02d}".format(0) + "-function.txt", index = False)
 
+    print("\nStart propogation")
     # Run simulation
     for i in range(0, params_simulation["n_transfer"]):
-        
+        # Algorithms used in this transfer
+        phenotype_algorithm = params_algorithm["community_phenotype"][i]
+        selection_algorithm = params_algorithm["selection_algorithm"][i]
+        migration_algorithm = params_algorithm["migration_algorithm"][i]
+
+        # Print the propagation progress
+        if (i % 5) == 0:
+            print("Transfer " + str(i+1))
+
         # Propagation
         plate.Propagate(params_simulation["n_propagation"])
     
         # Append the composition to a list
-        plate_data = reshape_plate_data(plate, transfer_loop_index = i, assembly_type = assembly_type) # Transfer = 0 means that it's before selection regime works upon
+        plate_data = reshape_plate_data(plate, transfer_loop_index = i + 1, assembly_type = assembly_type, community_function_name = phenotype_algorithm) # Transfer = 0 means that it's before selection regime works upon
         plate_data_list.append(plate_data)
 
-        ## Output the file if write_composition set True
-        if write_composition == True:
-            plate_data.to_csv(file_name + "-T" + "{:02d}".format(i) + ".txt", index = False) # Transfer = 0 means that it's before selection regime works upon
-
-        # Community phenotype
-        community_function = globals()[params_algorithm["community_phenotype"]](plate, assumptions = assumptions) # Community phenotype
-        richness = np.sum(plate.N > 0, axis = 0) # Richness
+        # Community phenotype, richness, and biomass
+        community_function = globals()[phenotype_algorithm](plate, assumptions = assumptions) # Community phenotype
+        richness = np.sum(plate.N >= 1/assumptions["scale"], axis = 0) # Richness
         biomass = list(np.sum(plate.N, axis = 0)) # Biomass
-        community_function_list.append(reshape_function_data(community_function, richness, biomass, transfer_loop_index = i)) # Transfer = 0 means that it's before selection regime works upon
+        function_data = reshape_function_data(community_function_name = phenotype_algorithm, community_function = community_function, richness = richness, biomass = biomass, transfer_loop_index = i + 1 , assembly_type = assembly_type)        
+        community_function_list.append(function_data) # Transfer = 0 means that it's before selection regime works upon
+
+        # Output the plate composition and community functions if write_composition set True
+        if write_composition == True:
+            plate_data.to_csv(file_name + "-" + phenotype_algorithm + "-T" + "{:02d}".format(i + 1) + "-composition.txt", index = False) # Transfer = 0 means that it's before selection regime works upon
+            function_data.to_csv(file_name + "-" + phenotype_algorithm + "-T" + "{:02d}".format(i + 1) + "-function.txt", index = False)
 
         # Passage and tranfer matrix
-        transfer_matrix = globals()[params_algorithm["selection_algorithm"]](community_function)
+        transfer_matrix = globals()[selection_algorithm](community_function)
         plate.Passage(transfer_matrix * params_simulation["dilution"])
         
         # Migration
-        m = globals()[params_algorithm["migration_algorithm"]](community_function) 
-        plate.N = migrate_from_pool(plate, params_simulation["pool"], m)
+        m = globals()[migration_algorithm](community_function) 
+        plate.N = migrate_from_pool(plate, pool = params_simulation["pool"], migration_factor = m, scale = assumptions["scale"], inocula = params_simulation["n_inoc"])
+
         
-        # Print the propagation progress
-        print("Transfer " + str(i+1) + " done") 
-        
-    
+    print("\nAlgorithm "+ params_algorithm["algorithm_name"][0] + " finished")
+
     # Concatenate data from from different transfers
     plate_data_con = pd.concat(plate_data_list)
     community_function_con = pd.concat(community_function_list)
@@ -383,7 +441,7 @@ def simulate_community(
 
 
 ## Reshape the plate resource and consumer matrix for saving into a txt file
-def reshape_plate_data(plate, transfer_loop_index, assembly_type):
+def reshape_plate_data(plate, transfer_loop_index, assembly_type, community_function_name):
     # Temporary function for adding variables to and melting df
     def melt_df(plate_df, data_type = "consumer"):
         # Consumers
@@ -395,10 +453,11 @@ def reshape_plate_data(plate, transfer_loop_index, assembly_type):
         temp_df["ID"] = range(total_number)
         temp_df["Transfer"] = np.repeat(str(transfer_loop_index), total_number)
         temp_df["Assembly"] = np.repeat(assembly_type, total_number)
-        
+        temp_df["CommunityPhenotypeName"] = np.repeat(community_function_name, total_number)
+         
         ## Melt the df
-        temp_df = pd.melt(temp_df, id_vars = ["Transfer", "Assembly", "Type", "ID"], var_name = "Well", value_name = "Abundance")
-        temp_df = temp_df[["Assembly", "Well", "Transfer", "Type", "ID", "Abundance"]]
+        temp_df = pd.melt(temp_df, id_vars = ["Transfer", "CommunityPhenotypeName", "Assembly", "Type", "ID"], var_name = "Well", value_name = "Abundance")
+        temp_df = temp_df[["Assembly", "CommunityPhenotypeName", "Well", "Transfer", "Type", "ID", "Abundance"]]
         temp_df = temp_df[temp_df.Abundance != 0] # Remove zero abundances
         return temp_df
         
@@ -415,7 +474,7 @@ def reshape_plate_data(plate, transfer_loop_index, assembly_type):
     return merged_df # Return concatenated dataframe
 
 
-def reshape_function_data(community_function, richness, biomass, transfer_loop_index):
+def reshape_function_data(community_function_name, community_function, richness, biomass, transfer_loop_index, assembly_type):
     temp_vector1 = community_function.copy()
     temp_vector2 = richness.copy()
     temp_vector3 = biomass.copy()
@@ -423,8 +482,10 @@ def reshape_function_data(community_function, richness, biomass, transfer_loop_i
     # Number of wells
     number_well = len(richness)
     # Make data.frame
-    temp_df = pd.DataFrame({"Transfer": np.repeat(str(transfer_loop_index), number_well), 
+    temp_df = pd.DataFrame({"Assembly": np.repeat(assembly_type, number_well),
+    "CommunityPhenotypeName": np.repeat(community_function_name, number_well),
     "Well": ["W" + str(i) for i in range(number_well)], 
+    "Transfer": np.repeat(str(transfer_loop_index), number_well), 
     "CommunityPhenotype": temp_vector1,
     "Richness": temp_vector2,
     "Biomass": temp_vector3})
@@ -482,9 +543,9 @@ def make_algorithm_library():
 
 
 # Migrate from species pool to the plate 
-def migrate_from_pool(plate, pool, migration_factor):
+def migrate_from_pool(plate, pool, migration_factor, scale, inocula):
     # Migration plate
-    migration_plate = sample_from_pool(plate.N) * migration_factor # Migration factor is a list determined by migration algorithms and community function
+    migration_plate = sample_from_pool(plate.N, scale = scale, inocula = inocula, initial_inocula_pool = False) * migration_factor # Migration factor is a list determined by migration algorithms and community function
     
     # Migration
     plate_migrated = plate.N + migration_plate 

@@ -2,13 +2,17 @@
 __pycache__/
 *.py[cod]
 *$py.class
-execution1.py
+execution*
 
 # Python notebook
 EEB279_Exercise_5.ipynb
 CommunityLevelSelection_V6_Experiment1.ipynb
 01-community_selection.Rmd
 community_coalescence_3.ipynb
+community_selection_f1_additive_function.ipynb
+community_selection_f2_interactive_function.ipynb
+community_selection_f3_binary.ipynb
+community_selection_f4_interaction_binary.ipynb
 
 # R documents
 figure/*

@@ -90,7 +90,7 @@ def f4_interaction_binary(plate, assumptions):
     plate_temp.N = (plate_temp.N > 0) * 1
     
     # Additive term
-    additive_term = np.sum(plate.N.values * plate.species_function[:,None], axis = 0)
+    additive_term = np.sum(plate_temp.N.values * plate.species_function[:,None], axis = 0)
     
     # Interaction term
     interaction_term = np.zeros(plate_temp.N.shape[1])
