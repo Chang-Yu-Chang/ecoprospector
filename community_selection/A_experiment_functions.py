@@ -533,7 +533,78 @@ def plot_transfer_matrix(transfer_matrix):
     
 
 
+def make_algorithms(params_simulation):
+    # Algorithms
+    ## Simple screening
+    simple_screening = pd.DataFrame({
+        "algorithm_name": "simple_screening",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": "no_selection",
+        "migration_algorithm": "no_migration"
+    })
 
+    ## Direction selection
+    direct_selection = pd.DataFrame({
+        "algorithm_name": "direct_selection",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"], 
+        "selection_algorithm": ["no_selection" for i in range(9)] + ["direct_selection_select"] + ["no_selection" for i in range(params_simulation["n_transfer"] - 10)], 
+        "migration_algorithm": ["no_migration" for i in range(9)] + ["direct_selection_migrate"] + ["no_migration" for i in range(params_simulation["n_transfer"] - 10)]
+    })
+
+
+    ## Select top 25%
+    select_top25 = pd.DataFrame({
+        "algorithm_name": "select_top25",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": ["no_selection" for i in range(9)] + ["select_top25percent"] + ["no_selection" for i in range(params_simulation["n_transfer"] - 10)], 
+        "migration_algorithm": "no_migration"
+    })  
+
+    ## Select top 10%
+    select_top10 = pd.DataFrame({
+        "algorithm_name": "select_top10",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": ["no_selection" for i in range(9)] + ["select_top10percent"] + ["no_selection" for i in range(params_simulation["n_transfer"] - 10)], 
+        "migration_algorithm": "no_migration"
+    })
+
+    ## Multiple direct selection
+    multiple_direct_selection = pd.DataFrame({
+        "algorithm_name": "multiple_direct_selection",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"], 
+        "selection_algorithm": ["no_selection" for i in range(5)] + ["direct_selection_select" for i in range(5)] + ["no_selection" for i in range(params_simulation["n_transfer"] - 10)], 
+        "migration_algorithm": ["no_migration" for i in range(5)] + ["direct_selection_migrate" for i in range(5)] + ["no_migration" for i in range(params_simulation["n_transfer"] - 10)]
+    })
+
+    ## Pair top communities
+    pair_top_communities = pd.DataFrame({
+        "algorithm_name": "pair_top_communities",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": ["no_selection" for i in range(9)] + ["pair_top"] + ["no_selection" for i in range(params_simulation["n_transfer"] - 10)], 
+        "migration_algorithm": "no_migration"
+    })
+
+    ## Swenson2000
+    swenson2000 = pd.DataFrame({
+        "algorithm_name": "swenson2000",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": ["select_top25percent" for i in range(10)] + ["no_selection" for i in range(params_simulation["n_transfer"] - 10)], 
+        "migration_algorithm": "no_migration"
+    })
+
+
+    # Save the algorithms
+    algorithms = pd.concat([simple_screening, direct_selection, select_top25, select_top10, 
+                            multiple_direct_selection, pair_top_communities, swenson2000])
+    
+    return algorithms
 
 
 
