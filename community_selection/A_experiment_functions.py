@@ -127,9 +127,7 @@ def sample_from_pool(plate_N, scale = 10**6, inocula = 10**6, initial_inocula_po
             consumer_list = np.random.choice(np.array(range(1, S_tot, 2)), size = inocula, replace = True, p = pool) # Draw from the pool
             my_tab = pd.crosstab(index = consumer_list, columns = "count") # Calculate the cell count
             N0[my_tab.index.values,k] = np.ravel(my_tab.values / scale) # Scale to biomass
-            # Test migration with large inocula biomass
-            N0[:,k] = N0[:,k]/sum(N0[:,k]) * 100 
-        
+
 
     # Make data.frame
     N0 = pd.DataFrame(N0, index = consumer_index, columns = well_names)
