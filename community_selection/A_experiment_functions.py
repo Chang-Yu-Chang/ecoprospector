@@ -134,41 +134,6 @@ def sample_from_pool(plate_N, scale = 10**6, inocula = 10**6, initial_inocula_po
 
     return N0
 
-# def sample_from_pool(plate_N, scale = 10**6, inocula = 10**6, initial_inocula_pool = True):
-#     """
-#     Sample communities from regional species pool
-# 
-#     plate_N = consumer data frame
-#     pool = 1-D array that defines the species relative abundances in the pool
-#     """
-#     # Total number of species in this universe
-#     S_tot = plate_N.shape[0] 
-#     
-#     # Make empty plate
-#     N0 = np.zeros((plate_N.shape)) # Make empty plate
-#     
-#     # Consumer index
-#     consumer_index = plate_N.index 
-#     
-#     # Well index
-#     well_names = plate_N.columns
-# 
-#     # Sample initial community for each well; the part is from Jean's code
-#     for k in range(plate_N.shape[1]):
-#         # For each well, sample community from different microbiome sample
-#         np.random.seed(k + 1) 
-#         pool = np.random.power(1, size  = S_tot) # Power-law distribution
-# #        pool = pool * np.random.binomial(1, 0.5, size = S_tot) # Add additional varaibility here by randomly choosing half of the species and set the probabilities of drawing them to 0 
-#         pool = pool/np.sum(pool) # Normalize the pool
-#         consumer_list = np.random.choice(len(pool), size = inocula, replace = True, p = pool) # Draw from the pool
-#         my_tab = pd.crosstab(index = consumer_list, columns = "count") # Calculate the cell count
-#         N0[my_tab.index.values,k] = np.ravel(my_tab.values / scale) # Scale to biomass
-#     
-#     # Make data.frame
-#     N0 = pd.DataFrame(N0, index = consumer_index, columns = well_names)
-# 
-#     return N0
-
 
 # Make initial state
 ## Make monos
