@@ -84,9 +84,30 @@ def prepare_experiment(assumptions, seed = 1):
     # Generate species function
     function_species, function_interaction = draw_species_function(assumptions)
     
-    return params, species_pool, function_species, function_interaction
+    # Subset parameters for simulation
+    temp_p = ["n_propagation", "n_transfer", "n_transfer_selection", "dilution", "n_inoc", "selected_function"]
+    params_simulation = {key: value for key, value in assumptions.items() if key in temp_p}
+    params_simulation.update({
+        "pool": species_pool, 
+        "species_function": function_species,
+        "interaction_function": function_interaction
+    })
+    
+#     params_simulation = {
+#     "n_propagation": 8, # Length of propagation, or hours within a growth cycle
+#     "n_transfer": 40, # Number of total transfer, or number of passage
+#     "n_transfer_selection": 20, # Number of transfer implementing seleciton regimes 
+#     "dilution": 1/125, # Dilution factor at every transfer
+#     "n_inoc": 128,  #Number of cells sampled from the regional species at start
+#     "pool": species_pool, 
+#     "species_function": species_function,
+#     "interaction_function": interaction_function,
+#     "selected_function": "f1_additive"
+# }
+    
+    return params, params_simulation
 
-def sample_from_pool(plate_N, scale = 10**6, inocula = 10**6, initial_inocula_pool = True):
+def sample_from_pool(plate_N, scale = 10**6, inocula = 10**6, two_pools = False, initial_inocula_pool = True):
     """
     Sample communities from regional species pool.
     In order to create variability in the pool, split the species pool into two pools, one for initial inocula and one migration.
@@ -109,25 +130,35 @@ def sample_from_pool(plate_N, scale = 10**6, inocula = 10**6, initial_inocula_po
     well_names = plate_N.columns
 
     # Sample initial community for each well; the part is from Jean's code
-    if initial_inocula_pool == True:
+    if two_pools == True:
+        if initial_inocula_pool == True:
+            for k in range(plate_N.shape[1]):
+                # For each well, sample community from different microbiome sample
+                np.random.seed(k + 1) 
+                pool = np.random.power(1, size  = S_half) # Power-law distribution
+        #        pool = pool * np.random.binomial(1, 0.5, size = S_tot) # Add additional varaibility here by randomly choosing half of the species and set the probabilities of drawing them to 0 
+                pool = pool/np.sum(pool) # Normalize the pool
+                consumer_list = np.random.choice(np.array(range(0, S_tot, 2)), size = inocula, replace = True, p = pool) # Draw from the pool
+                my_tab = pd.crosstab(index = consumer_list, columns = "count") # Calculate the cell count
+                N0[my_tab.index.values,k] = np.ravel(my_tab.values / scale) # Scale to biomass
+        elif initial_inocula_pool == False:
+            for k in range(plate_N.shape[1]):
+                np.random.seed(k + 1) 
+                pool = np.random.power(1, size  = S_half) # Power-law distribution
+                pool = pool/np.sum(pool) # Normalize the pool
+                consumer_list = np.random.choice(np.array(range(1, S_tot, 2)), size = inocula, replace = True, p = pool) # Draw from the pool
+                my_tab = pd.crosstab(index = consumer_list, columns = "count") # Calculate the cell count
+                N0[my_tab.index.values,k] = np.ravel(my_tab.values / scale) # Scale to biomass
+    elif two_pools == False:
         for k in range(plate_N.shape[1]):
             # For each well, sample community from different microbiome sample
             np.random.seed(k + 1) 
-            pool = np.random.power(1, size  = S_half) # Power-law distribution
+            pool = np.random.power(1, size = S_tot) # Power-law distribution
     #        pool = pool * np.random.binomial(1, 0.5, size = S_tot) # Add additional varaibility here by randomly choosing half of the species and set the probabilities of drawing them to 0 
             pool = pool/np.sum(pool) # Normalize the pool
-            consumer_list = np.random.choice(np.array(range(0, S_tot, 2)), size = inocula, replace = True, p = pool) # Draw from the pool
+            consumer_list = np.random.choice(S_tot, size = inocula, replace = True, p = pool) # Draw from the pool
             my_tab = pd.crosstab(index = consumer_list, columns = "count") # Calculate the cell count
             N0[my_tab.index.values,k] = np.ravel(my_tab.values / scale) # Scale to biomass
-    elif initial_inocula_pool == False:
-        for k in range(plate_N.shape[1]):
-            np.random.seed(k + 1) 
-            pool = np.random.power(1, size  = S_half) # Power-law distribution
-            pool = pool/np.sum(pool) # Normalize the pool
-            consumer_list = np.random.choice(np.array(range(1, S_tot, 2)), size = inocula, replace = True, p = pool) # Draw from the pool
-            my_tab = pd.crosstab(index = consumer_list, columns = "count") # Calculate the cell count
-            N0[my_tab.index.values,k] = np.ravel(my_tab.values / scale) # Scale to biomass
-
 
     # Make data.frame
     N0 = pd.DataFrame(N0, index = consumer_index, columns = well_names)
@@ -326,13 +357,15 @@ def simulate_community(
 
     # Make plate
     plate = Community(init_state, dynamics, params, scale = assumptions["scale"], parallel = True) 
-    setattr(plate, "species_function", params_simulation["species_function"]) # Add the species function to the plate attributes
-    setattr(plate, "interaction_function", params_simulation["interaction_function"])
     
     # Update the community composition by sampling from the pool
     print("\nGenerating initial plate")
-    plate.N = sample_from_pool(plate.N, scale = assumptions["scale"], inocula = params_simulation["n_inoc"], initial_inocula_pool = True)
+    plate.N = sample_from_pool(plate.N, scale = assumptions["scale"], inocula = params_simulation["n_inoc"], two_pools = False, initial_inocula_pool = True)
     
+    ## Add the attributes that are essential to the function measurement to the plate objects 
+    print("\nAdding attributes that are essential to the community function to the plate object")
+    plate = add_community_function(plate, dynamics, assumptions, params_simulation)
+
     # Empty list for saving data
     plate_data_list = list() # Plate composition
     community_function_list = list() # Community function
@@ -508,7 +541,7 @@ def make_algorithm_library():
 # Migrate from species pool to the plate 
 def migrate_from_pool(plate, pool, migration_factor, scale, inocula):
     # Migration plate
-    migration_plate = sample_from_pool(plate.N, scale = scale, inocula = inocula, initial_inocula_pool = False) * migration_factor # Migration factor is a list determined by migration algorithms and community function
+    migration_plate = sample_from_pool(plate.N, scale = scale, inocula = inocula, two_pools = False, initial_inocula_pool = False) * migration_factor # Migration factor is a list determined by migration algorithms and community function
     
     # Migration
     plate_migrated = plate.N + migration_plate 
@@ -549,8 +582,8 @@ def make_algorithms(params_simulation):
         "algorithm_name": "direct_selection",
         "transfer": range(1, params_simulation["n_transfer"] + 1),
         "community_phenotype": params_simulation["selected_function"], 
-        "selection_algorithm": ["no_selection" for i in range(9)] + ["direct_selection_select"] + ["no_selection" for i in range(params_simulation["n_transfer"] - 10)], 
-        "migration_algorithm": ["no_migration" for i in range(9)] + ["direct_selection_migrate"] + ["no_migration" for i in range(params_simulation["n_transfer"] - 10)]
+        "selection_algorithm": ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["direct_selection_select"] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
+        "migration_algorithm": ["no_migration" for i in range(params_simulation["n_transfer_selection"]-1)] + ["direct_selection_migrate"] + ["no_migration" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])]
     })
 
 
@@ -559,7 +592,7 @@ def make_algorithms(params_simulation):
         "algorithm_name": "select_top25",
         "transfer": range(1, params_simulation["n_transfer"] + 1),
         "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["no_selection" for i in range(9)] + ["select_top25percent"] + ["no_selection" for i in range(params_simulation["n_transfer"] - 10)], 
+        "selection_algorithm": ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["select_top25percent"] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
         "migration_algorithm": "no_migration"
     })  
 
@@ -568,17 +601,8 @@ def make_algorithms(params_simulation):
         "algorithm_name": "select_top10",
         "transfer": range(1, params_simulation["n_transfer"] + 1),
         "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["no_selection" for i in range(9)] + ["select_top10percent"] + ["no_selection" for i in range(params_simulation["n_transfer"] - 10)], 
+        "selection_algorithm": ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["select_top10percent"] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
         "migration_algorithm": "no_migration"
-    })
-
-    ## Multiple direct selection
-    multiple_direct_selection = pd.DataFrame({
-        "algorithm_name": "multiple_direct_selection",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"], 
-        "selection_algorithm": ["no_selection" for i in range(5)] + ["direct_selection_select" for i in range(5)] + ["no_selection" for i in range(params_simulation["n_transfer"] - 10)], 
-        "migration_algorithm": ["no_migration" for i in range(5)] + ["direct_selection_migrate" for i in range(5)] + ["no_migration" for i in range(params_simulation["n_transfer"] - 10)]
     })
 
     ## Pair top communities
@@ -586,7 +610,7 @@ def make_algorithms(params_simulation):
         "algorithm_name": "pair_top_communities",
         "transfer": range(1, params_simulation["n_transfer"] + 1),
         "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["no_selection" for i in range(9)] + ["pair_top"] + ["no_selection" for i in range(params_simulation["n_transfer"] - 10)], 
+        "selection_algorithm": ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["pair_top"] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
         "migration_algorithm": "no_migration"
     })
 
@@ -595,21 +619,126 @@ def make_algorithms(params_simulation):
         "algorithm_name": "swenson2000",
         "transfer": range(1, params_simulation["n_transfer"] + 1),
         "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["select_top25percent" for i in range(10)] + ["no_selection" for i in range(params_simulation["n_transfer"] - 10)], 
+        "selection_algorithm": ["select_top25percent" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
         "migration_algorithm": "no_migration"
     })
-
-
+    
+    ## Panke-Buisse2015
+    panke_buisse2015 = pd.DataFrame({
+        "algorithm_name": "panke_buisse2015",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": ["pool_top25percent" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
+        "migration_algorithm": "no_migration"
+    })
+    
+    ## Multiple pair top
+    multiple_pair_top = pd.DataFrame({
+        "algorithm_name": "multiple_pair_top",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": ["pair_top" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
+        "migration_algorithm": "no_migration"
+    })
+    
     # Save the algorithms
     algorithms = pd.concat([simple_screening, direct_selection, select_top25, select_top10, 
-                            multiple_direct_selection, pair_top_communities, swenson2000])
+    pair_top_communities, swenson2000, panke_buisse2015, multiple_pair_top])
     
     return algorithms
 
 
 
 
+def add_community_function(plate, dynamics, assumptions, params_simulation):
+    """
+    Add the function attribute to the community
+    
+    For f1 and f3, add species_function 
+    For f2 and f4, add interaction_function
+    For f5, add invasion_plate_t0 and invasion_plate_t1
+    For f6, add XX
+    
+    """
+    # Species function, f1 and f3
+    setattr(plate, "species_function", params_simulation["species_function"]) # Species function for additive community function
 
+    # Interactive functions, f2 and f4
+    setattr(plate, "interaction_function", params_simulation["interaction_function"]) # Interactive function for interactive community function
+
+    # Invasion function, f5
+    if params_simulation["selected_function"] == "f5_invader_growth":
+        assumptions_invasion = assumptions.copy()
+        assumptions_invasion.update({"n_wells": 96, "n_inoc": 1})
+        params_invasion = MakeParams(assumptions_invasion)
+        init_state_invasion = MakeInitialState(assumptions_invasion)
+        plate_invasion = Community(init_state_invasion, dynamics, params_invasion, scale = assumptions_invasion["scale"], parallel = True)
+        plate_invasion.N = sample_from_pool(plate_invasion.N, scale = assumptions_invasion["scale"], inocula = assumptions_invasion["n_inoc"], two_pools = False, initial_inocula_pool = True) # Sample one cell (one species) as the invader)
+        plate_invasion_t0 = plate_invasion.N.copy() # Save the t0 plate
+        plate_invasion.Propagate(params_simulation["n_propagation"])
+        plate_invasion_t1 = plate_invasion.N.copy() # Save the t1 plate
+    
+        invasion_plate_growth = np.sum(plate_invasion.N, axis = 0)
+        temp_index = np.where(invasion_plate_growth == np.max(invasion_plate_growth))[0][0] # Find the well with the highest biomass
+        temp_column_t0 = plate_invasion_t0["W" + str(temp_index)]
+        temp_column_t1 = plate_invasion_t1["W" + str(temp_index)] # Pick the best growth community as the invader community
+    
+        # Dupliate the chosen community to the whole plate
+        temp_df_t0 = pd.DataFrame()
+        temp_df_t1 = pd.DataFrame()
+        for i in range(assumptions["n_wells"]):
+            temp_df_t0["W" + str(i)] = temp_column_t0
+            temp_df_t1["W" + str(i)] = temp_column_t1
+    
+        # Add the invasion plate to the attr of community
+        setattr(plate, "invasion_plate_t0", temp_df_t0)
+        setattr(plate, "invasion_plate_t1", temp_df_t1)
+    
+    if params_simulation["selected_function"] == "f6_resident_growth":
+        # Make 96 communities and pick the best grown one as the focal resident community
+        assumptions_resident = assumptions.copy()
+        assumptions_resident.update({"n_wells": 96, "n_inoc": 1})
+        params_resident = MakeParams(assumptions_resident)
+        init_state_invasion = MakeInitialState(assumptions_resident)
+        plate_resident = Community(init_state_invasion, dynamics, params_resident, scale = assumptions_resident["scale"], parallel = True)
+        plate_resident.N = sample_from_pool(plate_resident.N, scale = assumptions_resident["scale"], inocula = assumptions_resident["n_inoc"], two_pools = False, initial_inocula_pool = True) # Sample one cell (one species) as the invader)
+
+        # Save the t0 plate
+        plate_resident_t0 = plate_resident.N.copy()
+        
+        print("\nStabilizing the resident community for function f6_resident_growth. Passage for " + str(assumptions_resident["n_transfer"] - assumptions_resident["n_transfer_selection"]) + " trasnfers.")
+
+        # Grow the resident plate 
+        for i in range(0, assumptions_resident["n_transfer"] - assumptions_resident["n_transfer_selection"]):
+            plate_resident.Propagate(params_simulation["n_propagation"])
+            if i < (assumptions_resident["n_transfer"] - assumptions_resident["n_transfer_selection"] - 1):
+                plate_resident.Passage(np.eye(assumptions_resident["n_wells"]) * assumptions_resident["dilution"])
+            if (i % 5) == 0:
+                print("Passaging resident community. Transfer " + str(i + 1))
+
+        # Save the t1 plate
+        plate_resident_t1 = plate_resident.N.copy()
+        
+        resident_plate_growth = np.sum(plate_resident.N, axis = 0)
+        temp_index = np.where(resident_plate_growth == np.max(resident_plate_growth))[0][0] # Find the well with the highest biomass
+        temp_column_t0 = plate_resident_t0["W" + str(temp_index)]
+        temp_column_t1 = plate_resident_t1["W" + str(temp_index)] # Pick the best growth community as the invader community
+        
+        # Dupliate the chosen community to the whole plate
+        temp_df_t0 = pd.DataFrame()
+        temp_df_t1 = pd.DataFrame()
+        for i in range(assumptions["n_wells"]):
+            temp_df_t0["W" + str(i)] = temp_column_t0
+            temp_df_t1["W" + str(i)] = temp_column_t1
+            
+        # 
+        print("Finish passaging the resident community. The resident community has " + str(np.sum(temp_column_t1>0)) + " species.")
+        
+        # Add the invasion plate to the attr of community
+        setattr(plate, "resident_plate_t0", temp_df_t0)
+        setattr(plate, "resident_plate_t1", temp_df_t1)
+    
+    return plate
 
 
 

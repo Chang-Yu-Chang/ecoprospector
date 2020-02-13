@@ -101,85 +101,150 @@ def f4_interaction_binary(plate, assumptions):
 
     return additive_term + interaction_term
 
-
-def f5_invasion_growth(plate, assumptions):
+def f5_invader_growth(plate, assumptions):
     """
-    Quantifying how much the invasive species can grow in a resident community 
+    Community function in which an indentical alien community (single or multiple species) invades the selected resident communities.
+    This community function is the ratio between the biomass when invader grows with the community, and when invader grows alone.
+    The biomass of invader growing alone (plate.invasion_plate_t1) should have been included in the plate object attribute.
     
     """
-    
-    # Mean biomass for communities being selected
-    mean_community_biomass = int(round(np.average(np.sum(plate.N, axis = 0)))) # Round up to integer
-    
-    # Number of and species and community
+    # Number of species and community
     S_tot = plate.N.shape[0]
     n_wells = plate.N.shape[1]
     
-    # Make a monoculuture community 
-    plate_invasion = plate.copy()
-    plate_invasion.N.iloc[1:S_tot,:] = 0 
-    plate_invasion.N.iloc[0:S_tot,:] = mean_community_biomass * 0.01 # Always use the invasive species with biomass ~1% of the resident community
-    
-    # Coalesce the community 
+    # Dilute the tested communities
     plate_test = plate.copy()
-    plate_test.N = plate_test.N + plate_invasion.N
-    
-    # Dilute the community 
-    plate_test.Passage(np.eye(n_wells) * 1/1000)
+    plate_test.Passage(np.eye(n_wells) * assumptions["dilution"])
+
+    # Coalesce the tested communities with invasion community (or single invader) 
+    plate_test.N = plate_test.N + plate.invasion_plate_t0
     
     # Grow the coalesced communities
-    plate_test.Propagate(24)
+    plate_test.Propagate(assumptions["n_propagation"])
     
     # Calculate the function by dividing the final x(t) with x(o) of pathogen (species 0)
-    function_growth = plate_test.N.iloc[0] / plate_invasion.N.iloc[0]
+    temp_index = list(np.where(plate.invasion_plate_t1["W0"] > 0)[0]) # Index of the invasive species
+    invader_growth_along = np.sum(plate.invasion_plate_t1.iloc[temp_index], axis = 0)
+    invader_growth_together = np.sum(plate_test.N.iloc[temp_index], axis = 0)
     
-    return function_growth
+    # For each community of selection, how good it recruits the invasive community. Defined by how much biomass compared to invasive community growing alone
+    function_invader_growth = invader_growth_together / invader_growth_along
+
+    return function_invader_growth
 
 
 def f6_resident_growth(plate, assumptions):
     """
-    Quantifying how resistant the community is to an external species invasion
+    The selected communities are invading an established community of one speices/community 
+    This community function is the ratio between the biomass when the resident community grows with any of the selected communities, and when the resident community grows along 
     
     """
-
-    # Number of and species and community
+    # Number of species and community
     S_tot = plate.N.shape[0]
     n_wells = plate.N.shape[1]
     
-    # Make the tested community inocula
+    # Tested communities
     plate_test = plate.copy()
     
-    # Make a plate with only single community replicates
-    ## Generate initial state
-    np.random.seed(1)
-    N0, R0 = MakeInitialState(assumptions) 
-    N0 = N0[["W0" for i in range(n_wells)]]; R0 = R0[["W0" for i in range(n_wells)]]
-    N0.columns = ["W" + str(i) for i in range(n_wells)]; R0.columns = ["W" + str(i) for i in range(n_wells)]
-    init_state = N0, R0
+    # Coalesce the two stable communities. Tested communities and resident community (or single invader) 
+    plate_test.N = plate_test.N + plate.resident_plate_t1
     
-    ## Make essential arguments for making plate
-    params = MakeParams(assumptions) 
-    dynamics = [plate.dNdt, plate.dRdt]
-    
-    ## Make plate
-    plate_resident = Community(init_state, dynamics, params, scale = 10**6, parallel = True) 
-
-    ## Propagate
-    plate_resident.Propagate(24)
-    
-    # Coalesce the community 
-    plate_test.N = 0.5 * plate_test.N + 0.5 * plate_resident.N
-    
-    # Dilute the coalesced community
-    plate_test.Passage(np.eye(n_wells) * 1/1000)
+    # Dilute the coalesced communities
+    plate_test.Passage(np.eye(n_wells) * assumptions["dilution"])
     
     # Grow the coalesced communities
-    plate_test.Propagate(24)
+    plate_test.Propagate(assumptions["n_propagation"])
+    
+    # Calculate the function by dividing the final x(t) with x(o) of pathogen (species 0)
+    temp_index = list(np.where(plate.resident_plate_t1["W0"] > 0)[0]) # Index of the resident species. All wells are the same so I arbitrary pick W0
+    resident_growth_along = np.sum(plate.resident_plate_t1.iloc[temp_index], axis = 0)
+    resident_growth_together = np.sum(plate_test.N.iloc[temp_index], axis = 0)
+    
+    # For each community of selection, how good it invades the resident community
+    function_resident_growth = resident_growth_together / resident_growth_along
+
+    return function_resident_growth
      
-    # Calculate the function by dividing how much the pathogen (species 0) in the resident community grow 
-    function_growth = plate_test.N.iloc[0] / plate_resident.N.iloc[0]
-     
-    return function_growth
+
+
+# def f5_invasion_growth(plate, assumptions):
+#     """
+#     Quantifying how much the invasive species can grow in a resident community 
+#     
+#     """
+#     
+#     # Mean biomass for communities being selected
+#     mean_community_biomass = int(round(np.average(np.sum(plate.N, axis = 0)))) # Round up to integer
+#     
+#     # Number of and species and community
+#     S_tot = plate.N.shape[0]
+#     n_wells = plate.N.shape[1]
+#     
+#     # Make a monoculuture community 
+#     plate_invasion = plate.copy()
+#     plate_invasion.N.iloc[1:S_tot,:] = 0 
+#     plate_invasion.N.iloc[0:S_tot,:] = mean_community_biomass * 0.01 # Always use the invasive species with biomass ~1% of the resident community
+#     
+#     # Coalesce the community 
+#     plate_test = plate.copy()
+#     plate_test.N = plate_test.N + plate_invasion.N
+#     
+#     # Dilute the community 
+#     plate_test.Passage(np.eye(n_wells) * 1/1000)
+#     
+#     # Grow the coalesced communities
+#     plate_test.Propagate(24)
+#     
+#     # Calculate the function by dividing the final x(t) with x(o) of pathogen (species 0)
+#     function_growth = plate_test.N.iloc[0] / plate_invasion.N.iloc[0]
+#     
+#     return function_growth
+
+# 
+# def f6_resident_growth(plate, assumptions):
+#     """
+#     Quantifying how resistant the community is to an external species invasion
+#     
+#     """
+# 
+#     # Number of and species and community
+#     S_tot = plate.N.shape[0]
+#     n_wells = plate.N.shape[1]
+#     
+#     # Make the tested community inocula
+#     plate_test = plate.copy()
+#     
+#     # Make a plate with only single community replicates
+#     ## Generate initial state
+#     np.random.seed(1)
+#     N0, R0 = MakeInitialState(assumptions) 
+#     N0 = N0[["W0" for i in range(n_wells)]]; R0 = R0[["W0" for i in range(n_wells)]]
+#     N0.columns = ["W" + str(i) for i in range(n_wells)]; R0.columns = ["W" + str(i) for i in range(n_wells)]
+#     init_state = N0, R0
+#     
+#     ## Make essential arguments for making plate
+#     params = MakeParams(assumptions) 
+#     dynamics = [plate.dNdt, plate.dRdt]
+#     
+#     ## Make plate
+#     plate_resident = Community(init_state, dynamics, params, scale = 10**6, parallel = True) 
+# 
+#     ## Propagate
+#     plate_resident.Propagate(24)
+#     
+#     # Coalesce the community 
+#     plate_test.N = 0.5 * plate_test.N + 0.5 * plate_resident.N
+#     
+#     # Dilute the coalesced community
+#     plate_test.Passage(np.eye(n_wells) * 1/1000)
+#     
+#     # Grow the coalesced communities
+#     plate_test.Propagate(24)
+#      
+#     # Calculate the function by dividing how much the pathogen (species 0) in the resident community grow 
+#     function_growth = plate_test.N.iloc[0] / plate_resident.N.iloc[0]
+#      
+#     return function_growth
 
 
 
