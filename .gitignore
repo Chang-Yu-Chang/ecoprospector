@@ -18,6 +18,10 @@ community_selection_f3_binary.ipynb
 community_selection_f4_interaction_binary.ipynb
 community_selection-typeI-large_pool.ipynb
 community_selection-typeIII-large_pool.ipynb
+test_playground.ipynb
+typeIII-24wells-rich_medium.py
+typeIII-24wells.py
+typeIII-96wells.py
 
 # R documents
 figure/*

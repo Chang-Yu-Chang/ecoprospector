@@ -152,10 +152,14 @@ def make_rich_medium(plate_R, assumptions):
     # Well index
     well_names = plate_R.columns
     
-    # Allocate resource to each well
+    resource_pool = np.random.power(1, size = R_tot)
+    resource_pool = resource_pool/np.sum(resource_pool)
+    resource_list = np.random.choice(R_tot, size = assumptions["R0_food"], replace = True, p = resource_pool) # Draw from the pool
+    my_tab = pd.crosstab(index = resource_list, columns = "count")
+    food_compostion = np.ravel(my_tab.values)
     for i in range(plate_R.shape[1]):
-        R0[assumptions["rich_food"],i] = assumptions["R0_food"] / len(assumptions["rich_food"]) 
-    
+        R0[my_tab.index.values,i] = food_compostion
+
     R0 = pd.DataFrame(R0, index = resource_index, columns = well_names)
     
     return R0
@@ -204,7 +208,7 @@ def simulate_community(
     plate = add_community_function(plate, dynamics, assumptions, params_simulation)
     
     # Update the supplied resource if "rich_medium"
-    if isinstance(assumptions["rich_food"], list):
+    if assumptions["rich_medium"]:
         plate.R = make_rich_medium(plate.R, assumptions)
         plate.R0 = make_rich_medium(plate.R, assumptions) # R0 for refreshing media on passaging if "refresh_resoruce" is turned on 
 

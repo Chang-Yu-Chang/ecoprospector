@@ -46,9 +46,7 @@ assumptions.update({
     "response": "type III",
     "sigma_max": 100, 
     'R0_food': 1000, # Total amount of supplied food 
-#    'rich_food': list(range(int(np.sum(assumptions["MA"])))), # The indices of foods in the rich medium 
-    'rich_food': [0, 10, 20, 40, 80], # The indices of foods in the rich medium 
-#    'rich_food': [0], # The indices of foods in the rich medium 
+    "rich_medium": True, # Number of food types passed to R0
     # The parameters below will be passed to params_simulation
     "n_propagation": 8, # Length of propagation, or hours within a growth cycle
     "n_transfer": 40, # Number of total transfer, or number of passage
@@ -64,8 +62,8 @@ params, params_simulation = prepare_experiment(assumptions, seed = 1)
 
 data_directory = "data/typeIII-24wells-rich_medium/"
 list_phenotypes = ["f1_additive", "f2_interaction", "f3_additive_binary", "f4_interaction_binary", "f5_invader_growth", "f6_resident_growth"]
-list_algorithms = ["simple_screening"]
-#list_algorithms = ["simple_screening", "directed_selection_migration", "pair_top_communities", "multiple_pair_top", "Blouin2015", "Mueller2019", "Panke_Buisse2015", "Swenson2000a", "Swenson2000b", "Wright2019"]
+#list_algorithms = ["simple_screening"]
+list_algorithms = ["directed_selection_migration", "pair_top_communities", "multiple_pair_top", "Blouin2015", "Mueller2019", "Panke_Buisse2015", "Swenson2000a", "Swenson2000b", "Wright2019"]
 #list_algorithms = ["simple_screening", "direct_selection", "pair_top_communities", "multiple_pair_top", "Blouin2015", "Mueller2019", "Panke_Buisse2015", "Swenson2000a", "Swenson2000b", "Wright2019"]
 
 for j in range(len(list_phenotypes)):

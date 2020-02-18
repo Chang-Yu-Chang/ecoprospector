@@ -159,7 +159,6 @@ def Williams2007a(community_function):
     """
     n_wells = len(community_function)
     sorted_community_function = np.sort(community_function)
-    cut_off = sorted_community_function[int(np.round(len(community_function)*(1-p))) - 1]
     winner_index = np.where(community_function == np.max(community_function))[0][::-1] 
     transfer_matrix = np.zeros((n_wells,n_wells))
     t_new = range(n_wells) # New wells
