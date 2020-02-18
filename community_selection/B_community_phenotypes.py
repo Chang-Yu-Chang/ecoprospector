@@ -104,9 +104,8 @@ def f4_interaction_binary(plate, assumptions):
 def f5_invader_growth(plate, assumptions):
     """
     Community function in which an indentical alien community (single or multiple species) invades the selected resident communities.
-    This community function is the ratio between the biomass when invader grows with the community, and when invader grows alone.
+    This community function is the ratio between the biomass when invader grows with the community and when invader grows alone.
     The biomass of invader growing alone (plate.invasion_plate_t1) should have been included in the plate object attribute.
-    
     """
     # Number of species and community
     S_tot = plate.N.shape[0]
@@ -118,12 +117,14 @@ def f5_invader_growth(plate, assumptions):
 
     # Coalesce the tested communities with invasion community (or single invader) 
     plate_test.N = plate_test.N + plate.invasion_plate_t0
+#    plate_test_initial = plate_test.N.copy() # initial inocula
     
     # Grow the coalesced communities
     plate_test.Propagate(assumptions["n_propagation"])
     
     # Calculate the function by dividing the final x(t) with x(o) of pathogen (species 0)
     temp_index = list(np.where(plate.invasion_plate_t1["W0"] > 0)[0]) # Index of the invasive species
+#    invader_growth_before = np.sum(plate_test_initial.iloc[temp_index], axis = 0)
     invader_growth_along = np.sum(plate.invasion_plate_t1.iloc[temp_index], axis = 0)
     invader_growth_together = np.sum(plate_test.N.iloc[temp_index], axis = 0)
     

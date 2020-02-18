@@ -28,7 +28,7 @@ def no_migration(community_function):
 
     return migration_factor
   
-def direct_selection_migrate(community_function):
+def directed_selection_migrate(community_function):
     """
     Sample new communities from species pool, coalesce the migrant communities to the species pools
     """
