@@ -67,7 +67,7 @@ def f3_additive_binary(plate, assumptions):
     # Binary function using type III response
     plate_temp = plate.copy()
     n = 10; Sm = 1
-    plate_temp.N = plate_temp.N * assumptions["n_inoc"] * 10**6
+    plate_temp.N = plate_temp.N * assumptions["scale"] * 10**6
     plate_temp.N = plate_temp.N**n / (1 + plate_temp.N**n/Sm) 
     community_function = np.sum(plate_temp.N.values * plate_temp.species_function[:,None], axis = 0)
 
@@ -89,7 +89,7 @@ def f4_interaction_binary(plate, assumptions):
     # Binary function using type III response
     plate_temp = plate.copy()
     n = 10; Sm = 1
-    plate_temp.N = plate_temp.N * assumptions["n_inoc"] * 10**6
+    plate_temp.N = plate_temp.N * assumptions["scale"] * 10**6
     plate_temp.N = plate_temp.N**n / (1 + plate_temp.N**n/Sm) 
     
     # Additive term
@@ -109,6 +109,7 @@ def f5_invader_growth(plate, assumptions):
     Community function in which an indentical alien community (single or multiple species) invades the selected resident communities.
     This community function is the ratio between the biomass when invader grows with the community and when invader grows alone.
     The biomass of invader growing alone (plate.invasion_plate_t1) should have been included in the plate object attribute.
+    
     """
     # Number of species and community
     S_tot = plate.N.shape[0]
