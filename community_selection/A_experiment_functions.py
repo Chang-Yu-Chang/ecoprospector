@@ -165,7 +165,9 @@ def make_rich_medium(plate_R, assumptions):
     # Well index
     well_names = plate_R.columns
     
-    resource_pool = np.random.uniform(0,1, size = R_tot)
+
+#    resource_pool = np.random.power(1, size = R_tot)
+    resource_pool = np.random.uniform(0, 1, size = R_tot) # Uniform distribution
     resource_pool = resource_pool/np.sum(resource_pool)
     resource_list = np.random.choice(R_tot, size = assumptions["R0_food"], replace = True, p = resource_pool) # Draw from the pool
     my_tab = pd.crosstab(index = resource_list, columns = "count")
@@ -651,9 +653,27 @@ def add_community_function(plate, dynamics, assumptions, params_simulation):
         init_state_invasion = MakeInitialState(assumptions_invasion)
         plate_invasion = Community(init_state_invasion, dynamics, params_invasion, scale = assumptions_invasion["scale"], parallel = True)
         plate_invasion.N = sample_from_pool(plate_invasion.N, scale = assumptions_invasion["scale"], inocula = assumptions_invasion["n_inoc"]) # Sample one cell (one species) as the invader)
-        plate_invasion_t0 = plate_invasion.N.copy() # Save the t0 plate
-        plate_invasion.Propagate(params_simulation["n_propagation"])
-        plate_invasion_t1 = plate_invasion.N.copy() # Save the t1 plate
+
+        # Save the t0 plate
+        plate_resident_t0 = plate_resident.N.copy()
+        
+        print("\nStabilizing the resident community for function f5_invader_growth. Passage for " + str(assumptions_resident["n_transfer"] - assumptions_resident["n_transfer_selection"]) + " transfers.")
+
+        # Grow the resident plate 
+        for i in range(0, assumptions_resident["n_transfer"] - assumptions_resident["n_transfer_selection"]):
+            plate_resident.Propagate(params_simulation["n_propagation"])
+            if i < (assumptions_resident["n_transfer"] - assumptions_resident["n_transfer_selection"] - 1):
+                plate_resident.Passage(np.eye(assumptions_resident["n_wells"]) * assumptions_resident["dilution"])
+            if (i % 5) == 0:
+                print("Passaging invader community. Transfer " + str(i + 1))
+
+        
+        # # Save the t0 plate
+        # plate_invasion_t0 = plate_invasion.N.copy() 
+        # plate_invasion.Propagate(params_simulation["n_propagation"])
+        # 
+        # # Save the t1 plate
+        # plate_invasion_t1 = plate_invasion.N.copy()
     
         invasion_plate_growth = np.sum(plate_invasion.N, axis = 0)
         temp_index = np.where(invasion_plate_growth == np.max(invasion_plate_growth))[0][0] # Find the well with the highest biomass
@@ -666,6 +686,8 @@ def add_community_function(plate, dynamics, assumptions, params_simulation):
         for i in range(assumptions["n_wells"]):
             temp_df_t0["W" + str(i)] = temp_column_t0
             temp_df_t1["W" + str(i)] = temp_column_t1
+
+        print("Finished passaging the invader community. The invader community has " + str(np.sum(temp_column_t1>0)) + " species.")
     
         # Add the invasion plate to the attr of community
         setattr(plate, "invasion_plate_t0", temp_df_t0)
@@ -708,7 +730,6 @@ def add_community_function(plate, dynamics, assumptions, params_simulation):
             temp_df_t0["W" + str(i)] = temp_column_t0
             temp_df_t1["W" + str(i)] = temp_column_t1
             
-        # 
         print("Finished passaging the resident community. The resident community has " + str(np.sum(temp_column_t1>0)) + " species.")
         
         # Add the invasion plate to the attr of community
