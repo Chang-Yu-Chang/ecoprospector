@@ -95,7 +95,7 @@ def prepare_experiment(assumptions, seed = 1):
     
     return params, params_simulation
 
-def sample_from_pool(plate_N, scale = 10**6, inocula = 10**6):
+def sample_from_pool(plate_N, scale = 10**6, inocula = 10**6, migration = False):
     """
     Sample communities from regional species pool. This function overwrites the plate.N data.frame
     In order to create variability in the pool, split the species pool into two pools, one for initial inocula and one migration.
@@ -117,10 +117,11 @@ def sample_from_pool(plate_N, scale = 10**6, inocula = 10**6):
     # Well index
     well_names = plate_N.columns
     
+    # For each well, sample community from different microbiome sample
     for k in range(plate_N.shape[1]):
-        # For each well, sample community from different microbiome sample
-        np.random.seed(k + 1) 
-        pool = np.random.power(1, size = S_tot) # Power-law distribution
+        if migration == False: 
+            np.random.seed(k + 1) # Same initial communities across algorithms, and different migrant communites when migration is set True
+        pool = np.random.power(0.01, size = S_tot) # Power-law distribution
         pool = pool/np.sum(pool) # Normalize the pool
         consumer_list = np.random.choice(S_tot, size = inocula, replace = True, p = pool) # Draw from the pool
         my_tab = pd.crosstab(index = consumer_list, columns = "count") # Calculate the cell count
@@ -130,6 +131,18 @@ def sample_from_pool(plate_N, scale = 10**6, inocula = 10**6):
     N0 = pd.DataFrame(N0, index = consumer_index, columns = well_names)
 
     return N0
+
+
+# Migrate from species pool to the plate 
+def migrate_from_pool(plate, pool, migration_factor, scale, inocula):
+    # Migration plate
+    migration_plate = sample_from_pool(plate.N, scale = scale, inocula = inocula, migration = True) * migration_factor # Migration factor is a list determined by migration algorithms and community function
+    
+    # Migration
+    plate_migrated = plate.N + migration_plate 
+
+    return plate_migrated
+
 
 # Make rich medium
 def make_rich_medium(plate_R, assumptions):
@@ -207,11 +220,10 @@ def simulate_community(
     print("\nAdding attributes that are essential to the community function to the plate object")
     plate = add_community_function(plate, dynamics, assumptions, params_simulation)
     
-    # Update the supplied resource if "rich_medium"
+    # Update the supplied resource if assumptions["rich_medium"]
     if assumptions["rich_medium"]:
         plate.R = make_rich_medium(plate.R, assumptions)
         plate.R0 = make_rich_medium(plate.R, assumptions) # R0 for refreshing media on passaging if "refresh_resoruce" is turned on 
-
 
     # Empty list for saving data
     plate_data_list = list() # Plate composition
@@ -384,16 +396,6 @@ def make_algorithm_library():
      
     return pd.concat(algorithms)
 
-
-# Migrate from species pool to the plate 
-def migrate_from_pool(plate, pool, migration_factor, scale, inocula):
-    # Migration plate
-    migration_plate = sample_from_pool(plate.N, scale = scale, inocula = inocula) * migration_factor # Migration factor is a list determined by migration algorithms and community function
-    
-    # Migration
-    plate_migrated = plate.N + migration_plate 
-
-    return plate_migrated
 
 # Plot community function
 def plot_community_function(function_df):
@@ -577,7 +579,7 @@ def add_community_function(plate, dynamics, assumptions, params_simulation):
         params_invasion = MakeParams(assumptions_invasion)
         init_state_invasion = MakeInitialState(assumptions_invasion)
         plate_invasion = Community(init_state_invasion, dynamics, params_invasion, scale = assumptions_invasion["scale"], parallel = True)
-        plate_invasion.N = sample_from_pool(plate_invasion.N, scale = assumptions_invasion["scale"], inocula = assumptions_invasion["n_inoc"], two_pools = False, initial_inocula_pool = True) # Sample one cell (one species) as the invader)
+        plate_invasion.N = sample_from_pool(plate_invasion.N, scale = assumptions_invasion["scale"], inocula = assumptions_invasion["n_inoc"]) # Sample one cell (one species) as the invader)
         plate_invasion_t0 = plate_invasion.N.copy() # Save the t0 plate
         plate_invasion.Propagate(params_simulation["n_propagation"])
         plate_invasion_t1 = plate_invasion.N.copy() # Save the t1 plate
@@ -605,7 +607,7 @@ def add_community_function(plate, dynamics, assumptions, params_simulation):
         params_resident = MakeParams(assumptions_resident)
         init_state_invasion = MakeInitialState(assumptions_resident)
         plate_resident = Community(init_state_invasion, dynamics, params_resident, scale = assumptions_resident["scale"], parallel = True)
-        plate_resident.N = sample_from_pool(plate_resident.N, scale = assumptions_resident["scale"], inocula = assumptions_resident["n_inoc"], two_pools = False, initial_inocula_pool = True) # Sample one cell (one species) as the invader)
+        plate_resident.N = sample_from_pool(plate_resident.N, scale = assumptions_resident["scale"], inocula = assumptions_resident["n_inoc"]) # Sample one cell (one species) as the invader)
 
         # Save the t0 plate
         plate_resident_t0 = plate_resident.N.copy()

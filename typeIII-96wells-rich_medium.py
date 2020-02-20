@@ -44,7 +44,7 @@ assumptions.update({
     "alpha": 1, # Scaling factor between species- and interaction-specific function variances
     "l": 0, # Set leakage function to 0 to switch off cross-feeding
     "response": "type III",
-    "sigma_max": 5, 
+    "sigma_max": 100, 
     'R0_food': 1000, # Total amount of supplied food 
     "rich_medium": True, # Number of food types passed to R0
     # The parameters below will be passed to params_simulation
@@ -59,10 +59,9 @@ assumptions.update({
 # Prepare experiment setup in this universe
 params, params_simulation = prepare_experiment(assumptions, seed = 1)
 
-data_directory = "data/typeIII-24wells-rich_medium/"
+data_directory = "data/typeIII-96wells-rich_medium/"
 list_phenotypes = ["f1_additive", "f2_interaction", "f3_additive_binary", "f4_interaction_binary", "f5_invader_growth", "f6_resident_growth"]
-list_algorithms = ["simple_screening"]
-#list_algorithms = ["directed_selection_migration", "pair_top_communities", "multiple_pair_top", "Blouin2015", "Mueller2019", "Panke_Buisse2015", "Swenson2000a", "Swenson2000b", "Wright2019"]
+list_algorithms = ["simple_screening", "directed_selection_migration", "pair_top_communities", "multiple_pair_top", "Blouin2015", "Mueller2019", "Panke_Buisse2015", "Swenson2000a", "Swenson2000b", "Williams2007a", "Williams2007b", "Wright2019"]
 #list_algorithms = ["simple_screening", "direct_selection", "pair_top_communities", "multiple_pair_top", "Blouin2015", "Mueller2019", "Panke_Buisse2015", "Swenson2000a", "Swenson2000b", "Wright2019"]
 
 for j in range(len(list_phenotypes)):

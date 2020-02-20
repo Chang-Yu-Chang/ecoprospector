@@ -64,13 +64,13 @@ def f3_additive_binary(plate, assumptions):
     plate = plate object from package
     species_function = a n by n 2-D array; n is the size of species pool
     """
-    # Convert the community composition to binary (presence = 1, absense = 0)
+    # Binary function using type III response
     plate_temp = plate.copy()
-    plate_temp.N = (plate_temp.N > 0) * 1
-    
-    # Community function
+    n = 10; Sm = 1
+    plate_temp.N = plate_temp.N * assumptions["n_inoc"] * 10**6
+    plate_temp.N = plate_temp.N**n / (1 + plate_temp.N**n/Sm) 
     community_function = np.sum(plate_temp.N.values * plate_temp.species_function[:,None], axis = 0)
-    
+
     return community_function
 
 
@@ -84,13 +84,16 @@ def f4_interaction_binary(plate, assumptions):
     """
     # Number of species in the pool 
     S_tot = plate.N.shape[0]
-    
-    # Convert the community composition to binary (presence = 1, absense = 0)
     plate_temp = plate.copy()
-    plate_temp.N = (plate_temp.N > 0) * 1
+
+    # Binary function using type III response
+    plate_temp = plate.copy()
+    n = 10; Sm = 1
+    plate_temp.N = plate_temp.N * assumptions["n_inoc"] * 10**6
+    plate_temp.N = plate_temp.N**n / (1 + plate_temp.N**n/Sm) 
     
     # Additive term
-    additive_term = np.sum(plate_temp.N.values * plate.species_function[:,None], axis = 0)
+    additive_term = np.sum(plate_temp.N.values * plate_temp.species_function[:,None], axis = 0)
     
     # Interaction term
     interaction_term = np.zeros(plate_temp.N.shape[1])
