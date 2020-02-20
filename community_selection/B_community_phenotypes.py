@@ -67,7 +67,7 @@ def f3_additive_binary(plate, assumptions):
     # Binary function using type III response
     plate_temp = plate.copy()
     n = 10; Sm = 1
-    plate_temp.N = plate_temp.N * assumptions["n_inoc"] * 10**6
+    plate_temp.N = plate_temp.N * assumptions["scale"] * 10**6
     plate_temp.N = plate_temp.N**n / (1 + plate_temp.N**n/Sm) 
     community_function = np.sum(plate_temp.N.values * plate_temp.species_function[:,None], axis = 0)
 
@@ -89,7 +89,7 @@ def f4_interaction_binary(plate, assumptions):
     # Binary function using type III response
     plate_temp = plate.copy()
     n = 10; Sm = 1
-    plate_temp.N = plate_temp.N * assumptions["n_inoc"] * 10**6
+    plate_temp.N = plate_temp.N * assumptions["scale"] * 10**6
     plate_temp.N = plate_temp.N**n / (1 + plate_temp.N**n/Sm) 
     
     # Additive term
