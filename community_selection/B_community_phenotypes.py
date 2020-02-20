@@ -109,6 +109,7 @@ def f5_invader_growth(plate, assumptions):
     Community function in which an indentical alien community (single or multiple species) invades the selected resident communities.
     This community function is the ratio between the biomass when invader grows with the community and when invader grows alone.
     The biomass of invader growing alone (plate.invasion_plate_t1) should have been included in the plate object attribute.
+    
     """
     # Number of species and community
     S_tot = plate.N.shape[0]
