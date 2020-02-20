@@ -33,24 +33,24 @@ assumptions = a_default.copy() # Start with default parameters
 ## Update parameters for community-selection
 assumptions.update({
     'SA': 600*np.ones(3), #Number of species in each specialist family (here, 3 families of 60 species)
-    'MA': 30*np.ones(3), #Number of resources in each class 
+    'MA': 30*np.ones(3), #Number of resources in each class
     'Sgen': 300, #Number of generalist species (unbiased sampling over alll resource classes)
-    "n_wells": 96,
-    "c1": 1, #Rescale uptake rate part 1. This is needed to avoid numerical errors that slow down the simulations
-    "muc": 10, # Rescale uptake part 2
+    "n_wells": 10,
     "m": 0, # Mortality
     "scale": 10**6,  #scale is a conversion factor specifying the number of individual microbial cells present when N = 1.
     "sigma" : 1, # Standard deviation for drawing specifc speices/interaction function
     "alpha": 1, # Scaling factor between species- and interaction-specific function variances
+    "l": 0, # Set leakage function to 0 to switch off cross-feeding
     "response": "type III",
-    "sigma_max": 100, 
-    'R0_food': 1000, #unperturbed fixed point for supplied food
+    "sigma_max": 5,
+    'R0_food': 1000, # Total amount of supplied food
+    "rich_medium": True, # Number of food types passed to R0
     # The parameters below will be passed to params_simulation
-    "n_propagation": 8, # Length of propagation, or hours within a growth cycle
+    "n_propagation": 1, # Length of propagation, or hours within a growth cycle
     "n_transfer": 40, # Number of total transfer, or number of passage
-    "n_transfer_selection": 20, # Number of transfer implementing seleciton regimes 
-    "dilution": 1/125, # Dilution factor at every transfer
-    "n_inoc": 128,  #Number of cells sampled from the regional species at start
+    "n_transfer_selection": 20, # Number of transfer implementing seleciton regimes
+    "dilution": 1/1000, # Dilution factor at every transfer
+    "n_inoc": 10**6,  #Number of cells sampled from the regional species at start
     "selected_function": "f1_additive"
 })
 
@@ -58,9 +58,9 @@ assumptions.update({
 params, params_simulation = prepare_experiment(assumptions, seed = 1)
 
 
-data_directory = "data/typeIII-96wells-large_pool/"
+data_directory = "data/typeIII-96wells/"
 list_phenotypes = ["f1_additive", "f2_interaction", "f3_additive_binary", "f4_interaction_binary", "f5_invader_growth", "f6_resident_growth"]
-list_algorithms = ["simple_screening", "swenson2000", "direct_selection", "panke_buisse2015", "pair_top_communities", "multiple_pair_top"]
+list_algorithms = ["simple_screening", "directed_selection_migration", "pair_top_communities", "multiple_pair_top", "Blouin2015", "Mueller2019", "Panke_Buisse2015", "Swenson2000a", "Swenson2000b", "Williams2007a", "Williams2007b", "Wright2019"]
 
 
 for j in range(len(list_phenotypes)):

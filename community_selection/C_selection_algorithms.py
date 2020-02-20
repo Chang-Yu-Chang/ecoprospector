@@ -22,6 +22,28 @@ def no_selection(community_function):
     # Read number of wells 
     n_wells = len(community_function)
     return np.eye(n_wells)
+   
+ 
+def select_top(community_function):
+    """
+    Select the top community 
+    """
+    # Read number of wells 
+    n_wells = len(community_function)
+    
+    # Winner wells
+    winner_index = np.where(community_function >= np.max(community_function))[0][::-1] # Reverse the list so the higher 
+    
+    # Transfer matrix
+    transfer_matrix = np.zeros((n_wells,n_wells))
+    t_new = range(n_wells) # New wells
+    t_old = list(winner_index) * n_wells # Old wells
+        
+    # Fill in the transfer matrix
+    for i in range(n_wells):
+        transfer_matrix[t_new[i], t_old[i]] = 1
+  
+    return transfer_matrix
     
 def select_top25percent(community_function, p = 0.25):
     """
@@ -55,16 +77,23 @@ def select_top10percent(community_function, p = 0.1):
     """
     Select the top 10% communities 
     """
+    # Read number of wells 
     n_wells = len(community_function)
+    
+    # Sort the community function in this transfer
     sorted_community_function = np.sort(community_function)
     cut_off = sorted_community_function[int(np.round(len(community_function)*(1-p))) - 1]
     winner_index = np.where(community_function >= cut_off)[0][::-1] # Reverse the list so the higher 
+    
+    # Transfer matrix
     transfer_matrix = np.zeros((n_wells,n_wells))
     t_new = range(n_wells) # New wells
     t_old = list(winner_index) * int(np.round(1/p)) # Old wells
     for i in range(n_wells):
         transfer_matrix[t_new[i], t_old[i]] = 1
+  
     return transfer_matrix
+
 
 def select_bottom25percent(community_function):
     """
@@ -217,6 +246,25 @@ def pair_top(community_function):
 
     return transfer_matrix
 
+def coalescence(community_function):
+    """
+    Select the top community and coalesce with all other communities (including self)
+    """
+    # Read number of wells 
+    n_wells = len(community_function)
+    
+    # Winner wells
+    winner_index = np.where(community_function >= np.max(community_function))[0][::-1] # Reverse the list so the higher 
+    
+    # Transfer matrix
+    transfer_matrix = np.eye(n_wells)
+    t_new = range(n_wells) # New wells
+    t_old = list(winner_index) * n_wells # Old wells
+        
+    # Fill in the transfer matrix
+    for i in range(n_wells):
+        transfer_matrix[t_new[i], t_old[i]] = 1
+    return transfer_matrix
 
 
 def directed_selection_select(community_function):
