@@ -217,15 +217,15 @@ def simulate_community(
     print("\nGenerating initial plate")
     plate.N = sample_from_pool(plate.N, scale = assumptions["scale"], inocula = params_simulation["n_inoc"])
     
-    ## Add the attributes that are essential to the function measurement to the plate objects 
-    print("\nAdding attributes that are essential to the community function to the plate object")
-    plate = add_community_function(plate, dynamics, assumptions, params_simulation)
-    
     # Update the supplied resource if assumptions["rich_medium"]
     if assumptions["rich_medium"]:
         plate.R = make_rich_medium(plate.R, assumptions)
         plate.R0 = make_rich_medium(plate.R, assumptions) # R0 for refreshing media on passaging if "refresh_resoruce" is turned on 
 
+    # Add the attributes that are essential to the function measurement to the plate objects 
+    print("\nAdding attributes that are essential to the community function to the plate object")
+    plate = add_community_function(plate, dynamics, assumptions, params_simulation)
+    
     # Empty list for saving data
     plate_data_list = list() # Plate composition
     community_function_list = list() # Community function
@@ -575,34 +575,32 @@ def add_community_function(plate, dynamics, assumptions, params_simulation):
 
     # Invasion function, f5
     if params_simulation["selected_function"] == "f5_invader_growth":
+        # Make 10960 communities and pick the best grown one as the focal invader community
         assumptions_invasion = assumptions.copy()
         assumptions_invasion.update({"n_wells": 96, "n_inoc": 1})
         params_invasion = MakeParams(assumptions_invasion)
         init_state_invasion = MakeInitialState(assumptions_invasion)
         plate_invasion = Community(init_state_invasion, dynamics, params_invasion, scale = assumptions_invasion["scale"], parallel = True)
-        plate_invasion.N = sample_from_pool(plate_invasion.N, scale = assumptions_invasion["scale"], inocula = assumptions_invasion["n_inoc"]) # Sample one cell (one species) as the invader)
+        plate_invasion.N = assumptions["n_inoc"] * sample_from_pool(plate_invasion.N, scale = assumptions_invasion["scale"], inocula = assumptions_invasion["n_inoc"]) # Sample one cell (one species) as the invader)
+        if assumptions["rich_medium"]:
+            plate_invasion.R = make_rich_medium(plate_invasion.R, assumptions)
+            plate_invasion.R0 = make_rich_medium(plate_invasion.R, assumptions) # R0 for refreshing media on passaging if "refresh_resoruce" is turned on 
 
         # Save the t0 plate
-        plate_resident_t0 = plate_resident.N.copy()
-        
-        print("\nStabilizing the resident community for function f5_invader_growth. Passage for " + str(assumptions_resident["n_transfer"] - assumptions_resident["n_transfer_selection"]) + " transfers.")
+        plate_invasion_t0 = plate_invasion.N.copy()
 
-        # Grow the resident plate 
-        for i in range(0, assumptions_resident["n_transfer"] - assumptions_resident["n_transfer_selection"]):
-            plate_resident.Propagate(params_simulation["n_propagation"])
-            if i < (assumptions_resident["n_transfer"] - assumptions_resident["n_transfer_selection"] - 1):
-                plate_resident.Passage(np.eye(assumptions_resident["n_wells"]) * assumptions_resident["dilution"])
+        print("\nStabilizing the invader community for function f5_invader_growth. Passage for " + str(assumptions_invasion["n_transfer"] - assumptions_invasion["n_transfer_selection"]) + " transfers." + "The invader plate has ", str(assumptions_invasion["n_wells"]), " wells.")
+
+        # Grow the invader plate 
+        for i in range(0, assumptions_invasion["n_transfer"] - assumptions_invasion["n_transfer_selection"]):
+            plate_invasion.Propagate(params_simulation["n_propagation"])
+            plate_invasion.Passage(np.eye(assumptions_invasion["n_wells"]) * assumptions_invasion["dilution"])
+
             if (i % 5) == 0:
                 print("Passaging invader community. Transfer " + str(i + 1))
 
-        
-        # # Save the t0 plate
-        # plate_invasion_t0 = plate_invasion.N.copy() 
-        # plate_invasion.Propagate(params_simulation["n_propagation"])
-        # 
-        # # Save the t1 plate
-        # plate_invasion_t1 = plate_invasion.N.copy()
-    
+        # Save the t1 plate
+        plate_invasion_t1 = plate_invasion.N.copy()
         invasion_plate_growth = np.sum(plate_invasion.N, axis = 0)
         temp_index = np.where(invasion_plate_growth == np.max(invasion_plate_growth))[0][0] # Find the well with the highest biomass
         temp_column_t0 = plate_invasion_t0["W" + str(temp_index)]
@@ -626,20 +624,25 @@ def add_community_function(plate, dynamics, assumptions, params_simulation):
         assumptions_resident = assumptions.copy()
         assumptions_resident.update({"n_wells": 96, "n_inoc": 1})
         params_resident = MakeParams(assumptions_resident)
-        init_state_invasion = MakeInitialState(assumptions_resident)
-        plate_resident = Community(init_state_invasion, dynamics, params_resident, scale = assumptions_resident["scale"], parallel = True)
-        plate_resident.N = sample_from_pool(plate_resident.N, scale = assumptions_resident["scale"], inocula = assumptions_resident["n_inoc"]) # Sample one cell (one species) as the invader)
+        init_state_resident = MakeInitialState(assumptions_resident)
+        plate_resident = Community(init_state_resident, dynamics, params_resident, scale = assumptions_resident["scale"], parallel = True)
+        plate_resident.N = assumptions["n_inoc"] * sample_from_pool(plate_resident.N, scale = assumptions_resident["scale"], inocula = assumptions_resident["n_inoc"]) # Sample one cell (one species) as the invader)
+        plate_resident.R = plate.R0.copy(); plate_resident.R0 = plate.R0.copy()
+        if assumptions["rich_medium"]:
+            plate_resident.R = make_rich_medium(plate_resident.R, assumptions)
+            plate_resident.R0 = make_rich_medium(plate_resident.R, assumptions) # R0 for refreshing media on passaging if "refresh_resoruce" is turned on 
 
         # Save the t0 plate
         plate_resident_t0 = plate_resident.N.copy()
-        
-        print("\nStabilizing the resident community for function f6_resident_growth. Passage for " + str(assumptions_resident["n_transfer"] - assumptions_resident["n_transfer_selection"]) + " transfers.")
 
-        # Grow the resident plate 
+
+        print("\nStabilizing the invader community for function f6_resident_growth. Passage for " + str(assumptions_resident["n_transfer"] - assumptions_resident["n_transfer_selection"]) + " transfers." + "The resident plate has ", str(assumptions_resident["n_wells"]), " wells.")
+
+        # Grow the invader plate 
         for i in range(0, assumptions_resident["n_transfer"] - assumptions_resident["n_transfer_selection"]):
-            plate_resident.Propagate(params_simulation["n_propagation"])
-            if i < (assumptions_resident["n_transfer"] - assumptions_resident["n_transfer_selection"] - 1):
-                plate_resident.Passage(np.eye(assumptions_resident["n_wells"]) * assumptions_resident["dilution"])
+            plate_invasion.Propagate(params_simulation["n_propagation"])
+            plate_invasion.Passage(np.eye(assumptions_resident["n_wells"]) * assumptions_resident["dilution"])
+
             if (i % 5) == 0:
                 print("Passaging resident community. Transfer " + str(i + 1))
 

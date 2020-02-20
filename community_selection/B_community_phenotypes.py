@@ -125,7 +125,7 @@ def f5_invader_growth(plate, assumptions):
     # Grow the coalesced communities
     plate_test.Propagate(assumptions["n_propagation"])
     
-    # Calculate the function by dividing the final x(t) with x(o) of pathogen (species 0)
+    # Calculate the function by dividing the final x(t) with x(o) of pathogen 
     temp_index = list(np.where(plate.invasion_plate_t1["W0"] > 0)[0]) # Index of the invasive species
 #    invader_growth_before = np.sum(plate_test_initial.iloc[temp_index], axis = 0)
     invader_growth_along = np.sum(plate.invasion_plate_t1.iloc[temp_index], axis = 0)
