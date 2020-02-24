@@ -35,7 +35,7 @@ assumptions.update({
     'SA': 600*np.ones(3), #Number of species in each specialist family (here, 3 families of 60 species)
     'MA': 30*np.ones(3), #Number of resources in each class
     'Sgen': 300, #Number of generalist species (unbiased sampling over alll resource classes)
-    "n_wells": 10,
+    "n_wells": 96,
     "m": 0, # Mortality
     "scale": 10**6,  #scale is a conversion factor specifying the number of individual microbial cells present when N = 1.
     "sigma" : 1, # Standard deviation for drawing specifc speices/interaction function
@@ -59,8 +59,11 @@ params, params_simulation = prepare_experiment(assumptions, seed = 1)
 
 
 data_directory = "data/typeIII-96wells/"
-list_phenotypes = ["f1_additive", "f2_interaction", "f3_additive_binary", "f4_interaction_binary", "f5_invader_growth", "f6_resident_growth"]
-list_algorithms = ["simple_screening", "directed_selection_migration", "pair_top_communities", "multiple_pair_top", "Blouin2015", "Mueller2019", "Panke_Buisse2015", "Swenson2000a", "Swenson2000b", "Williams2007a", "Williams2007b", "Wright2019"]
+list_phenotypes = ["f1_additive"]
+#list_phenotypes = ["f1_additive", "f2_interaction", "f3_additive_binary", "f4_interaction_binary", "f5_invader_growth", "f6_resident_growth"]
+list_algorithms = ["Blouin2015_control", "Mueller2019", "Panke_Buisse2015", "Swenson2000a", "Swenson2000b", "Williams2007a", "Williams2007b", "Wright2019"]
+#list_algorithms = ["Mueller2019", "Panke_Buisse2015", "Swenson2000a", "Swenson2000b", "Williams2007a", "Williams2007b", "Wright2019"]
+#list_algorithms = ["simple_screening", "directed_selection_migration", "pair_top_communities", "multiple_pair_top", "Blouin2015", "Mueller2019", "Panke_Buisse2015", "Swenson2000a", "Swenson2000b", "Williams2007a", "Williams2007b", "Wright2019"]
 
 
 for j in range(len(list_phenotypes)):

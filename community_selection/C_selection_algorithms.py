@@ -144,6 +144,30 @@ def pool_top25percent(community_function, p = 0.25):
   
     return transfer_matrix 
 
+def pool_top20percent_control(community_function, p = 0.20):
+    """
+    Select random 20% communities, pool them all together, and replicate to all the new wells
+    """    
+    # Read number of wells 
+    n_wells = len(community_function)
+    
+    # Sort the community function in this transfer
+    sorted_community_function = community_function[list(np.argsort(np.random.uniform(size = n_wells)))]
+#    sorted_community_function = np.sort(community_function)
+    
+    # 25% cutoff for selecting communities
+    cut_off = sorted_community_function[int(np.round(len(community_function)*(1-p))) - 1]
+    
+    # Winner wells
+    winner_index = np.where(community_function > cut_off)[0][::-1] # Reverse the list so the higher 
+    
+    # Transfer matrix
+    transfer_matrix = np.zeros((n_wells,n_wells))
+    transfer_matrix[:, winner_index] = 1
+  
+    return transfer_matrix 
+
+
 
 def pool_top10percent(community_function, p = 0.1):
     """
@@ -156,6 +180,21 @@ def pool_top10percent(community_function, p = 0.1):
     transfer_matrix = np.zeros((n_wells,n_wells))
     transfer_matrix[:, winner_index] = 1
     return transfer_matrix 
+
+
+def pool_top10percent_control(community_function, p = 0.1):
+    """
+    Select random 10% communities, pool them all together, and replicate to all the new wells
+    """    
+    n_wells = len(community_function)
+    sorted_community_function = community_function[list(np.argsort(np.random.uniform(size = n_wells)))]
+    cut_off = sorted_community_function[int(np.round(len(community_function)*(1-p))) - 1]
+    winner_index = np.where(community_function > cut_off)[0][::-1] # Reverse the list so the higher 
+    transfer_matrix = np.zeros((n_wells,n_wells))
+    transfer_matrix[:, winner_index] = 1
+    return transfer_matrix 
+
+
 
 def pool_top20percent(community_function, p = 0.2):
     """

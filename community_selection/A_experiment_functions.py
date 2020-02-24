@@ -502,6 +502,25 @@ def make_algorithms(params_simulation):
         "migration_algorithm": "no_migration"
     })
     
+    # Blouin2015 control
+    Blouin2015_control = pd.DataFrame({
+        "algorithm_name": "Blouin2015_control",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": ["pool_top10percent_control" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
+        "migration_algorithm": "no_migration"
+    })
+
+    
+    # Jochum2019
+    Jochum2019 = pd.DataFrame({
+        "algorithm_name": "Jochum2019",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": ["pool_top10percent" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
+        "migration_algorithm": "no_migration"
+    })
+    
     # Mueller2019
     Mueller2019 = pd.DataFrame({
         "algorithm_name": "Mueller2019",
@@ -529,6 +548,15 @@ def make_algorithms(params_simulation):
         "migration_algorithm": "no_migration"
     })
     
+    # Swenson2000a control
+    Swenson2000a_control = pd.DataFrame({
+        "algorithm_name": "Swenson2000a_control",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": ["pool_top20percent_control" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
+        "migration_algorithm": "no_migration"
+    })
+
     # Swenson2000b
     Swenson2000b = pd.DataFrame({
         "algorithm_name": "Swenson2000b",
@@ -621,7 +649,9 @@ def make_algorithms(params_simulation):
     })  
     # Save the algorithms
     algorithms = pd.concat([simple_screening, directed_selection_migration, select_top25, select_top10, pair_top_communities, multiple_pair_top,
-    Blouin2015, Mueller2019, Panke_Buisse2015, Swenson2000a, Swenson2000b, Williams2007a, Williams2007b, Wright2019, multiple_pair_top,coalescence,migration,resource,bottleneck,knock_out,knock_in])
+    Blouin2015, Mueller2019, Panke_Buisse2015, Swenson2000a, Swenson2000b, Williams2007a, Williams2007b, Wright2019,
+    Swenson2000a_control, Blouin2015_control,
+    coalescence,migration,resource,bottleneck,knock_out,knock_in])
     
     return algorithms
 
