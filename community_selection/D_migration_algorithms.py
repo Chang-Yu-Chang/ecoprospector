@@ -31,6 +31,18 @@ def no_migration(community_function):
     migration_factor = np.zeros(n_wells)
 
     return migration_factor
+    
+def parent_migration(community_function):
+    """
+    Parent migration, migrate into all wells
+    """
+    # Number of wells
+    n_wells = len(community_function)
+    
+    # All migration 
+    migration_factor = np.ones(n_wells)
+
+    return migration_factor    
   
 def directed_selection_migrate(community_function):
     """

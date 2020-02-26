@@ -75,6 +75,7 @@ def f3_additive_binary(plate, assumptions):
     plate = plate object from package
     species_function = a n by n 2-D array; n is the size of species pool
     """
+<<<<<<< HEAD
     assert len(species_function) == plate.N.shape[0], "Length of species_function does not match species number in plate."
     
     # Number of species in the pool 
@@ -82,6 +83,16 @@ def f3_additive_binary(plate, assumptions):
     
     # Additive term; diagonal of the species function matrix
     additive_term = np.sum(plate.N.values * np.diag(species_function)[:,None], axis=0)
+=======
+    # Binary function using type III response
+    plate_temp = plate.copy()
+    n = 10; Sm = 1
+    plate_temp.N = plate_temp.N * assumptions["scale"] * 10**6
+    plate_temp.N = plate_temp.N**n / (1 + plate_temp.N**n/Sm) 
+    community_function = np.sum(plate_temp.N.values * plate_temp.species_function[:,None], axis = 0)
+
+    return community_function
+>>>>>>> a5e0739c6d64623e96ceaa681272cdcaf16120f6
 
     # Interaction term; matrix multiplication
     community_composition = np.array(plate.N.iloc[:,0]).reshape(S_tot, 1)
@@ -110,6 +121,7 @@ def f4_interaction_binary(plate, assumptions):
     
     # Number of species in the pool 
     S_tot = plate.N.shape[0]
+<<<<<<< HEAD
     
 <<<<<<< HEAD
     # Additive term; diagonal of the species function matrix
@@ -122,11 +134,18 @@ def f4_interaction_binary(plate, assumptions):
     interaction_term = np.nansum(community_composition_square * species_function / ( community_composition_square + k))
 =======
     # Convert the community composition to binary (presence = 1, absense = 0)
+=======
+>>>>>>> a5e0739c6d64623e96ceaa681272cdcaf16120f6
     plate_temp = plate.copy()
-    plate_temp.N = (plate_temp.N > 0) * 1
+
+    # Binary function using type III response
+    plate_temp = plate.copy()
+    n = 10; Sm = 1
+    plate_temp.N = plate_temp.N * assumptions["scale"] * 10**6
+    plate_temp.N = plate_temp.N**n / (1 + plate_temp.N**n/Sm) 
     
     # Additive term
-    additive_term = np.sum(plate_temp.N.values * plate.species_function[:,None], axis = 0)
+    additive_term = np.sum(plate_temp.N.values * plate_temp.species_function[:,None], axis = 0)
     
     # Interaction term
     interaction_term = np.zeros(plate_temp.N.shape[1])
@@ -179,6 +198,7 @@ def f5_invader_growth(plate, assumptions):
     Community function in which an indentical alien community (single or multiple species) invades the selected resident communities.
     This community function is the ratio between the biomass when invader grows with the community and when invader grows alone.
     The biomass of invader growing alone (plate.invasion_plate_t1) should have been included in the plate object attribute.
+    
     """
     # Number of species and community
     S_tot = plate.N.shape[0]
@@ -195,7 +215,7 @@ def f5_invader_growth(plate, assumptions):
     # Grow the coalesced communities
     plate_test.Propagate(assumptions["n_propagation"])
     
-    # Calculate the function by dividing the final x(t) with x(o) of pathogen (species 0)
+    # Calculate the function by dividing the final x(t) with x(o) of pathogen 
     temp_index = list(np.where(plate.invasion_plate_t1["W0"] > 0)[0]) # Index of the invasive species
 #    invader_growth_before = np.sum(plate_test_initial.iloc[temp_index], axis = 0)
     invader_growth_along = np.sum(plate.invasion_plate_t1.iloc[temp_index], axis = 0)
