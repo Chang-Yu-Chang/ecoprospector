@@ -2,14 +2,32 @@
 __pycache__/
 *.py[cod]
 *$py.class
+<<<<<<< HEAD
+=======
+execution1.py
+execution2.py
+execution3.py
+>>>>>>> 407fe86eee06599bad96f752d145782f531f77cc
 
 # Python notebook
 EEB279_Exercise_5.ipynb
+EEB279_Exercise_5_JV.ipynb
 CommunityLevelSelection_V6_Experiment1.ipynb
 01-community_selection.Rmd
 community_coalescence_3.ipynb
+community_selection_f1_additive_function.ipynb
+community_selection_f2_interactive_function.ipynb
+community_selection_f3_binary.ipynb
+community_selection_f4_interaction_binary.ipynb
+community_selection-typeI-large_pool.ipynb
+community_selection-typeIII-large_pool.ipynb
+test_playground.ipynb
+typeIII-24wells-rich_medium.py
+typeIII-24wells.py
+typeIII-96wells.py
 
 # R documents
+figure/*
 data/*
 *.Rproj
 *.R
