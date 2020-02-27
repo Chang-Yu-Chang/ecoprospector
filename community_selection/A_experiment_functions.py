@@ -136,10 +136,13 @@ def sample_from_pool(plate_N, scale = 10**6, inocula = 10**6,migration=False):
 # Migrate from species pool to the plate 
 def migrate_from_pool(plate, pool, migration_factor, scale, inocula):
     # Migration plate
-    migration_plate = sample_from_pool(plate.N, scale = scale, inocula = inocula, migration = True) * migration_factor # Migration factor is a list determined by migration algorithms and community function
-    
-    # Migration
-    plate_migrated = plate.N + migration_plate 
+    if np.sum(migration_factor) !=0:
+        print('Migration')
+        migration_plate = sample_from_pool(plate.N, scale = scale, inocula = inocula, migration = True) * migration_factor # Migration factor is a list determined by migration algorithms and community function
+        # Migration
+        plate_migrated = plate.N + migration_plate 
+    else:
+        plate_migrated = plate.N
 
     return plate_migrated
 
