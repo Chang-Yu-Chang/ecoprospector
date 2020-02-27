@@ -133,9 +133,10 @@ def f5_invader_growth(plate, assumptions):
     invader_growth_together = np.sum(plate_test.N.iloc[temp_index], axis = 0)
     
     # For each community of selection, how good it recruits the invasive community. Defined by how much biomass compared to invasive community growing alone
-    function_invader_growth = invader_growth_together / invader_growth_along
+#    function_invader_growth = invader_growth_together / invader_growth_along
+    function_invader_suppressed_growth = (invader_growth_together - invader_growth_along) / invader_growth_along
 
-    return function_invader_growth
+    return function_invader_suppressed_growth
 
 
 def f6_resident_growth(plate, assumptions):
@@ -166,9 +167,10 @@ def f6_resident_growth(plate, assumptions):
     resident_growth_together = np.sum(plate_test.N.iloc[temp_index], axis = 0)
     
     # For each community of selection, how good it invades the resident community
-    function_resident_growth = resident_growth_together / resident_growth_along
+#    function_resident_growth = resident_growth_together / resident_growth_along
+    function_resident_suppressed_growth = (resident_growth_together - resident_growth_along) / resident_growth_along
 
-    return function_resident_growth
+    return function_resident_suppressed_growth
      
 
 
