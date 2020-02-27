@@ -286,7 +286,10 @@ def simulate_community(
         
         # Migration
         m = globals()[migration_algorithm](community_function) 
-        plate.N = migrate_from_pool(plate, pool = params_simulation["pool"], migration_factor = m, scale = assumptions["scale"], inocula = params_simulation["n_inoc"])
+        
+        if all(m==0) != True : 
+            plate.N = migrate_from_pool(plate, pool = params_simulation["pool"], migration_factor = m, scale = assumptions["scale"], inocula = params_simulation["n_inoc"])
+
         if params_algorithm["algorithm_name"][0] == 'knock_in' and selection_algorithm == 'select_top':
             for k in plate.N.columns:
                 s_id = np.random.choice(np.where(plate.N[k]==0)[0])
