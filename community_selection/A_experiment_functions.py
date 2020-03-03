@@ -188,7 +188,8 @@ def simulate_community(
     params_algorithm,
     file_name = "data/",
     assembly_type = "self_assembly",
-    write_composition = False):
+    write_composition = False
+):
     """
     Simulate community dynamics by given experimental regimes
     
@@ -311,7 +312,6 @@ def simulate_community(
             ##add new fresh environment (so that this round uses R0
             plate.R = plate.R + plate.R0
     print("\nAlgorithm "+ params_algorithm["algorithm_name"][0] + " finished")
-
     # Concatenate data from from different transfers
     plate_data_con = pd.concat(plate_data_list)
     community_function_con = pd.concat(community_function_list)
@@ -459,7 +459,6 @@ def make_algorithms(params_simulation):
         "migration_algorithm": ["no_migration" for i in range(params_simulation["n_transfer_selection"]-1)] + ["directed_selection_migrate"] + ["no_migration" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])]
     })
 
-
     ## Select top 25%
     select_top25 = pd.DataFrame({
         "algorithm_name": "select_top25",
@@ -496,6 +495,15 @@ def make_algorithms(params_simulation):
         "migration_algorithm": "no_migration"
     })
     
+    # Arora2019
+    Arora2019 = pd.DataFrame({
+        "algorithm_name": "Arora2019",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": ["select_top33percent" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
+        "migration_algorithm": "no_migration"
+    })
+    
     # Blouin2015
     Blouin2015 = pd.DataFrame({
         "algorithm_name": "Blouin2015",
@@ -513,7 +521,6 @@ def make_algorithms(params_simulation):
         "selection_algorithm": ["pool_top10percent_control" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
         "migration_algorithm": "no_migration"
     })
-
     
     # Jochum2019
     Jochum2019 = pd.DataFrame({
@@ -596,7 +603,6 @@ def make_algorithms(params_simulation):
         "migration_algorithm": "no_migration"
     })
     
-
     #Knock_in_pertubation
     knock_in = pd.DataFrame({
         "algorithm_name": "knock_in",
@@ -650,11 +656,13 @@ def make_algorithms(params_simulation):
         "selection_algorithm": ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["select_top"] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
         "migration_algorithm": "no_migration"
     })  
+
     # Save the algorithms
-    algorithms = pd.concat([simple_screening, directed_selection_migration, select_top25, select_top10, pair_top_communities, multiple_pair_top,
-    Blouin2015, Mueller2019, Panke_Buisse2015, Swenson2000a, Swenson2000b, Williams2007a, Williams2007b, Wright2019,
-    Swenson2000a_control, Blouin2015_control,
-    coalescence,migration,resource,bottleneck,knock_out,knock_in])
+    algorithms = pd.concat([
+        simple_screening, directed_selection_migration, select_top25, select_top10, pair_top_communities, multiple_pair_top,
+        Arora2019, Blouin2015, Blouin2015_control, Mueller2019, Panke_Buisse2015, Swenson2000a, Swenson2000a_control,
+        Swenson2000b, Williams2007a, Williams2007b, Wright2019,
+        coalescence,migration,resource,bottleneck,knock_out,knock_in])
     
     return algorithms
 
@@ -682,27 +690,36 @@ def add_community_function(plate, dynamics, assumptions, params_simulation):
     if (params_simulation["selected_function"] == "f5_invader_growth") or (params_simulation["selected_function"] == "f6_resident_growth"):
     # Make 96 communities and pick the best grown one as the focal invader community
         assumptions_invasion = assumptions.copy()
-        assumptions_invasion.update({"n_wells": 96, "n_inoc": 1})
+        
+        if params_simulation["selected_function"] == "f5_invader_growth":
+            assumptions_invasion.update({"n_wells": 96, "n_inoc": 1})
+        elif params_simulation["selected_function"] == "f6_resident_growth":
+            assumptions_invasion.update({"n_wells": 96})
+        
         params_invasion = MakeParams(assumptions_invasion)
         init_state_invasion = MakeInitialState(assumptions_invasion)
         plate_invasion = Community(init_state_invasion, dynamics, params_invasion, scale = assumptions_invasion["scale"], parallel = True)
-        plate_invasion.N = assumptions["n_inoc"] * sample_from_pool(plate_invasion.N, scale = assumptions_invasion["scale"], inocula = assumptions_invasion["n_inoc"]) # Sample one cell (one species) as the invader)
+        plate_invasion.N = sample_from_pool(plate_invasion.N, scale = assumptions_invasion["scale"], inocula = assumptions_invasion["n_inoc"])
+        plate_invasion.N = plate_invasion.N / np.sum(plate_invasion.N, axis = 0) # Rescale biomass to to one 
+
+
         if assumptions["rich_medium"]:
             plate_invasion.R = make_rich_medium(plate_invasion.R, assumptions_invasion)
             plate_invasion.R0 = make_rich_medium(plate_invasion.R, assumptions_invasion) # R0 for refreshing media on passaging if "refresh_resoruce" is turned on 
 
         # Save the t0 plate
+        temp = assumptions_invasion["n_transfer"] - assumptions_invasion["n_transfer_selection"]
+        print("\nStabilizing the invader (or resident) community. Passage for " + str(temp) + " transfer. The plate has ", str(assumptions_invasion["n_wells"]), " wells.")
         plate_invasion_t0 = plate_invasion.N.copy()
-
-        print("\nStabilizing the invader (or resident) community. Passage for " + str(assumptions_invasion["n_transfer"] - assumptions_invasion["n_transfer_selection"]) + " transfers. The plate has ", str(assumptions_invasion["n_wells"]), " wells.")
+        plate_invasion.Propagate(assumptions_invasion["n_propagation"])
+        print("Passaging invader community. Transfer 1")
 
         # Grow the invader plate 
-        for i in range(0, assumptions_invasion["n_transfer"] - assumptions_invasion["n_transfer_selection"]):
-            plate_invasion.Propagate(assumptions_invasion["n_propagation"])
+        for i in range(0, temp - 1):
             plate_invasion.Passage(np.eye(assumptions_invasion["n_wells"]) * assumptions_invasion["dilution"])
+            plate_invasion.Propagate(assumptions_invasion["n_propagation"])
+            print("Passaging invader community. Transfer " + str(i + 2))
 
-            if (i % 5) == 0:
-                print("Passaging invader community. Transfer " + str(i + 1))
 
         # Save the t1 plate
         plate_invasion_t1 = plate_invasion.N.copy()
@@ -718,7 +735,16 @@ def add_community_function(plate, dynamics, assumptions, params_simulation):
             temp_df_t0["W" + str(i)] = temp_column_t0
             temp_df_t1["W" + str(i)] = temp_column_t1
 
-        print("Finished passaging the invader (or resident) community. The community has " + str(np.sum(temp_column_t1>0)) + " species.")
+        print("Finished passaging the invader (or resident) community.") 
+        print("The community has " + str(np.sum(temp_column_t1>0)) + " species")
+        print("The community has initial biomass " + str(int(np.sum(temp_column_t0))) + " and reaches total biomass", str(np.sum(temp_column_t1)))
+        
+        # Print the biomass off each
+#        temp_index = list(np.where(temp_df_t0["W0"] > 0)[0]) # Index of the resident species. All wells are the same so I arbitrary pick W0
+#        print("The community has initial biomass "+ str(np.sum(temp_df_t0[:,1].iloc[temp_index], axis = 0)))
+#        print("The stabilized community has biomass "+ str(np.sum(temp_df_t1[:,1].iloc[temp_index], axis = 0)))
+#        print(np.sum(temp_df_t1[:,1].iloc[temp_index], axis = 0))
+
     
         if params_simulation["selected_function"] == "f5_invader_growth":
             # Add the invasion plate to the attr of community

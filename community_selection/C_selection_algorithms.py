@@ -72,6 +72,32 @@ def select_top25percent(community_function, p = 0.25):
   
     return transfer_matrix
 
+def select_top33percent(community_function, p = 0.33):
+    """
+    Select the top 33% communities 
+    """
+    # Read number of wells 
+    n_wells = len(community_function)
+    
+    # Sort the community function in this transfer
+    sorted_community_function = np.sort(community_function)
+    
+    # 25% cutoff for selecting communities
+    cut_off = sorted_community_function[int(np.round(len(community_function)*(1-p))) - 1]
+    
+    # Winner wells
+    winner_index = np.where(community_function >= cut_off)[0][::-1] # Reverse the list so the higher 
+    
+    # Transfer matrix
+    transfer_matrix = np.zeros((n_wells,n_wells))
+    t_new = range(n_wells) # New wells
+    t_old = list(winner_index) * int(np.round(1/p)) # Old wells
+        
+    # Fill in the transfer matrix
+    for i in range(n_wells):
+        transfer_matrix[t_new[i], t_old[i]] = 1
+  
+    return transfer_matrix
 
 def select_top10percent(community_function, p = 0.1):
     """
