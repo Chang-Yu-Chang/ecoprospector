@@ -2,9 +2,12 @@
 __pycache__/
 *.py[cod]
 *$py.class
+<<<<<<< HEAD
+=======
 execution1.py
 execution2.py
 execution3.py
+>>>>>>> 407fe86eee06599bad96f752d145782f531f77cc
 
 # Python notebook
 EEB279_Exercise_5.ipynb

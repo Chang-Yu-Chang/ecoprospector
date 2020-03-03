@@ -55,6 +55,7 @@ assumptions.update({
     "sigma_max": 5,
     'R0_food': 1000, # Total amount of supplied food
     "rich_medium": True, # Number of food types passed to R0
+    "binary_threshold": 1,  
     # The parameters below will be passed to params_simulation
     "n_propagation": 1, # Length of propagation, or hours within a growth cycle
     "n_transfer": 40, # Number of total transfer, or number of passage
@@ -98,7 +99,7 @@ for j in range(len(list_phenotypes)):
             params_simulation = params_simulation,
             params_algorithm = algorithms[algorithms["algorithm_name"] == list_algorithms[i]],
             write_composition = True,
-            file_name = data_directory + "SP" + str(1) + "-" + list_algorithms[i],
+            file_name = data_directory + "SP" + str(seed_temp) + "-" + list_algorithms[i],
             assembly_type = str(list_algorithms[i]),
         )
 
