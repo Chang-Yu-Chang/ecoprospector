@@ -38,29 +38,44 @@ def make_regional_pool(assumptions):
     return pool/np.sum(pool)  # Relative species abundance in regional pool
 
 
-def prepare_experiment(assumptions):
+def draw_species_function(assumptions):
     """
-    Prepare the experimental setting shared by self assembly and paiwise competition  
+    Draw species-specific functions
     
     assumptions = dictionary of metaparameters from community-simulator
     
     Return:
-    params, species_pool
+    function_species, function_interaction
     """
-    np.random.seed(0) 
+    # Total number of species in the pool
+    S_tot = int(np.sum(assumptions['SA']) + assumptions['Sgen']) 
+    
+    # Species-specific function, 1-D array
+    function_species = np.random.normal(0, assumptions["sigma"], size = S_tot)
+    
+    # Interaction-specific function, 2-D n by n array
+    function_interaction = np.array(np.random.normal(0, assumptions["sigma"] * assumptions["alpha"], size = S_tot * S_tot)).reshape(S_tot, S_tot)
+
+    return function_species, function_interaction
+
+
+def prepare_experiment(assumptions, seed = 1):
+    """
+    Prepare the experimental setting shared by all assembly experiments
+    
+    assumptions = dictionary of metaparameters from community-simulator
+    
+    Return:
+    species_pool
+    """
+    np.random.seed(seed) 
     
     # Make parameters
-    params = MakeParams(assumptions)
+    params = MakeParams(assumptions) 
     
-    # Generate a species pool
+    # Generate a species pool with the species abundance
     species_pool = make_regional_pool(assumptions) 
     
-<<<<<<< HEAD
-    return params, species_pool
-
-
-def sample_from_pool(plate_N, pool, scale=10**6, inocula=10**6):
-=======
     # Generate species function
     function_species, function_interaction = draw_species_function(assumptions)
     
@@ -75,12 +90,8 @@ def sample_from_pool(plate_N, pool, scale=10**6, inocula=10**6):
     
     return params, params_simulation
 
-<<<<<<< HEAD
-def sample_from_pool(plate_N, scale = 10**6, inocula = 10**6):
->>>>>>> 407fe86eee06599bad96f752d145782f531f77cc
-=======
+
 def sample_from_pool(plate_N, scale = 10**6, inocula = 10**6,migration=False):
->>>>>>> a5e0739c6d64623e96ceaa681272cdcaf16120f6
     """
     Sample communities from regional species pool.
     In order to create variability in the pool, split the species pool into two pools, one for initial inocula and one migration.
@@ -89,7 +100,6 @@ def sample_from_pool(plate_N, scale = 10**6, inocula = 10**6,migration=False):
     plate_N = consumer data.frame
     pool = 1-D array that defines the species relative abundances in the pool
     """
-<<<<<<< HEAD
     S_tot = plate_N.shape[0] # Total number of species in the pool
     N0 = np.zeros((plate_N.shape)) # Make empty plate
     consumer_index = plate_N.index
@@ -97,25 +107,6 @@ def sample_from_pool(plate_N, scale = 10**6, inocula = 10**6,migration=False):
 
     # Sample initial community for each well
     # The part is from Jean's code
-=======
-    # Total number of species in this universe
-    S_tot = plate_N.shape[0] 
-    S_half = int(np.round(S_tot/2))
-    
-    # Make empty plate
-    N0 = np.zeros((plate_N.shape)) # Make empty plate
-    
-    # Consumer index
-    consumer_index = plate_N.index 
-    
-    # Well index
-    well_names = plate_N.columns
-<<<<<<< HEAD
-    
->>>>>>> 407fe86eee06599bad96f752d145782f531f77cc
-=======
-
->>>>>>> a5e0739c6d64623e96ceaa681272cdcaf16120f6
     for k in range(plate_N.shape[1]):
         # For each well, sample community from different microbiome sample
         if migration==False:
@@ -125,58 +116,11 @@ def sample_from_pool(plate_N, scale = 10**6, inocula = 10**6,migration=False):
         consumer_list = np.random.choice(S_tot, size = inocula, replace = True, p = pool) # Draw from the pool
         my_tab = pd.crosstab(index = consumer_list, columns = "count") # Calculate the cell count
         N0[my_tab.index.values,k] = np.ravel(my_tab.values / scale) # Scale to biomass
-<<<<<<< HEAD
-    
-    # for k in range(plate_N.shape[1]):
-    #     species_list = np.random.choice(len(pool), size=len(pool), replace=True, p=pool)
-    #     my_tab = pd.crosstab(index=species_list, columns="count") # Calculate the biomass count
-    #     N0[my_tab.index.values,k] = np.ravel(my_tab.values / np.sum(my_tab.values) * inocula / scale) # Scale to sum
-
+        
     # Make data.frame
     N0 = pd.DataFrame(N0, index = consumer_index, columns = well_names)
 
     return N0
-
-<<<<<<< HEAD
-    
-
-# Make initial state
-## Make monos
-def make_synthetic_mono(assumptions):
-    """
-    Make the synthetic community inocula
-    
-    assumptions = dictionary of metaparameters
-    
-    Return:
-    N0 = initial consumer populations
-    """
-    # Extract parameters from assumption
-    S_tot = int(np.sum(assumptions['SA'])+assumptions['Sgen'])
-    F = len(assumptions['SA'])
-    
-    # Construct lists of names of resources, consumers, resource types, consumer families and wells:
-    family_names = ['F'+str(k) for k in range(F)]
-    consumer_names = ['S'+str(k) for k in range(S_tot)]
-    consumer_index = [[family_names[m] for m in range(F) for k in range(assumptions['SA'][m])]
-                      +['GEN' for k in range(assumptions['Sgen'])],consumer_names]
-    well_names = ['W'+str(k) for k in range(S_tot)]
-    
-    # Make data.frame for community-simulator input
-    N0 = np.eye(S_tot)
-=======
-
-    # Make data.frame
->>>>>>> 407fe86eee06599bad96f752d145782f531f77cc
-    N0 = pd.DataFrame(N0, index = consumer_index, columns = well_names)
-    
-    return N0
-
-<<<<<<< HEAD
-## Make synthetic pairs
-def make_synthetic_community(species_list, assumptions, number_species = 2, initial_frequency = [[0.5, 0.5], [0.95, 0.05]]):
-=======
-=======
 
 # Migrate from species pool to the plate 
 def migrate_from_pool(plate, pool, migration_factor, scale, inocula):
@@ -189,55 +133,28 @@ def migrate_from_pool(plate, pool, migration_factor, scale, inocula):
     return plate_migrated
 
 
->>>>>>> a5e0739c6d64623e96ceaa681272cdcaf16120f6
 # Make rich medium
 def make_rich_medium(plate_R, assumptions):
->>>>>>> 407fe86eee06599bad96f752d145782f531f77cc
     """
     Make rich media for each well
 
-<<<<<<< HEAD
-    Return:
-    N0 = initial consumer populations
-    """
-    # Stopifnot
-#    assert max(species_list) <= len(species_pool), "Some species in the list are not in the pool."
-    assert len(species_list) >= number_species, "Cannot make pair from one species."
-    assert any(list((sum(x) == 1 for x in initial_frequency))), "Sum of initial frequencies is not equal to 1."
-    assert any(list((len(x) == number_species for x in initial_frequency))), "Length of initial frequencies is not equal to number of species."
-    
-    # All possible combinations of species for given number of species added to a well
-    from itertools import combinations
-    consumer_pairs = list(combinations(species_list, number_species))
-=======
     plate_R = resource dataframe
     """
     np.random.seed(2)
     
     # Total number of resource in this universe
     R_tot = plate_R.shape[0] 
->>>>>>> 407fe86eee06599bad96f752d145782f531f77cc
     
     # Make empty plate
     R0 = np.zeros((plate_R.shape)) # Make empty plate
     
-<<<<<<< HEAD
-    # Construct lists of names of resources, consumers, resource types, consumer families and wells:
-    family_names = ['F'+str(k) for k in range(F)]
-    consumer_names = ['S'+str(k) for k in range(S_tot)]
-    consumer_index = [[family_names[m] for m in range(F) for k in range(assumptions['SA'][m])]
-                      +['GEN' for k in range(assumptions['Sgen'])],consumer_names]
-    well_names = ['W'+str(k) for k in range(len(consumer_pairs) * len(initial_frequency))]
-=======
     # Resource index
     resource_index = plate_R.index 
->>>>>>> 407fe86eee06599bad96f752d145782f531f77cc
     
     # Well index
     well_names = plate_R.columns
     
-
-#    resource_pool = np.random.power(1, size = R_tot)
+    #
     resource_pool = np.random.uniform(0, 1, size = R_tot) # Uniform distribution
     resource_pool = resource_pool/np.sum(resource_pool)
     resource_list = np.random.choice(R_tot, size = assumptions["R0_food"], replace = True, p = resource_pool) # Draw from the pool
@@ -246,97 +163,13 @@ def make_rich_medium(plate_R, assumptions):
     for i in range(plate_R.shape[1]):
         R0[my_tab.index.values,i] = food_compostion
 
-<<<<<<< HEAD
-    return N0
-
-## Make initial state. Function added from Bobby's code 
-def make_initial_state(assumptions, N0):
-    """
-    Construct initial state, at unperturbed resource fixed point.
-    
-    assumptions = dictionary of metaparameters
-        'SA' = number of species in each family
-        'MA' = number of resources of each type
-        'Sgen' = number of generalist species
-        'n_wells' = number of independent wells in the experiment
-        'S' = initial number of species per well
-        'food' = index of supplied "food" resource
-        'R0_food' = unperturbed fixed point for supplied food resource
-    N0 = consumer populations made from make_synthetic_*()
-    
-    Returns:
-    N0 = initial consumer populations
-    R0 = initial resource concentrations
-    """
-
-    #PREPARE VARIABLES
-    #Force number of species to be an array:
-    if isinstance(assumptions['MA'],numbers.Number):
-        assumptions['MA'] = [assumptions['MA']]
-    if isinstance(assumptions['SA'],numbers.Number):
-        assumptions['SA'] = [assumptions['SA']]
-    #Force numbers of species to be integers:
-    assumptions['MA'] = np.asarray(assumptions['MA'],dtype=int)
-    assumptions['SA'] = np.asarray(assumptions['SA'],dtype=int)
-    assumptions['Sgen'] = int(assumptions['Sgen'])
-
-    #Extract total numbers of resources, consumers, resource types, and consumer families:
-    M = int(np.sum(assumptions['MA']))
-    T = len(assumptions['MA'])
-    S_tot = int(np.sum(assumptions['SA'])+assumptions['Sgen'])
-    F = len(assumptions['SA'])
-    #Construct lists of names of resources, consumers, resource types, consumer families and wells:
-    resource_names = ['R'+str(k) for k in range(M)]
-    type_names = ['T'+str(k) for k in range(T)]
-    family_names = ['F'+str(k) for k in range(F)]
-    consumer_names = ['S'+str(k) for k in range(S_tot)]
-    resource_index = [[type_names[m] for m in range(T) for k in range(assumptions['MA'][m])],
-                      resource_names]
-    consumer_index = [[family_names[m] for m in range(F) for k in range(assumptions['SA'][m])]
-                      +['GEN' for k in range(assumptions['Sgen'])],consumer_names]
-    well_names = ['W'+str(k) for k in range(N0.shape[1])] # Modify the number of wells in R0 by using the well number of N0
-
-    R0 = np.zeros((M,N0.shape[1]))
-
-    if not isinstance(assumptions['food'],int):
-        assert len(assumptions['food']) == N0.shape[1], 'Length of food vector must equal n_wells.'
-        food_list = assumptions['food']
-    else:
-        food_list = np.ones(N0.shape[1],dtype=int)*assumptions['food']
-
-    if not isinstance(assumptions['R0_food'],int):
-        assert len(assumptions['R0_food']) == N0.shape[1], 'Length of food vector must equal n_wells.'
-        R0_food_list = assumptions['R0_food']
-    else:
-        R0_food_list = np.ones(N0.shape[1],dtype=int)*assumptions['R0_food']
-
-    for k in range(N0.shape[1]):
-        R0[food_list[k],k] = R0_food_list[k]
-
-    R0 = pd.DataFrame(R0,index=resource_index,columns=well_names)
-
-    return N0, R0
-
-# Simulate community dynamics
-## Simulation parameters
-params_simulation = {
-    "n_propagation": 12, # Lenght of propagation, or hours within a growth cycle
-    "n_transfer": 10, # Number of transfer, or number of passage
-    "dilution": 1/125, # Dilution factor for transfer
-}
-
-## Main function for simulating community
-def simulate_community(
-    plate, 
-    params_simulation, 
-    params_algorithm = {"community_phenotype": "community_function_additive", "selection_algorithm": "no_selection", "migration_algorithm": "no_migration"}, 
-    file_name = "data/self_assembly-community", 
-=======
     R0 = pd.DataFrame(R0, index = resource_index, columns = well_names)
     
     return R0
 
+
 # Main function for simulating community
+
 def simulate_community( 
     assumptions,
     params,
@@ -345,7 +178,6 @@ def simulate_community(
     params_algorithm,
     file_name = "data/",
     assembly_type = "self_assembly",
->>>>>>> 407fe86eee06599bad96f752d145782f531f77cc
     write_composition = False):
     """
     Simulate community dynamics by given experimental regimes
@@ -390,10 +222,6 @@ def simulate_community(
     community_function_list = list() # Community function
 
     # Save the inocula composition
-<<<<<<< HEAD
-    plate_data = reshape_plate_data(plate, transfer_loop_index = 0) # Initial state
-    plate_data_list.append(plate_data)
-=======
     plate_data = reshape_plate_data(plate, transfer_loop_index = 0, assembly_type = assembly_type, community_function_name = params_algorithm["community_phenotype"][0]) # Initial state
     plate_data_list.append(plate_data)
     
@@ -404,8 +232,7 @@ def simulate_community(
     function_data = reshape_function_data(community_function_name = params_algorithm["community_phenotype"][0], community_function = community_function, richness = richness, biomass = biomass, transfer_loop_index = 0, assembly_type = assembly_type)        
     community_function_list.append(function_data) # Transfer = 0 means that it's before selection regime works upon
 
->>>>>>> 407fe86eee06599bad96f752d145782f531f77cc
-    
+
     # Output the plate composition and community functions if write_composition set True
     if write_composition == True:
         plate_data.to_csv(file_name + "-" + params_algorithm["community_phenotype"][0] + "-T" + "{:02d}".format(0) + "-composition.txt", index = False)
@@ -427,18 +254,6 @@ def simulate_community(
         plate.Propagate(params_simulation["n_propagation"])
     
         # Append the composition to a list
-<<<<<<< HEAD
-        plate_data = reshape_plate_data(plate, transfer_loop_index = i + 1)
-        plate_data_list.append(plate_data)
-
-        ## Output the file if write_composition set True
-        if write_composition == True:
-            plate_data.to_csv(file_name + "-T" + "{:02d}".format(i+1) + ".txt", index = False)
-        
-        # Community phenotype
-        community_function = globals()[params_algorithm["community_phenotype"]](plate)
-        community_function_list.append(reshape_function_data(community_function, transfer_loop_index = i + 1))
-=======
         plate_data = reshape_plate_data(plate, transfer_loop_index = i + 1, assembly_type = assembly_type, community_function_name = phenotype_algorithm) # Transfer = 0 means that it's before selection regime works upon
         plate_data_list.append(plate_data)
 
@@ -453,13 +268,10 @@ def simulate_community(
         if write_composition == True:
             plate_data.to_csv(file_name + "-" + phenotype_algorithm + "-T" + "{:02d}".format(i + 1) + "-composition.txt", index = False) # Transfer = 0 means that it's before selection regime works upon
             function_data.to_csv(file_name + "-" + phenotype_algorithm + "-T" + "{:02d}".format(i + 1) + "-function.txt", index = False)
-<<<<<<< HEAD
->>>>>>> 407fe86eee06599bad96f752d145782f531f77cc
-=======
-        # Passage and tranfer matrix if is selection experiment
->>>>>>> a5e0739c6d64623e96ceaa681272cdcaf16120f6
 
-       # Passage and tranfer matrix
+        # Passage and tranfer matrix if is selection experiment
+
+        # Passage and tranfer matrix
         transfer_matrix = globals()[selection_algorithm](community_function)
         plate.Passage(transfer_matrix * params_simulation["dilution"])
         
@@ -469,26 +281,38 @@ def simulate_community(
         if all(m==0) != True : 
             plate.N = migrate_from_pool(plate, pool = params_simulation["pool"], migration_factor = m, scale = assumptions["scale"], inocula = params_simulation["n_inoc"])
 
+        # Perturbation
         if params_algorithm["algorithm_name"][0] == 'knock_in' and selection_algorithm == 'select_top':
+            winning_index = np.where(community_function >= np.max(community_function))[0][::-1] # Reverse the list so the higher
             for k in plate.N.columns:
-                s_id = np.random.choice(np.where(plate.N[k]==0)[0])
-                plate.N[k][s_id]= 1/params_simulation["dilution"] * 1/assumptions["scale"]
+                if k != plate.N.columns[winning_index]:
+                    print(k)
+                    s_id = np.random.choice(np.where(plate.N[k]==0)[0])
+                    plate.N[k][s_id]= 1/params_simulation["dilution"] * 1/assumptions["scale"]
         if params_algorithm["algorithm_name"][0] == 'knock_out' and selection_algorithm == 'select_top':
+            winning_index = np.where(community_function >= np.max(community_function))[0][::-1] # Reverse the list so the higher
             for k in plate.N.columns:
-                s_id = np.random.choice(np.where(plate.N[k]>0)[0])
-                plate.N[k][s_id]=0        
+                if k != plate.N.columns[winning_index]:
+                    s_id = np.random.choice(np.where(plate.N[k]>0)[0])
+                    plate.N[k][s_id]=0
         if params_algorithm["algorithm_name"][0] == 'bottleneck' and selection_algorithm == 'select_top':
-            plate.Passage(np.eye(assumptions['n_wells'])* 10**-4)
+            winning_index = np.where(community_function >= np.max(community_function))[0][::-1] # Reverse the list so the higher
+            dilution_matrix = np.eye(assumptions['n_wells'])
+            dilution_matrix[winning_index,winning_index] = 0
+            plate.Passage(np.eye(assumptions['n_wells'])* params_simulation["dilution"])
         if params_algorithm["algorithm_name"][0] == 'resource' and selection_algorithm == 'select_top':
+            winning_index = np.where(community_function >= np.max(community_function))[0][::-1] # Reverse the list so the higher
 			#Remove fresh environment that was added by passage
             plate.R = plate.R - plate.R0
 			#change default fresh renvironment so that all subsequent rounds use R0
             for k in plate.R0.columns:
-                r_id = np.random.choice(np.where(plate.R0[k]>=0)[0])
-                plate.R0[k][r_id] = assumptions['R0_food']/10
+                if k != plate.R0.columns[winning_index]:
+                    r_id = np.random.choice(np.where(plate.R0[k]>=0)[0])
+                    plate.R0[k][r_id] = assumptions['R0_food']/10
             plate.R0 = plate.R0/np.sum(plate.R0)*assumptions['R0_food']
             ##add new fresh environment (so that this round uses R0
             plate.R = plate.R + plate.R0
+            
     print("\nAlgorithm "+ params_algorithm["algorithm_name"][0] + " finished")
 
     # Concatenate data from from different transfers
@@ -499,11 +323,7 @@ def simulate_community(
 
 
 ## Reshape the plate resource and consumer matrix for saving into a txt file
-<<<<<<< HEAD
-def reshape_plate_data(plate, transfer_loop_index):
-=======
 def reshape_plate_data(plate, transfer_loop_index, assembly_type, community_function_name):
->>>>>>> 407fe86eee06599bad96f752d145782f531f77cc
     # Temporary function for adding variables to and melting df
     def melt_df(plate_df, data_type = "consumer"):
         # Consumers
@@ -514,14 +334,9 @@ def reshape_plate_data(plate, transfer_loop_index, assembly_type, community_func
         temp_df["Type"] = np.repeat(data_type, total_number)
         temp_df["ID"] = range(total_number)
         temp_df["Transfer"] = np.repeat(str(transfer_loop_index), total_number)
-<<<<<<< HEAD
-        temp_df["Assembly"] = np.repeat("self-assembly", total_number)
-        
-=======
         temp_df["Assembly"] = np.repeat(assembly_type, total_number)
         temp_df["CommunityPhenotypeName"] = np.repeat(community_function_name, total_number)
-         
->>>>>>> 407fe86eee06599bad96f752d145782f531f77cc
+
         ## Melt the df
         temp_df = pd.melt(temp_df, id_vars = ["Transfer", "CommunityPhenotypeName", "Assembly", "Type", "ID"], var_name = "Well", value_name = "Abundance")
         temp_df = temp_df[["Assembly", "CommunityPhenotypeName", "Well", "Transfer", "Type", "ID", "Abundance"]]
@@ -610,11 +425,6 @@ def make_algorithm_library():
 def plot_community_function(function_df):
     function_df.plot.scatter(x = "Transfer", y = "CommunityPhenotype")
 
-<<<<<<< HEAD
-
-
-
-=======
 # Plot transfer matrix
 def plot_transfer_matrix(transfer_matrix):
     import seaborn as sns
@@ -847,10 +657,6 @@ def make_algorithms(params_simulation):
     coalescence,migration,resource,bottleneck,knock_out,knock_in])
     
     return algorithms
->>>>>>> 407fe86eee06599bad96f752d145782f531f77cc
-
-
-    
 
 def add_community_function(plate, dynamics, assumptions, params_simulation):
     """
@@ -921,10 +727,6 @@ def add_community_function(plate, dynamics, assumptions, params_simulation):
             setattr(plate, "resident_plate_t1", temp_df_t1)
     
     return plate
-
-
-
-
 
 
 
