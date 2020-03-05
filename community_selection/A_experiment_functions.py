@@ -734,15 +734,19 @@ def add_community_function(plate, dynamics, assumptions, params_simulation):
     
     """
     np.random.seed(2)
+
     # Species function, f1 and f3
     setattr(plate, "species_function", params_simulation["species_function"]) # Species function for additive community function
 
     # Interactive functions, f2 and f4
     setattr(plate, "interaction_function", params_simulation["interaction_function"]) # Interactive function for interactive community function
 
-    # Invasion function f5 and resident function f6
-    if (params_simulation["selected_function"] == "f5_invader_growth") or (params_simulation["selected_function"] == "f6_resident_growth"):
-    # Make 96 communities and pick the best grown one as the focal invader community
+    # Invasion function f5 and resident function f6, and f7 and f8 as well
+    if (params_simulation["selected_function"] == "f5_invader_growth") or (params_simulation["selected_function"] == "f6_resident_growth") or (params_simulation["selected_function"] == "f7_resident_growth_community") or (params_simulation["selected_function"] == "f8_resident_growth_environment"):
+        # Keep the initial plate R0 for function f7 
+        setattr(plate, "R0_initial", plate.R0)
+        
+        # Make 96 communities and pick the best grown one as the focal invader community
         assumptions_invasion = assumptions.copy()
         
         if params_simulation["selected_function"] == "f5_invader_growth":
@@ -753,7 +757,8 @@ def add_community_function(plate, dynamics, assumptions, params_simulation):
         params_invasion = MakeParams(assumptions_invasion)
         init_state_invasion = MakeInitialState(assumptions_invasion)
         plate_invasion = Community(init_state_invasion, dynamics, params_invasion, scale = assumptions_invasion["scale"], parallel = True)
-        plate_invasion.N = sample_from_pool(plate_invasion.N, scale = assumptions_invasion["scale"], inocula = assumptions_invasion["n_inoc"])
+        print("Sampling invader (resident) community")
+        plate_invasion.N = sample_from_pool(plate_invasion.N, scale = assumptions_invasion["scale"], inocula = assumptions_invasion["n_inoc"]) 
         plate_invasion.N = plate_invasion.N / np.sum(plate_invasion.N, axis = 0) # Rescale biomass to to one 
 
 
@@ -763,16 +768,16 @@ def add_community_function(plate, dynamics, assumptions, params_simulation):
 
         # Save the t0 plate
         temp = assumptions_invasion["n_transfer"] - assumptions_invasion["n_transfer_selection"]
-        print("\nStabilizing the invader (or resident) community. Passage for " + str(temp) + " transfer. The plate has ", str(assumptions_invasion["n_wells"]), " wells.")
+        print("\nStabilizing the invader (resident) community. Passage for " + str(temp) + " transfer. The plate has ", str(assumptions_invasion["n_wells"]), " wells.")
         plate_invasion_t0 = plate_invasion.N.copy()
         plate_invasion.Propagate(assumptions_invasion["n_propagation"])
-        print("Passaging invader community. Transfer 1")
+        print("Passaging invader (resident) community. Transfer 1")
 
         # Grow the invader plate 
-        for i in range(0, temp - 1):
+        for i in range(temp - 1):
             plate_invasion.Passage(np.eye(assumptions_invasion["n_wells"]) * assumptions_invasion["dilution"])
             plate_invasion.Propagate(assumptions_invasion["n_propagation"])
-            print("Passaging invader community. Transfer " + str(i + 2))
+            print("Passaging invader (resident) community. Transfer " + str(i + 2))
 
 
         # Save the t1 plate
@@ -789,7 +794,7 @@ def add_community_function(plate, dynamics, assumptions, params_simulation):
             temp_df_t0["W" + str(i)] = temp_column_t0
             temp_df_t1["W" + str(i)] = temp_column_t1
 
-        print("Finished passaging the invader (or resident) community.") 
+        print("Finished passaging the invader (resident) community.") 
         print("The community has " + str(np.sum(temp_column_t1>0)) + " species")
         print("The community has initial biomass " + str(int(np.sum(temp_column_t0))) + " and reaches total biomass", str(np.sum(temp_column_t1)))
         
@@ -798,7 +803,7 @@ def add_community_function(plate, dynamics, assumptions, params_simulation):
             # Add the invasion plate to the attr of community
             setattr(plate, "invasion_plate_t0", temp_df_t0)
             setattr(plate, "invasion_plate_t1", temp_df_t1)
-        elif params_simulation["selected_function"] == "f6_resident_growth":
+        elif (params_simulation["selected_function"] == "f6_resident_growth") or (params_simulation["selected_function"] == "f7_resident_growth_community") or (params_simulation["selected_function"] == "f8_resident_growth_environment"):
             # Add the resident plate to the attr of community
             setattr(plate, "resident_plate_t0", temp_df_t0)
             setattr(plate, "resident_plate_t1", temp_df_t1)

@@ -129,6 +129,8 @@ def f5_invader_growth(plate, assumptions):
 
 def f6_resident_growth(plate, assumptions):
     """
+    Community and the perturbed envionments (new environment)
+    
     The selected communities are invading an established community of one speices/community 
     This community function is the ratio between the biomass when the resident community grows with any of the selected communities, and when the resident community grows along 
 
@@ -149,17 +151,83 @@ def f6_resident_growth(plate, assumptions):
     # Grow the coalesced communities
     plate_test.Propagate(assumptions["n_propagation"])
     
-    # Calculate the function by dividing the final x(t) with x(o) of pathogen (species 0)
-    temp_index = list(np.where(plate.resident_plate_t1["W0"] > 0)[0]) # Index of the resident species. All wells are the same so I arbitrary pick W0
-    resident_growth_along = np.sum(plate.resident_plate_t1.iloc[temp_index], axis = 0)
-    resident_growth_together = np.sum(plate_test.N.iloc[temp_index], axis = 0)
+    # 
+    temp = plate.resident_plate_t1["W0"]
+    dominant_index = list(np.where(temp == np.max(temp))[0]) # Index of the most abundant speceis in the resident community
+    resident_growth_along = np.sum(plate.resident_plate_t1.iloc[dominant_index], axis = 0)
+    resident_growth_together = np.sum(plate_test.N.iloc[dominant_index], axis = 0)
     
     #
     function_resident_suppressed_growth = resident_growth_along / resident_growth_together
 
     return function_resident_suppressed_growth
 
+# 
+def f7_resident_growth_community(plate, assumptions):
+    """
+    Only the Community. The environment is the original R0 (old environment)
+    """
+    # Number of species and community
+    S_tot = plate.N.shape[0]
+    n_wells = plate.N.shape[1]
+     
+    # Tested communities
+    plate_test = plate.copy()
+    
+    # Use the initial R0
+    plate_test.R0 = plate_test.R0_initial
+    plate_test.R = plate_test.R0_initial
+    
+    # Coalesce the two stable communities. Tested communities and resident community (or single invader) 
+    plate_test.N = plate_test.N + plate.resident_plate_t1
+    
+    # Dilute the coalesced communities
+    plate_test.Passage(np.eye(n_wells) * assumptions["dilution"])
+    
+    # Grow the coalesced communities
+    plate_test.Propagate(assumptions["n_propagation"])
+    
+    # 
+    temp = plate.resident_plate_t1["W0"]
+    dominant_index = list(np.where(temp == np.max(temp))[0]) # Index of the most abundant speceis in the resident community
+    resident_growth_along = np.sum(plate.resident_plate_t1.iloc[dominant_index], axis = 0)
+    resident_growth_together = np.sum(plate_test.N.iloc[dominant_index], axis = 0)
+    
+    #
+    function_resident_suppressed_growth = resident_growth_along / resident_growth_together
 
+    return function_resident_suppressed_growth
+
+def f8_resident_growth_environment(plate, assumptions):
+    """
+    Only the new environment. Resident community is grown on the new environment
+    """
+    # Number of species and community
+    S_tot = plate.N.shape[0]
+    n_wells = plate.N.shape[1]
+     
+    # Tested communities
+    plate_test = plate.copy() # This also copies the new environment R0
+
+    # Tested only the resident community 
+    plate_test.N = plate.resident_plate_t1
+    
+    # Dilute the coalesced communities
+    plate_test.Passage(np.eye(n_wells) * assumptions["dilution"])
+    
+    # Grow the coalesced communities
+    plate_test.Propagate(assumptions["n_propagation"])
+    
+    # 
+    temp = plate.resident_plate_t1["W0"]
+    dominant_index = list(np.where(temp == np.max(temp))[0]) # Index of the most abundant speceis in the resident community
+    resident_growth_along = np.sum(plate.resident_plate_t1.iloc[dominant_index], axis = 0)
+    resident_growth_together = np.sum(plate_test.N.iloc[dominant_index], axis = 0)
+    
+    #
+    function_resident_suppressed_growth = resident_growth_along / resident_growth_together
+
+    return function_resident_suppressed_growth 
 
 # Compute the distances from the target resource 
 # This function is from Jean
