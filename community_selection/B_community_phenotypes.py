@@ -49,6 +49,32 @@ def f2_interaction(plate, assumptions):
 
     return additive_term + interaction_term
 
+
+def f2a_interaction(plate, assumptions):
+    """
+    Additive community function with interaction (F2)
+    
+    plate = plate object from package
+    species_function = a n by n 2-D array; n is the size of species pool
+    """
+
+    # Number of species in the pool 
+    S_tot = plate.N.shape[0]
+    
+    # Additive term
+    additive_term = np.sum(plate.N.values * plate.species_function[:,None], axis = 0)
+    
+    # Interaction term
+    interaction_term = np.zeros(plate.N.shape[1])
+    for i in range(plate.N.shape[1]): # For each community
+        community_composition = np.array(plate.N.iloc[:,i]).reshape(S_tot, 1)
+        community_composition_square = np.multiply(community_composition, community_composition.reshape(1, S_tot))
+        interaction_term[i] = np.sum(community_composition_square * plate.interaction_function_p25)
+
+    return additive_term + interaction_term
+
+
+
 def f3_additive_binary(plate, assumptions):
     """
     Complex community function
@@ -110,7 +136,7 @@ def f5_invader_growth(plate, assumptions):
     plate_test = plate.copy()
     plate_test.Passage(np.eye(n_wells) * assumptions["dilution"])
 
-    # Coalesce the tested communities with invasion community (or single invader) 
+    # Coalesce the tested community with invasion community (or single invader) 
     plate_test.N = plate_test.N + plate.invasion_plate_t0
 
     # Grow the coalesced communities
@@ -139,30 +165,36 @@ def f6_resident_growth(plate, assumptions):
     S_tot = plate.N.shape[0]
     n_wells = plate.N.shape[1]
      
-    # Tested communities
+    # Generate tested communities by copying plate
     plate_test = plate.copy()
     
-    # Coalesce the two stable communities. Tested communities and resident community (or single invader) 
-    plate_test.N = plate_test.N + plate.resident_plate_t1
+    # Coalescence tested community with the resident community
+    plate_test.N = (plate.N + plate.resident_plate_t1_N) / 2
+    plate_test.R = (plate.R + plate.resident_plate_t1_R) / 2
     
+    # Use the fresh media set by tested communities
+    plate_test.R0 = plate.R0
+
     # Dilute the coalesced communities
     plate_test.Passage(np.eye(n_wells) * assumptions["dilution"])
-    
+
     # Grow the coalesced communities
     plate_test.Propagate(assumptions["n_propagation"])
     
-    # 
-    temp = plate.resident_plate_t1["W0"]
+    # Index of the most abundant species (dominant) in the resident community
+    temp = plate.resident_plate_t1_N["W0"]
     dominant_index = list(np.where(temp == np.max(temp))[0]) # Index of the most abundant speceis in the resident community
-    resident_growth_along = np.sum(plate.resident_plate_t1.iloc[dominant_index], axis = 0)
+
+    # Biomass of dominant in the resident community, when growing with or without the plates
+    resident_growth_along = np.sum(plate.resident_plate_t1_N.iloc[dominant_index], axis = 0)
     resident_growth_together = np.sum(plate_test.N.iloc[dominant_index], axis = 0)
     
-    #
+    # Function calculated by the ratio of two biomass
     function_resident_suppressed_growth = resident_growth_along / resident_growth_together
 
     return function_resident_suppressed_growth
 
-# 
+ 
 def f7_resident_growth_community(plate, assumptions):
     """
     Only the Community. The environment is the original R0 (old environment)
@@ -171,29 +203,31 @@ def f7_resident_growth_community(plate, assumptions):
     S_tot = plate.N.shape[0]
     n_wells = plate.N.shape[1]
      
-    # Tested communities
+    # Generate tested communities by copying plate
     plate_test = plate.copy()
     
-    # Use the initial R0
-    plate_test.R0 = plate_test.R0_initial
-    plate_test.R = plate_test.R0_initial
+    # Coalescence tested community with the resident community
+    plate_test.N = (plate.N + plate.resident_plate_t1_N) / 2
+    plate_test.R = (plate.R + plate.resident_plate_t1_R) / 2
     
-    # Coalesce the two stable communities. Tested communities and resident community (or single invader) 
-    plate_test.N = plate_test.N + plate.resident_plate_t1
+    # Use the original R0
+    plate_test.R0 = plate.resident_plate_t0_R
     
     # Dilute the coalesced communities
     plate_test.Passage(np.eye(n_wells) * assumptions["dilution"])
-    
+
     # Grow the coalesced communities
     plate_test.Propagate(assumptions["n_propagation"])
     
-    # 
-    temp = plate.resident_plate_t1["W0"]
+    # Index of the most abundant species (dominant) in the resident community
+    temp = plate.resident_plate_t1_N["W0"]
     dominant_index = list(np.where(temp == np.max(temp))[0]) # Index of the most abundant speceis in the resident community
-    resident_growth_along = np.sum(plate.resident_plate_t1.iloc[dominant_index], axis = 0)
+
+    # Biomass of dominant in the resident community, when growing with or without the plates
+    resident_growth_along = np.sum(plate.resident_plate_t1_N.iloc[dominant_index], axis = 0)
     resident_growth_together = np.sum(plate_test.N.iloc[dominant_index], axis = 0)
     
-    #
+    # Function calculated by the ratio of two biomass
     function_resident_suppressed_growth = resident_growth_along / resident_growth_together
 
     return function_resident_suppressed_growth
@@ -206,28 +240,35 @@ def f8_resident_growth_environment(plate, assumptions):
     S_tot = plate.N.shape[0]
     n_wells = plate.N.shape[1]
      
-    # Tested communities
-    plate_test = plate.copy() # This also copies the new environment R0
-
-    # Tested only the resident community 
-    plate_test.N = plate.resident_plate_t1
+    # Generate tested communities by copying plate
+    plate_test = plate.copy()
+    
+    # Coalescence tested community with the resident community
+    plate_test.N = plate.resident_plate_t1_N
+    plate_test.R = plate.resident_plate_t1_R
+    
+    # Use the fresh media set by tested communities
+    plate_test.R0 = plate_test.R0
     
     # Dilute the coalesced communities
     plate_test.Passage(np.eye(n_wells) * assumptions["dilution"])
-    
+
     # Grow the coalesced communities
     plate_test.Propagate(assumptions["n_propagation"])
     
-    # 
-    temp = plate.resident_plate_t1["W0"]
+    # Index of the most abundant species (dominant) in the resident community
+    temp = plate.resident_plate_t1_N["W0"]
     dominant_index = list(np.where(temp == np.max(temp))[0]) # Index of the most abundant speceis in the resident community
-    resident_growth_along = np.sum(plate.resident_plate_t1.iloc[dominant_index], axis = 0)
+
+    # Biomass of dominant in the resident community, when growing with or without the plates
+    resident_growth_along = np.sum(plate.resident_plate_t1_N.iloc[dominant_index], axis = 0)
     resident_growth_together = np.sum(plate_test.N.iloc[dominant_index], axis = 0)
     
-    #
+    # Function calculated by the ratio of two biomass
     function_resident_suppressed_growth = resident_growth_along / resident_growth_together
 
-    return function_resident_suppressed_growth 
+    return function_resident_suppressed_growth
+
 
 # Compute the distances from the target resource 
 # This function is from Jean

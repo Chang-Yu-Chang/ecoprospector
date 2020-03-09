@@ -25,79 +25,10 @@ from community_selection.C_selection_algorithms import *
 from community_selection.D_migration_algorithms import *
 
 
-# Functions for experiment
-
-def make_regional_pool(assumptions):
-    """
-    Create a regional species pool that has each species' relative abundance    
-    
-    assumptions = dictionary of metaparameters from community-simulator
-    """
-    # Total number of species (specialist + generalist)
-    S_tot = int(np.sum(assumptions['SA']) + assumptions['Sgen']) 
-    
-    # Assign drawn values based on power-law distribution
-    pool = np.random.power(1, size  = S_tot)  
-
-    # Relative speceis abundance in regional pool
-    pool = pool/np.sum(pool)  
-
-    return pool
 
 
-def draw_species_function(assumptions):
-    """
-    Draw species-specific functions
-    
-    assumptions = dictionary of metaparameters from community-simulator
-    
-    Return:
-    function_species, function_interaction
-    """
-    # Total number of species in the pool
-    S_tot = int(np.sum(assumptions['SA']) + assumptions['Sgen']) 
-    
-    # Species-specific function, 1-D array
-    function_species = np.random.normal(0, assumptions["sigma"], size = S_tot)
-    
-    # Interaction-specific function, 2-D n by n array
-    function_interaction = np.array(np.random.normal(0, assumptions["sigma"] * assumptions["alpha"], size = S_tot * S_tot)).reshape(S_tot, S_tot)
 
-    return function_species, function_interaction
-
-
-def prepare_experiment(assumptions, seed = 1):
-    """
-    Prepare the experimental setting shared by all assembly experiments
-    
-    assumptions = dictionary of metaparameters from community-simulator
-    
-    Return:
-    species_pool
-    """
-    np.random.seed(seed) 
-    
-    # Make parameters
-    params = MakeParams(assumptions) 
-    
-    # Generate a species pool with the species abundance
-    species_pool = make_regional_pool(assumptions) 
-    
-    # Generate species function
-    function_species, function_interaction = draw_species_function(assumptions)
-    
-    # Subset parameters for simulation
-    temp_p = ["n_propagation", "n_transfer", "n_transfer_selection", "dilution", "n_inoc", "selected_function"]
-    params_simulation = {key: value for key, value in assumptions.items() if key in temp_p}
-    params_simulation.update({
-        "pool": species_pool, 
-        "species_function": function_species,
-        "interaction_function": function_interaction
-    })
-    
-    return params, params_simulation
-
-def sample_from_pool(plate_N, scale = 10**6, inocula = 10**6,migration=False):
+def sample_from_pool(plate_N, scale = 10**6, inocula = 10**6, migration = False, monoculture = False):
     """
     Sample communities from regional species pool.
     In order to create variability in the pool, split the species pool into two pools, one for initial inocula and one migration.
@@ -110,20 +41,27 @@ def sample_from_pool(plate_N, scale = 10**6, inocula = 10**6,migration=False):
     N0 = np.zeros((plate_N.shape)) # Make empty plate
     consumer_index = plate_N.index
     well_names = plate_N.columns
+    
+    # Draw community
+    if monoculture == False:
+        # Sample initial community for each well
+        for k in range(plate_N.shape[1]):
+            # For each well, sample community from different microbiome sample
+            if migration == False:
+                np.random.seed(k + 1) 
+            pool = np.random.power(0.01, size = S_tot) # Power-law distribution
+            pool = pool/np.sum(pool) # Normalize the pool
+            consumer_list = np.random.choice(S_tot, size = inocula, replace = True, p = pool) # Draw from the pool
+            my_tab = pd.crosstab(index = consumer_list, columns = "count") # Calculate the cell count
+            N0[my_tab.index.values,k] = np.ravel(my_tab.values / scale) # Scale to biomass
 
-    # Sample initial community for each well
-    for k in range(plate_N.shape[1]):
-        # For each well, sample community from different microbiome sample
-        if migration==False:
-            np.random.seed(k + 1) 
-        pool = np.random.power(0.01, size = S_tot) # Power-law distribution
-        pool = pool/np.sum(pool) # Normalize the pool
-        consumer_list = np.random.choice(S_tot, size = inocula, replace = True, p = pool) # Draw from the pool
-        my_tab = pd.crosstab(index = consumer_list, columns = "count") # Calculate the cell count
-        N0[my_tab.index.values,k] = np.ravel(my_tab.values / scale) # Scale to biomass
-        
-    # Make data.frame
-    N0 = pd.DataFrame(N0, index = consumer_index, columns = well_names)
+        # Make data.frame
+        N0 = pd.DataFrame(N0, index = consumer_index, columns = well_names)
+
+    # Monoculture plate
+    elif monoculture == True:
+        N0 = np.eye(plate_N.shape[0]) / scale
+        N0 = pd.DataFrame(N0, index = consumer_index, columns = ["W" + str(i) for i in range(plate_N.shape[0])])
 
     return N0
 
@@ -184,7 +122,8 @@ def simulate_community(
     params_algorithm,
     file_name = "data/",
     assembly_type = "self_assembly",
-    write_composition = False):
+    write_composition = False,
+    write_function = False):
     """
     Simulate community dynamics by given experimental regimes
     
@@ -221,7 +160,7 @@ def simulate_community(
 
     # Add the attributes that are essential to the function measurement to the plate objects 
     print("\nAdding attributes that are essential to the community function to the plate object")
-    plate = add_community_function(plate, dynamics, assumptions, params_simulation)
+    plate = add_community_function(plate, dynamics, assumptions, params, params_simulation, params_algorithm)
     
     # Empty list for saving data
     plate_data_list = list() # Plate composition
@@ -242,6 +181,7 @@ def simulate_community(
     # Output the plate composition and community functions if write_composition set True
     if write_composition == True:
         plate_data.to_csv(file_name + "-" + params_algorithm["community_phenotype"][0] + "-T" + "{:02d}".format(0) + "-composition.txt", index = False)
+    if write_function == True:
         function_data.to_csv(file_name + "-" + params_algorithm["community_phenotype"][0] + "-T" + "{:02d}".format(0) + "-function.txt", index = False)
 
     print("\nStart propogation")
@@ -273,6 +213,7 @@ def simulate_community(
         # Output the plate composition and community functions if write_composition set True
         if write_composition == True:
             plate_data.to_csv(file_name + "-" + phenotype_algorithm + "-T" + "{:02d}".format(i + 1) + "-composition.txt", index = False) # Transfer = 0 means that it's before selection regime works upon
+        if write_function == True:
             function_data.to_csv(file_name + "-" + phenotype_algorithm + "-T" + "{:02d}".format(i + 1) + "-function.txt", index = False)
 
         # Passage and tranfer matrix if is selection experiment
@@ -286,20 +227,22 @@ def simulate_community(
         plate.N = migrate_from_pool(plate, pool = params_simulation["pool"], migration_factor = m, scale = assumptions["scale"], inocula = params_simulation["n_inoc"])
 
         # Perturbation
-        if params_algorithm["algorithm_name"][0] == 'knock_in' and selection_algorithm == 'select_top':
+        if  'knock_in' in params_algorithm["algorithm_name"][0] and selection_algorithm == 'select_top':
             winning_index = np.where(community_function >= np.max(community_function))[0][0] 
             for k in plate.N.columns:
                 if k != plate.N.columns[winning_index]:
-                    print(k)
                     s_id = np.random.choice(np.where(plate.N[k]==0)[0])
+                    if 'isolates' in param_algorithm["algorithm_name"][0]:
+                        isolate_function = plate.isolate_function[:,None]
+                        s_id = np.random.choice(np.where((plate.N[k]==0)and (isolate_function > community_function[winning_index]))) ## add error check if no isolate does better than the community
                     plate.N[k][s_id]= 1/params_simulation["dilution"] * 1/assumptions["scale"]
-        if params_algorithm["algorithm_name"][0] == 'knock_out' and selection_algorithm == 'select_top':
+        if 'knock_out' in params_algorithm["algorithm_name"][0] and selection_algorithm == 'select_top':
             winning_index = np.where(community_function >= np.max(community_function))[0][0]
             for k in plate.N.columns:
                 if k != plate.N.columns[winning_index]:
                     s_id = np.random.choice(np.where(plate.N[k]>0)[0])
                     plate.N[k][s_id]=0        
-        if params_algorithm["algorithm_name"][0] == 'bottleneck' and selection_algorithm == 'select_top':
+        if 'bottleneck' in params_algorithm["algorithm_name"][0]  and selection_algorithm == 'select_top':
             winning_index = np.where(community_function >= np.max(community_function))[0][0] 
             dilution_matrix = np.eye(assumptions['n_wells'])
             dilution_matrix[winning_index,winning_index] = 0
@@ -320,10 +263,13 @@ def simulate_community(
     print("\nAlgorithm "+ params_algorithm["algorithm_name"][0] + " finished")
 
     # Concatenate data from from different transfers
-    plate_data_con = pd.concat(plate_data_list)
-    community_function_con = pd.concat(community_function_list)
+    if (write_composition == False) and (write_function == False):
+        plate_data_con = pd.concat(plate_data_list)
+        community_function_con = pd.concat(community_function_list)
+        return plate_data_con, community_function_con
+    else: 
+        return None
 
-    return plate_data_con, community_function_con
 
 
 ## Reshape the plate resource and consumer matrix for saving into a txt file
@@ -383,355 +329,16 @@ def reshape_function_data(community_function_name, community_function, richness,
 
  
 
-# Make library of algorithms
-def make_algorithm_library():
-    """
-    Show the table of algorithms in this package
-    """
-    import re
-    import pandas as pd
-    
-    # Find directory of community_selection modultes
-    import community_selection
-    module_dir = community_selection.__file__
-    module_dir = re.sub("__init__.py", "", module_dir) 
-    
-    # 
-    algorithm_types = ["community_phenotypes", "selection_algorithms", "migration_algorithms"]
-    algorithms = list()
-    
-    for i in range(len(algorithm_types)):
-    
-        # Open files
-        file_algorithm_phenotype = open(module_dir + ["B", "C", "D"][i] + "_" + algorithm_types[i] + ".py", "r")
-        
-        # Read lines
-        line_list = list()
-        line = file_algorithm_phenotype.readline()
-        cnt = 1
-        
-        while line:
-            line = file_algorithm_phenotype.readline()
-            line_list.append(line.strip())
-            cnt += 1
-        
-        # Regular expression
-        algorithm_names = re.findall("def \w+", " ".join(line_list))
-        list_algorithm = [re.sub("^def ", "", x) for x in algorithm_names]
-        
-        # Write the files
-        algorithms.append(pd.DataFrame({"AlgorithmType": re.sub("s$", "", algorithm_types[i]), "AlgorithmName": list_algorithm}))
-     
-    return pd.concat(algorithms)
-
-
-# Plot community function
-def plot_community_function(function_df):
-    function_df.plot.scatter(x = "Transfer", y = "CommunityPhenotype")
-
-# Plot transfer matrix
-def plot_transfer_matrix(transfer_matrix):
-    import seaborn as sns
-    fig,ax=plt.subplots()
-    sns.heatmap(transfer_matrix,ax=ax)
-    ax.set_xlabel('Old well',fontsize=14)
-    ax.set_ylabel('New well',fontsize=14)
-    ax.set_title(r'Transfer Matrix',fontsize=14)
-    plt.show()
-    
-    return fig
-    
-
-
-def make_algorithms(params_simulation):
-    # Algorithms
-    ## Simple screening
-    simple_screening = pd.DataFrame({
-        "algorithm_name": "simple_screening",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": "no_selection",
-        "migration_algorithm": "no_migration"
-    })
-
-    ## Direction selection
-    directed_selection_migration = pd.DataFrame({
-        "algorithm_name": "directed_selection_migration",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"], 
-        "selection_algorithm": ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["directed_selection_select"] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": ["no_migration" for i in range(params_simulation["n_transfer_selection"]-1)] + ["directed_selection_migrate"] + ["no_migration" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])]
-    })
-
-    ## Select top 25%
-    select_top25 = pd.DataFrame({
-        "algorithm_name": "select_top25",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["select_top25percent"] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    })  
-
-    ## Select top 10%
-    select_top10 = pd.DataFrame({
-        "algorithm_name": "select_top10",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["select_top10percent"] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    })
-
-    ## Pair top communities
-    pair_top_communities = pd.DataFrame({
-        "algorithm_name": "pair_top_communities",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["pair_top"] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    })
-
-    ## Multiple pair top
-    multiple_pair_top = pd.DataFrame({
-        "algorithm_name": "multiple_pair_top",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["pair_top" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    })
-    
-    # Arora2019
-    Arora2019 = pd.DataFrame({
-        "algorithm_name": "Arora2019",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["select_top33percent" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    })
-    
-    # Blouin2015
-    Blouin2015 = pd.DataFrame({
-        "algorithm_name": "Blouin2015",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["pool_top10percent" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    })
-    
-    # Blouin2015 control
-    Blouin2015_control = pd.DataFrame({
-        "algorithm_name": "Blouin2015_control",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["pool_top10percent_control" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    })
-    
-    # Jochum2019
-    Jochum2019 = pd.DataFrame({
-        "algorithm_name": "Jochum2019",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["pool_top10percent" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    })
-    
-    # Mueller2019
-    Mueller2019 = pd.DataFrame({
-        "algorithm_name": "Mueller2019",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["pool_top25percent" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    })
-    
-    # Panke-Buisse2015
-    Panke_Buisse2015 = pd.DataFrame({
-        "algorithm_name": "Panke_Buisse2015",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["pool_top25percent" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    })
-    
-    # Swenson2000a
-    Swenson2000a = pd.DataFrame({
-        "algorithm_name": "Swenson2000a",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["pool_top20percent" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    })
-    
-    # Swenson2000a control
-    Swenson2000a_control = pd.DataFrame({
-        "algorithm_name": "Swenson2000a_control",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["pool_top20percent_control" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    })
-
-    # Swenson2000b
-    Swenson2000b = pd.DataFrame({
-        "algorithm_name": "Swenson2000b",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["select_top25percent" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    })
-    
-    # Williams2007a
-    Williams2007a = pd.DataFrame({
-        "algorithm_name": "Williams2007a",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["Williams2007a" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    })
-    
-    # Williams2007b
-    Williams2007b = pd.DataFrame({
-        "algorithm_name": "Williams2007b",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["Williams2007b" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    })
-        
-    # Wright2019
-    Wright2019 = pd.DataFrame({
-        "algorithm_name": "Wright2019",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["pool_top10percent" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    })
-    
-    #ctrl_pertubation
-    ctrl = pd.DataFrame({
-        "algorithm_name": "ctrl",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["select_top"] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    })  
-    
-    
-    #Knock_in_pertubation
-    knock_in = pd.DataFrame({
-        "algorithm_name": "knock_in",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["select_top"] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    })  
-    
-    #Knock_out_pertubation
-    knock_out = pd.DataFrame({
-        "algorithm_name": "knock_out",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["select_top"] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    })  
-    
-    #Bottleneck_Pertubation
-    bottleneck = pd.DataFrame({
-        "algorithm_name": "bottleneck",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["select_top"] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    })      
-    
-    #Coalescence_Pertubation
-    coalescence = pd.DataFrame({
-        "algorithm_name": "coalescence",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["coalescence"] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    })     
-    
-    #Migration Pertubation
-    migration = pd.DataFrame({
-        "algorithm_name": "migration",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["select_top"] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": ["no_migration" for i in range(params_simulation["n_transfer_selection"]-1)] + ["parent_migration"] + ["no_migration" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])]
-    })     
-    
-    #Resource pertubation
-    resource = pd.DataFrame({
-        "algorithm_name": "resource",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["select_top"] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    })  
-    
-    #long experiments
-    iterative_ctrl = pd.DataFrame({
-        "algorithm_name": "iterative_ctrl",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": np.tile(["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["select_top"],int(params_simulation["n_transfer"]/params_simulation["n_transfer_selection"])).tolist(), 
-        "migration_algorithm": "no_migration"
-    })  
-    
-    iterative_resource = pd.DataFrame({
-        "algorithm_name": "iterative_resource",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": np.tile(["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["select_top"],int(params_simulation["n_transfer"]/params_simulation["n_transfer_selection"])).tolist(), 
-        "migration_algorithm": "no_migration"
-    })  
-
-    iterative_resource_migration = pd.DataFrame({
-        "algorithm_name": "iterative_resource_migration",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": np.tile(["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["select_top"],int(params_simulation["n_transfer"]/params_simulation["n_transfer_selection"])).tolist(), 
-        "migration_algorithm":  np.tile(["no_migration" for i in range(params_simulation["n_transfer_selection"]-1)] + ["parent_migration"],int(params_simulation["n_transfer"]/params_simulation["n_transfer_selection"])).tolist()
-    })  
-
-    iterative_migration = pd.DataFrame({
-        "algorithm_name": "iterative_migration",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": np.tile(["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["select_top"],int(params_simulation["n_transfer"]/params_simulation["n_transfer_selection"])).tolist(), 
-        "migration_algorithm":  np.tile(["no_migration" for i in range(params_simulation["n_transfer_selection"]-1)] + ["parent_migration"],int(params_simulation["n_transfer"]/params_simulation["n_transfer_selection"])).tolist()
-    })  
-
-    iterative_coalescence = pd.DataFrame({
-        "algorithm_name": "iterative_coalescence",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": np.tile(["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["coalescence"],int(params_simulation["n_transfer"]/params_simulation["n_transfer_selection"])).tolist(), 
-        "migration_algorithm": "no_migration"
-    })   
-    
-    # Save the algorithms
-    algorithms = pd.concat([
-        simple_screening, directed_selection_migration, select_top25, select_top10, pair_top_communities, multiple_pair_top,
-        Arora2019, Blouin2015, Blouin2015_control, Mueller2019, Panke_Buisse2015, Swenson2000a, Swenson2000a_control,
-        Swenson2000b, Williams2007a, Williams2007b, Wright2019,
-        ctrl, coalescence,migration,resource,bottleneck,knock_out,knock_in,
-        iterative_ctrl,iterative_resource,iterative_migration,iterative_resource_migration,iterative_coalescence])
-    
-    return algorithms
-
-
-def add_community_function(plate, dynamics, assumptions, params_simulation):
+def add_community_function(plate, dynamics, assumptions, params, params_simulation, params_algorithm):
     """
     Add the function attribute to the community
     
     For f1 and f3, add species_function 
     For f2 and f4, add interaction_function
     For f5, add invasion_plate_t0 and invasion_plate_t1
-    For f6, add XX
+    For f6, f7, and f8, add resident_plate_t0_N, resident_plate_t1_N, resident_plate_t0_R, and resident_plate_t1_R
     
+    if isolates calculate function for every isolate in monoculture.
     """
     np.random.seed(2)
 
@@ -741,35 +348,33 @@ def add_community_function(plate, dynamics, assumptions, params_simulation):
     # Interactive functions, f2 and f4
     setattr(plate, "interaction_function", params_simulation["interaction_function"]) # Interactive function for interactive community function
 
-    # Invasion function f5 and resident function f6, and f7 and f8 as well
-    if (params_simulation["selected_function"] == "f5_invader_growth") or (params_simulation["selected_function"] == "f6_resident_growth") or (params_simulation["selected_function"] == "f7_resident_growth_community") or (params_simulation["selected_function"] == "f8_resident_growth_environment"):
+    # Invasion function f5 and resident function f6, f7 and f8 as well
+    if ("invader" in params_simulation["selected_function"]) or ("resident" in params_simulation["selected_function"]):
         # Keep the initial plate R0 for function f7 
         setattr(plate, "R0_initial", plate.R0)
         
-        # Make 96 communities and pick the best grown one as the focal invader community
         assumptions_invasion = assumptions.copy()
+        params_invasion = params.copy()
         
-        if params_simulation["selected_function"] == "f5_invader_growth":
+        # For invader, only sample one species. For resident community, sample multiple species
+        if "invader" in params_simulation["selected_function"]:
             assumptions_invasion.update({"n_wells": 96, "n_inoc": 1})
-        elif params_simulation["selected_function"] == "f6_resident_growth":
+        elif "resident" in params_simulation["selected_function"]:
             assumptions_invasion.update({"n_wells": 96})
         
-        params_invasion = MakeParams(assumptions_invasion)
+        # Make plates
         init_state_invasion = MakeInitialState(assumptions_invasion)
         plate_invasion = Community(init_state_invasion, dynamics, params_invasion, scale = assumptions_invasion["scale"], parallel = True)
         print("Sampling invader (resident) community")
         plate_invasion.N = sample_from_pool(plate_invasion.N, scale = assumptions_invasion["scale"], inocula = assumptions_invasion["n_inoc"]) 
-        plate_invasion.N = plate_invasion.N / np.sum(plate_invasion.N, axis = 0) # Rescale biomass to to one 
-
-
         if assumptions["rich_medium"]:
             plate_invasion.R = make_rich_medium(plate_invasion.R, assumptions_invasion)
             plate_invasion.R0 = make_rich_medium(plate_invasion.R, assumptions_invasion) # R0 for refreshing media on passaging if "refresh_resoruce" is turned on 
 
         # Save the t0 plate
         temp = assumptions_invasion["n_transfer"] - assumptions_invasion["n_transfer_selection"]
-        print("\nStabilizing the invader (resident) community. Passage for " + str(temp) + " transfer. The plate has ", str(assumptions_invasion["n_wells"]), " wells.")
-        plate_invasion_t0 = plate_invasion.N.copy()
+        print("\nStabilizing the invader (resident) community. Passage for " + str(temp) + " transfers. The plate has ", str(assumptions_invasion["n_wells"]), " wells")
+        plate_invasion_t0 = plate_invasion.copy()
         plate_invasion.Propagate(assumptions_invasion["n_propagation"])
         print("Passaging invader (resident) community. Transfer 1")
 
@@ -781,34 +386,122 @@ def add_community_function(plate, dynamics, assumptions, params_simulation):
 
 
         # Save the t1 plate
-        plate_invasion_t1 = plate_invasion.N.copy()
+        plate_invasion_t1 = plate_invasion.copy()
         invasion_plate_growth = np.sum(plate_invasion.N, axis = 0)
         temp_index = np.where(invasion_plate_growth == np.max(invasion_plate_growth))[0][0] # Find the well with the highest biomass
-        temp_column_t0 = plate_invasion_t0["W" + str(temp_index)]
-        temp_column_t1 = plate_invasion_t1["W" + str(temp_index)] # Pick the best growth community as the invader community
-    
-        # Dupliate the chosen community to the whole plate
-        temp_df_t0 = pd.DataFrame()
-        temp_df_t1 = pd.DataFrame()
-        for i in range(assumptions["n_wells"]):
-            temp_df_t0["W" + str(i)] = temp_column_t0
-            temp_df_t1["W" + str(i)] = temp_column_t1
 
-        print("Finished passaging the invader (resident) community.") 
-        print("The community has " + str(np.sum(temp_column_t1>0)) + " species")
-        print("The community has initial biomass " + str(int(np.sum(temp_column_t0))) + " and reaches total biomass", str(np.sum(temp_column_t1)))
+        # Dupliate the chosen community to the whole plate
+        temp_df_t0_N = pd.DataFrame(); temp_df_t1_N = pd.DataFrame()
+        temp_df_t0_R = pd.DataFrame(); temp_df_t1_R = pd.DataFrame()
         
+        for i in range(assumptions["n_wells"]):
+            temp_df_t0_N["W" + str(i)] = plate_invasion_t0.N["W" + str(temp_index)]
+            temp_df_t1_N["W" + str(i)] = plate_invasion_t1.N["W" + str(temp_index)]
+            temp_df_t0_R["W" + str(i)] = plate_invasion_t0.R["W" + str(temp_index)]
+            temp_df_t1_R["W" + str(i)] = plate_invasion_t1.R["W" + str(temp_index)]
+            
+        # Index of the most abundant species in the resident community
+        temp = plate_invasion.N["W0"]
+        dominant_index = list(np.where(temp == np.max(temp))[0]) 
+        
+        # Print out the characteristics of (invader) resident community 
+        print("Finished passaging the invader (resident) community") 
+        print("The community has " + str(np.sum(plate_invasion_t1.N["W" + str(temp_index)] > 0)) + " species")
+        print("The community has initial biomass " + str(int(np.sum(plate_invasion_t0.N["W" + str(temp_index)]))) + " and reaches total biomass", str(np.sum(plate_invasion_t1.N["W" + str(temp_index)])))
+        print("The invader species (or dominant species in the resident community) has the biomass ", plate_invasion.N["W0"].iloc[dominant_index][0], " at equilibrium")
     
-        if params_simulation["selected_function"] == "f5_invader_growth":
+        if "invader" in params_simulation["selected_function"]:
             # Add the invasion plate to the attr of community
-            setattr(plate, "invasion_plate_t0", temp_df_t0)
-            setattr(plate, "invasion_plate_t1", temp_df_t1)
-        elif (params_simulation["selected_function"] == "f6_resident_growth") or (params_simulation["selected_function"] == "f7_resident_growth_community") or (params_simulation["selected_function"] == "f8_resident_growth_environment"):
+            setattr(plate, "invasion_plate_t0", temp_df_t0_N)
+            setattr(plate, "invasion_plate_t1", temp_df_t1_N)
+        elif "resident" in params_simulation["selected_function"]:
             # Add the resident plate to the attr of community
-            setattr(plate, "resident_plate_t0", temp_df_t0)
-            setattr(plate, "resident_plate_t1", temp_df_t1)
+            setattr(plate, "resident_plate_t0_N", temp_df_t0_N)
+            setattr(plate, "resident_plate_t1_N", temp_df_t1_N)
+            setattr(plate, "resident_plate_t0_R", temp_df_t0_R)
+            setattr(plate, "resident_plate_t1_R", temp_df_t1_R)
+            ### Firstly are we preserving the paramaters for the isolate plat   
+    
+    
+    # Single isolate functions 
+    # Make a plate of all single isolates and measure function    
+    if 'isolate' in params_algorithm["algorithm_name"][0]:
+        assumptions_isolate = assumptions.copy()
+        params_isolate = params.copy()
+        
+        # For invader, only sample one species. For resident community, sample multiple species
+        assumptions_isolate.update({"n_wells": np.sum(assumptions["SA"])  + assumptions["Sgen"]})
+
+        # Make plates
+        print("Making monoculture plate")
+        init_state_invasion = MakeInitialState(assumptions_isolate)
+        plate_isolate = Community(init_state_invasion, dynamics, params_isolate, scale = assumptions_isolate["scale"], parallel = True)
+        plate_isolate.N = sample_from_pool(plate_isolate.N, scale = assumptions_isolate["scale"], inocula = assumptions_isolate["n_inoc"], monoculture = True) 
+        if assumptions["rich_medium"]:
+            plate_isolate.R = make_rich_medium(plate_isolate.R, assumptions_isolate)
+            plate_isolate.R0 = make_rich_medium(plate_isolate.R, assumptions_isolate) # R0 for refreshing media on passaging if "refresh_resoruce" is turned on 
+        plate_isolate.N = plate_isolate.N / np.sum(plate_isolate.N, axis = 0) # Rescale 
+
+"""
+The sinlge isoalte does not grow!!
+"""
+
+        temp = assumptions_isolate["n_transfer"] - assumptions_isolate["n_transfer_selection"]
+        print("\nStabilizing monoculture plate. Passage for " + str(temp) + " transfers. The plate has ", str(assumptions_isolate["n_wells"]), " wells")
+        plate_isolate.Propagate(assumptions_isolate["n_propagation"])
+        print("Passaging monoculture plate. Transfer 1")
+
+        # Grow the monoculture plate 
+        for i in range(temp - 1):
+            plate_isolate = passage_monoculture(plate, assumptions_isolate["dilution"])
+            print(plate_isolate.N.sum(axis = 0))
+            plate_isolate.Propagate(assumptions_isolate["n_propagation"])
+            print("Passaging monoculture plate. Transfer " + str(i + 2))
+
+        # Save the isolate functions
+        isolate_function = np.sum(plate_isolate.N, axis = 0) 
+        
+        print(isolate_function)
+        print(plate_isolate.N)
+        
+        setattr(plate, "isolate_function", isolate_function)
+    
+
     
     return plate
 
 
 
+def passage_monoculture(plate, f, scale = None, refresh_resource=True):
+    self = plate.copy()
+    #HOUSEKEEPING
+    if scale == None:
+        scale = self.scale #Use scale from initialization by default
+    f = np.asarray(f) #Allow for f to be a dataframe
+    self.N[self.N<0] = 0 #Remove any negative values that may have crept in
+    self.R[self.R<0] = 0
+    
+    #DEFINE NEW VARIABLES
+    N_tot = np.sum(self.N)
+    R_tot = np.sum(self.R)
+    N = np.zeros(np.shape(self.N))
+    
+
+    self.N = self.N * f 
+    plate.N[plate.N <= plate.scale] = 0
+    if refresh_resource:
+        self.R = self.R * f
+        self.R = self.R+self.R0
+        
+    #In continuous culture, it is useful to eliminate the resources that are
+    #going extinct, to avoid numerical instability
+    else:
+        R_tot = np.sum(self.R)
+        R = np.zeros(np.shape(self.R))
+        for k in range(self.n_wells):
+            if f[k,k] > 0 and R_tot[k] > 0:
+                R[:,k] += np.random.multinomial(int(scale*R_tot[k]*f[k,k]),(self.R/R_tot).values[:,k])*1./scale
+        self.R = pd.DataFrame(R, index = self.R.index, columns = self.R.keys())
+    
+
+    return self

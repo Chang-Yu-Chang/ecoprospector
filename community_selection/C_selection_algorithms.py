@@ -58,7 +58,7 @@ def temp_select_top(community_function, p):
         transfer_matrix[t_new[i], t_old[i]] = 1
     return transfer_matrix
 
-for i in [10, 15, 20, 25, 28, 30, 40, 50, 60]:
+for i in [10, 15, 20, 25, 28, 30, 33, 40, 50, 60]:
     globals()['select_top%spercent' %i] = partial(temp_select_top, p = i/100)
 
 ## Select top n% control
@@ -74,7 +74,7 @@ def temp_select_top_control(community_function, p):
         transfer_matrix[t_new[i], t_old[i]] = 1
     return transfer_matrix
 
-for i in [10, 15, 20, 25, 28, 30, 40, 50, 60]:
+for i in [10, 15, 20, 25, 28, 30, 33, 40, 50, 60]:
     globals()['select_top%spercent_control' %i] = partial(temp_select_top_control, p = i/100)
 
 
@@ -88,7 +88,7 @@ def temp_pool_top(community_function, p):
     transfer_matrix[:, winner_index] = 1
     return transfer_matrix
 
-for i in [10, 15, 20, 25, 28, 30, 40, 50, 60]:
+for i in [10, 15, 20, 25, 28, 30, 33, 40, 50, 60]:
     globals()['pool_top%spercent' %i] = partial(temp_pool_top, p = i/100)
 
 ## Pooling control
@@ -101,7 +101,7 @@ def temp_pool_top_control(community_function, p):
     transfer_matrix[:, winner_index] = 1
     return transfer_matrix
 
-for i in [10, 15, 20, 25, 28, 30, 40, 50, 60]:
+for i in [10, 15, 20, 25, 28, 30, 33, 40, 50, 60]:
     globals()['pool_top%spercent_control' %i] = partial(temp_pool_top_control, p = i/100)
 
 

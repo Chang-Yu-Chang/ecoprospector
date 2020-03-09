@@ -42,9 +42,9 @@ assumptions = a_default.copy() # Start with default parameters
 
 ## Update parameters for community-selection
 assumptions.update({
-    'SA': 600*np.ones(3), #Number of species in each specialist family (here, 3 families of 60 species)
+    'SA': 0, #Number of species in each specialist family (here, 3 families of 60 species)
     'MA': 30*np.ones(3), #Number of resources in each class
-    'Sgen': 300, #Number of generalist species (unbiased sampling over alll resource classes)
+    'Sgen': 2100, #Number of generalist species (unbiased sampling over alll resource classes)
     "n_wells": 96,
     "m": 0, # Mortality
     "scale": 10**6,  #scale is a conversion factor specifying the number of individual microbial cells present when N = 1.
