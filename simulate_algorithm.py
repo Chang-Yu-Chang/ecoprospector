@@ -42,9 +42,9 @@ assumptions = a_default.copy() # Start with default parameters
 
 ## Update parameters for community-selection
 assumptions.update({
-    'SA': 0, #Number of species in each specialist family (here, 3 families of 60 species)
-    'MA': 30*np.ones(3), #Number of resources in each class
-    'Sgen': 2100, #Number of generalist species (unbiased sampling over alll resource classes)
+    'SA': 2100 * np.ones(1), #Number of species in each specialist family (here, 3 families of 60 species)
+    'MA': 90*np.ones(1), #Number of resources in each class
+    'Sgen': 0, #Number of generalist species (unbiased sampling over alll resource classes)
     "n_wells": 96,
     "m": 0, # Mortality
     "scale": 10**6,  #scale is a conversion factor specifying the number of individual microbial cells present when N = 1.
@@ -99,6 +99,7 @@ for j in range(len(list_phenotypes)):
             params_simulation = params_simulation,
             params_algorithm = algorithms[algorithms["algorithm_name"] == list_algorithms[i]],
             write_composition = True,
+            write_function = True,
             file_name = data_directory + "SP" + str(seed_temp) + "-" + list_algorithms[i],
             assembly_type = str(list_algorithms[i]),
         )
