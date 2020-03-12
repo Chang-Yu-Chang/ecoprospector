@@ -66,7 +66,7 @@ def sample_from_pool(plate_N, scale = 10**6, inocula = 10**6, migration = False,
     return N0
 
 # Migrate from species pool to the plate 
-def migrate_from_pool(plate, pool, migration_factor, scale, inocula):
+def migrate_from_pool(plate, migration_factor, scale, inocula):
     if np.sum(migration_factor) !=0:
         print('Migration')
         migration_plate = sample_from_pool(plate.N, scale = scale, inocula = inocula, migration = True) * migration_factor # Migration factor is a list determined by migration algorithms and community function
@@ -224,7 +224,7 @@ def simulate_community(
         
         # Migration
         m = globals()[migration_algorithm](community_function) 
-        plate.N = migrate_from_pool(plate, pool = params_simulation["pool"], migration_factor = m, scale = assumptions["scale"], inocula = params_simulation["n_inoc"])
+        plate.N = migrate_from_pool(plate, migration_factor = m, scale = assumptions["scale"], inocula = params_simulation["n_inoc"])
 
         # Perturbation
         if  'knock_in' in params_algorithm["algorithm_name"][0] and selection_algorithm == 'select_top':
@@ -232,9 +232,12 @@ def simulate_community(
             for k in plate.N.columns:
                 if k != plate.N.columns[winning_index]:
                     s_id = np.random.choice(np.where(plate.N[k]==0)[0])
-                    if 'isolates' in param_algorithm["algorithm_name"][0]:
-                        isolate_function = plate.isolate_function[:,None]
-                        s_id = np.random.choice(np.where((plate.N[k]==0)and (isolate_function > community_function[winning_index]))) ## add error check if no isolate does better than the community
+                    if 'isolates' in params_algorithm["algorithm_name"][0]:
+                        # Knock in an isolate that is 1) not in the resident community 2) have high monoculture function (above 90% isolates in the pool)  
+                        temp = np.logical_and(np.array(plate.N[k]==0), plate.isolate_function >= np.percentile(plate.isolate_function, q = 90))
+#                        temp = np.logical_and(np.array(plate.N[k]==0), (plate.isolate_function > community_function[winning_index]))
+#                        isolate_function = plate.isolate_function[:,None]
+                        s_id = np.random.choice(np.where(temp)[0]) ## add error check if no isolate does better than the community
                     plate.N[k][s_id]= 1/params_simulation["dilution"] * 1/assumptions["scale"]
         if 'knock_out' in params_algorithm["algorithm_name"][0] and selection_algorithm == 'select_top':
             winning_index = np.where(community_function >= np.max(community_function))[0][0]
@@ -347,6 +350,8 @@ def add_community_function(plate, dynamics, assumptions, params, params_simulati
 
     # Interactive functions, f2 and f4
     setattr(plate, "interaction_function", params_simulation["interaction_function"]) # Interactive function for interactive community function
+    setattr(plate, "interaction_function_p25", params_simulation["interaction_function_p25"])
+
 
     # Invasion function f5 and resident function f6, f7 and f8 as well
     if ("invader" in params_simulation["selected_function"]) or ("resident" in params_simulation["selected_function"]):
@@ -401,14 +406,16 @@ def add_community_function(plate, dynamics, assumptions, params, params_simulati
             temp_df_t1_R["W" + str(i)] = plate_invasion_t1.R["W" + str(temp_index)]
             
         # Index of the most abundant species in the resident community
-        temp = plate_invasion.N["W0"]
-        dominant_index = list(np.where(temp == np.max(temp))[0]) 
-        
+        dominant_index = list(np.where(temp_df_t1_N["W0"] == np.max(temp_df_t1_N["W0"]))[0]) 
+        print("invader index = " + str(dominant_index))
+ 
         # Print out the characteristics of (invader) resident community 
         print("Finished passaging the invader (resident) community") 
-        print("The community has " + str(np.sum(plate_invasion_t1.N["W" + str(temp_index)] > 0)) + " species")
-        print("The community has initial biomass " + str(int(np.sum(plate_invasion_t0.N["W" + str(temp_index)]))) + " and reaches total biomass", str(np.sum(plate_invasion_t1.N["W" + str(temp_index)])))
-        print("The invader species (or dominant species in the resident community) has the biomass ", plate_invasion.N["W0"].iloc[dominant_index][0], " at equilibrium")
+        print("The community has " + str(np.sum(temp_df_t1_N["W0"] > 0)) + " species")
+        print("The community has initial biomass " + str(np.sum(temp_df_t0_N["W0"])) + " and reaches total biomass", str(np.sum(temp_df_t1_N["W0"])))
+        print("The invader species (or dominant species in the resident community) has the biomass ", temp_df_t1_N["W0"].iloc[dominant_index][0], " at equilibrium")
+    
+    
     
         if "invader" in params_simulation["selected_function"]:
             # Add the invasion plate to the attr of community
@@ -453,11 +460,10 @@ def add_community_function(plate, dynamics, assumptions, params, params_simulati
             print("Passaging monoculture plate. Transfer " + str(i + 2))
 
         # Save the isolate functions
-        isolate_function = np.sum(plate_isolate.N, axis = 0) 
-        
+        isolate_function = np.array(np.sum(plate_isolate.N, axis = 0)) 
         print(isolate_function)
 
-        setattr(plate, "isolate_function", np.array(isolate_function))
+        setattr(plate, "isolate_function", isolate_function)
     
 
     

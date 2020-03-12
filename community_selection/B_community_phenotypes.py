@@ -143,9 +143,13 @@ def f5_invader_growth(plate, assumptions):
     plate_test.Propagate(assumptions["n_propagation"])
     
     # Calculate the function by dividing the final x(t) with x(o) of pathogen 
-    temp_index = list(np.where(plate.invasion_plate_t1["W0"] > 0)[0]) # Index of the invasive species
-    invader_growth_along = np.sum(plate.invasion_plate_t1.iloc[temp_index], axis = 0)
-    invader_growth_together = np.sum(plate_test.N.iloc[temp_index], axis = 0)
+    temp = plate.invasion_plate_t1["W0"]
+    dominant_index = list(np.where(temp == np.max(temp))[0]) # Index of the most abundant speceis in the resident community
+    print("invader index = " + str(dominant_index))
+    print(plate.N.iloc[dominant_index])
+#    temp_index = list(np.where(plate.invasion_plate_t1["W0"] > 0)[0]) # Index of the invasive species
+    invader_growth_along = np.sum(plate.invasion_plate_t1.iloc[dominant_index], axis = 0)
+    invader_growth_together = np.sum(plate_test.N.iloc[dominant_index], axis = 0)
     
     #
     function_invader_suppressed_growth = invader_growth_along / invader_growth_together
