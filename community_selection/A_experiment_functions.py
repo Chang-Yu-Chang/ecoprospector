@@ -440,11 +440,6 @@ def add_community_function(plate, dynamics, assumptions, params, params_simulati
         if assumptions["rich_medium"]:
             plate_isolate.R = make_rich_medium(plate_isolate.R, assumptions_isolate)
             plate_isolate.R0 = make_rich_medium(plate_isolate.R, assumptions_isolate) # R0 for refreshing media on passaging if "refresh_resoruce" is turned on 
-        plate_isolate.N = plate_isolate.N / np.sum(plate_isolate.N, axis = 0) # Rescale 
-
-"""
-The sinlge isoalte does not grow!!
-"""
 
         temp = assumptions_isolate["n_transfer"] - assumptions_isolate["n_transfer_selection"]
         print("\nStabilizing monoculture plate. Passage for " + str(temp) + " transfers. The plate has ", str(assumptions_isolate["n_wells"]), " wells")
@@ -453,8 +448,7 @@ The sinlge isoalte does not grow!!
 
         # Grow the monoculture plate 
         for i in range(temp - 1):
-            plate_isolate = passage_monoculture(plate, assumptions_isolate["dilution"])
-            print(plate_isolate.N.sum(axis = 0))
+            plate_isolate = passage_monoculture(plate_isolate, assumptions_isolate["dilution"])
             plate_isolate.Propagate(assumptions_isolate["n_propagation"])
             print("Passaging monoculture plate. Transfer " + str(i + 2))
 
@@ -462,9 +456,8 @@ The sinlge isoalte does not grow!!
         isolate_function = np.sum(plate_isolate.N, axis = 0) 
         
         print(isolate_function)
-        print(plate_isolate.N)
-        
-        setattr(plate, "isolate_function", isolate_function)
+
+        setattr(plate, "isolate_function", np.array(isolate_function))
     
 
     
@@ -477,7 +470,7 @@ def passage_monoculture(plate, f, scale = None, refresh_resource=True):
     #HOUSEKEEPING
     if scale == None:
         scale = self.scale #Use scale from initialization by default
-    f = np.asarray(f) #Allow for f to be a dataframe
+#    f = np.asarray(f) #Allow for f to be a dataframe
     self.N[self.N<0] = 0 #Remove any negative values that may have crept in
     self.R[self.R<0] = 0
     
@@ -486,9 +479,9 @@ def passage_monoculture(plate, f, scale = None, refresh_resource=True):
     R_tot = np.sum(self.R)
     N = np.zeros(np.shape(self.N))
     
-
     self.N = self.N * f 
-    plate.N[plate.N <= plate.scale] = 0
+    plate.N[plate.N <= 1./plate.scale] = 0
+
     if refresh_resource:
         self.R = self.R * f
         self.R = self.R+self.R0
