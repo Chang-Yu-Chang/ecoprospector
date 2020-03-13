@@ -294,6 +294,33 @@ def make_algorithms(params_simulation):
         "migration_algorithm": "no_migration"
     })
     
+    # Penn2004
+    Penn2004 = pd.DataFrame({
+        "algorithm_name": "Penn2004",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": ["Williams2007a" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
+        "migration_algorithm": "no_migration"
+    })
+    
+    # Raynaud2019a
+    Raynaud2019a = pd.DataFrame({
+        "algorithm_name": "Raynaud2019a",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": ["select_top10percent" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
+        "migration_algorithm": "no_migration"
+    })
+    
+    # Raynaud2019b
+    Raynaud2019b = pd.DataFrame({
+        "algorithm_name": "Raynaud2019b",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": ["pool_top10percent" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
+        "migration_algorithm": "no_migration"
+    })
+    
     # Swenson2000a
     Swenson2000a = pd.DataFrame({
         "algorithm_name": "Swenson2000a",
@@ -318,6 +345,24 @@ def make_algorithms(params_simulation):
         "transfer": range(1, params_simulation["n_transfer"] + 1),
         "community_phenotype": params_simulation["selected_function"],
         "selection_algorithm": ["select_top25percent" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
+        "migration_algorithm": "no_migration"
+    })
+    
+    # Swenson2000b_control
+    Swenson2000b_control = pd.DataFrame({
+        "algorithm_name": "Swenson2000b_control",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": ["select_top25percent_control" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
+        "migration_algorithm": "no_migration"
+    })
+    
+    # Swenson2000c
+    Swenson2000c = pd.DataFrame({
+        "algorithm_name": "Swenson2000c",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": ["pool_top20percent" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
         "migration_algorithm": "no_migration"
     })
     
@@ -347,6 +392,25 @@ def make_algorithms(params_simulation):
         "selection_algorithm": ["pool_top10percent" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
         "migration_algorithm": "no_migration"
     })
+
+    # Xie2019a
+    Xie2019a = pd.DataFrame({
+        "algorithm_name": "Xie2019a",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": ["select_top_dog" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
+        "migration_algorithm": "no_migration"
+    })
+    
+    # Xie2019b
+    Xie2019b = pd.DataFrame({
+        "algorithm_name": "Xie2019b",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": ["select_top10percent" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
+        "migration_algorithm": "no_migration"
+    })
+    
     
     #ctrl_pertubation
     ctrl = pd.DataFrame({
@@ -465,8 +529,9 @@ def make_algorithms(params_simulation):
     # Save the algorithms
     algorithms = pd.concat([
         simple_screening, directed_selection_migration, select_top25, select_top10, pair_top_communities, multiple_pair_top,
-        Arora2019, Blouin2015, Blouin2015_control, Mueller2019, Panke_Buisse2015, Swenson2000a, Swenson2000a_control,
-        Swenson2000b, Williams2007a, Williams2007b, Wright2019,
+        Arora2019, Blouin2015, Blouin2015_control, Jochum2019, Mueller2019, Panke_Buisse2015, Penn2004,
+        Raynaud2019a, Raynaud2019b, Swenson2000a, Swenson2000a_control, Swenson2000b, Swenson2000b_control, Swenson2000c,
+        Williams2007a, Williams2007b, Wright2019, Xie2019a, Xie2019b,
         ctrl, coalescence,migration,resource,bottleneck,knock_out,knock_in, knock_in_isolates,
         iterative_ctrl,iterative_resource,iterative_migration,iterative_resource_migration,iterative_coalescence])
     

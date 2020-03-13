@@ -26,6 +26,7 @@ from community_selection.A_experiment_functions import *
 from community_selection.B_community_phenotypes import *
 from community_selection.C_selection_algorithms import *
 from community_selection.D_migration_algorithms import *
+from community_selection.usertools import *
 
 
 # Make dynanmics by default we will use the microbial consumer resource model

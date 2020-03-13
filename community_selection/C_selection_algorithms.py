@@ -43,6 +43,26 @@ def select_top(community_function):
   
     return transfer_matrix
 
+def select_top_dog(community_function):
+  """
+  100 communities. Reproduce the best one to 60-70 newborns, and reproduce the second best to 30-40 newborns. 
+  """
+  n_wells = len(community_function)
+  sorted_community_function = np.sort(community_function)
+  cut_off = sorted_community_function[int(np.round(len(community_function)*0.5)) - 1]
+  winner_index = np.where(community_function >= cut_off)[0][::-1] # Reverse the list so the higher 
+  
+  # Transfer matrix
+  transfer_matrix = np.zeros((n_wells,n_wells))
+  t_new = range(n_wells) # New wells
+  # The best performed community
+  t_old = [list(winner_index)[0]] * int(0.6 * n_wells) + [list(winner_index)[1]] * int(0.5 * n_wells) # Old wells
+  
+  # Fill in the transfer matrix
+  for i in range(n_wells):
+      transfer_matrix[t_new[i], t_old[i]] = 1
+  
+  return transfer_matrix
 
 # Make selection algorithms with similar names 
 ## Select top n%
