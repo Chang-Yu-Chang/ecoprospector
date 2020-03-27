@@ -194,6 +194,23 @@ def make_algorithms(params_simulation):
         "selection_algorithm": "no_selection",
         "migration_algorithm": "no_migration"
     })
+    
+    positive_control = pd.DataFrame({
+        "algorithm_name": "positive_control",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": "no_selection",
+        "migration_algorithm": "no_migration"
+    })
+    
+    ## Monoculture
+    monoculture = pd.DataFrame({
+        "algorithm_name": "monoculture",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": "no_selection",
+        "migration_algorithm": "no_migration"
+    }) 
 
     ## Direction selection
     directed_selection_migration = pd.DataFrame({
@@ -528,7 +545,7 @@ def make_algorithms(params_simulation):
     
     # Save the algorithms
     algorithms = pd.concat([
-        simple_screening, directed_selection_migration, select_top25, select_top10, pair_top_communities, multiple_pair_top,
+        simple_screening, positive_control, monoculture, directed_selection_migration, select_top25, select_top10, pair_top_communities, multiple_pair_top,
         Arora2019, Blouin2015, Blouin2015_control, Jochum2019, Mueller2019, Panke_Buisse2015, Penn2004,
         Raynaud2019a, Raynaud2019b, Swenson2000a, Swenson2000a_control, Swenson2000b, Swenson2000b_control, Swenson2000c,
         Williams2007a, Williams2007b, Wright2019, Xie2019a, Xie2019b,

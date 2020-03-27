@@ -25,9 +25,6 @@ from community_selection.C_selection_algorithms import *
 from community_selection.D_migration_algorithms import *
 
 
-
-
-
 def sample_from_pool(plate_N, scale = 10**6, inocula = 10**6, migration = False, monoculture = False):
     """
     Sample communities from regional species pool.
@@ -62,6 +59,7 @@ def sample_from_pool(plate_N, scale = 10**6, inocula = 10**6, migration = False,
     elif monoculture == True:
         N0 = np.eye(plate_N.shape[0]) / scale
         N0 = pd.DataFrame(N0, index = consumer_index, columns = ["W" + str(i) for i in range(plate_N.shape[0])])
+
 
     return N0
 
@@ -139,6 +137,9 @@ def simulate_community(
     print("\nAlgorithm: "+ params_algorithm["algorithm_name"][0])
     print("\n")
     print(params_algorithm[["transfer", "community_phenotype", "selection_algorithm", "migration_algorithm"]].to_string(index = False))
+    
+    if "monoculture" in params_algorithm["algorithm_name"][0]:
+        assumptions.update({"n_wells": np.sum(assumptions["SA"])  + assumptions["Sgen"]})
 
     # Set seeds
     np.random.seed(2)
@@ -151,7 +152,11 @@ def simulate_community(
     
     # Update the community composition by sampling from the pool
     print("\nGenerating initial plate")
-    plate.N = sample_from_pool(plate.N, scale = assumptions["scale"], inocula = params_simulation["n_inoc"])
+    if "monoculture" in params_algorithm["algorithm_name"][0]:
+        plate.N = sample_from_pool(plate.N, scale = assumptions["scale"], inocula = params_simulation["n_inoc"], monoculture = True) 
+    else:
+        plate.N = sample_from_pool(plate.N, scale = assumptions["scale"], inocula = params_simulation["n_inoc"])
+
     
     # Update the supplied resource if assumptions["rich_medium"]
     if assumptions["rich_medium"]:
@@ -220,7 +225,11 @@ def simulate_community(
 
         # Passage and tranfer matrix
         transfer_matrix = globals()[selection_algorithm](community_function)
-        plate.Passage(transfer_matrix * params_simulation["dilution"])
+        if "monoculture" in params_algorithm["algorithm_name"][0]:
+            plate = passage_monoculture(plate, params_simulation["dilution"])
+        else:
+            plate.Passage(transfer_matrix * params_simulation["dilution"])
+        
         
         # Migration
         m = globals()[migration_algorithm](community_function) 
@@ -360,18 +369,23 @@ def add_community_function(plate, dynamics, assumptions, params, params_simulati
         
         assumptions_invasion = assumptions.copy()
         params_invasion = params.copy()
-        
+
         # For invader, only sample one species. For resident community, sample multiple species
         if "invader" in params_simulation["selected_function"]:
-            assumptions_invasion.update({"n_wells": 96, "n_inoc": 1})
+            assumptions_invasion.update({"n_wells": np.sum(assumptions["SA"])  + assumptions["Sgen"]})
         elif "resident" in params_simulation["selected_function"]:
             assumptions_invasion.update({"n_wells": 96})
-        
+
         # Make plates
         init_state_invasion = MakeInitialState(assumptions_invasion)
         plate_invasion = Community(init_state_invasion, dynamics, params_invasion, scale = assumptions_invasion["scale"], parallel = True)
+#        print(plate.N.shape)
         print("Sampling invader (resident) community")
-        plate_invasion.N = sample_from_pool(plate_invasion.N, scale = assumptions_invasion["scale"], inocula = assumptions_invasion["n_inoc"]) 
+        if "invader" in params_simulation["selected_function"]:
+            plate_invasion.N = sample_from_pool(plate_invasion.N, scale = assumptions_invasion["scale"], monoculture = True, migration = False) 
+        elif "resident" in params_simulation["selected_function"]:
+            plate_invasion.N = sample_from_pool(plate_invasion.N, scale = assumptions_invasion["scale"], inocula = assumptions_invasion["n_inoc"]) 
+        
         if assumptions["rich_medium"]:
             plate_invasion.R = make_rich_medium(plate_invasion.R, assumptions_invasion)
             plate_invasion.R0 = make_rich_medium(plate_invasion.R, assumptions_invasion) # R0 for refreshing media on passaging if "refresh_resoruce" is turned on 
@@ -383,11 +397,20 @@ def add_community_function(plate, dynamics, assumptions, params, params_simulati
         plate_invasion.Propagate(assumptions_invasion["n_propagation"])
         print("Passaging invader (resident) community. Transfer 1")
 
+
+
         # Grow the invader plate 
-        for i in range(temp - 1):
-            plate_invasion.Passage(np.eye(assumptions_invasion["n_wells"]) * assumptions_invasion["dilution"])
-            plate_invasion.Propagate(assumptions_invasion["n_propagation"])
-            print("Passaging invader (resident) community. Transfer " + str(i + 2))
+        if "invader" in params_simulation["selected_function"]:
+            for i in range(3):
+                plate_invasion = passage_monoculture(plate_invasion, assumptions_invasion["dilution"])
+                plate_invasion.Propagate(assumptions_invasion["n_propagation"])
+                print("Passaging invader (resident) community. Transfer " + str(i + 2))
+
+        elif "resident" in params_simulation["selected_function"]:
+            for i in range(temp - 1):
+                plate_invasion.Passage(np.eye(assumptions_invasion["n_wells"]) * assumptions_invasion["dilution"])
+                plate_invasion.Propagate(assumptions_invasion["n_propagation"])
+                print("Passaging invader (resident) community. Transfer " + str(i + 2))
 
 
         # Save the t1 plate
@@ -464,7 +487,6 @@ def add_community_function(plate, dynamics, assumptions, params, params_simulati
         print(isolate_function)
 
         setattr(plate, "isolate_function", isolate_function)
-    
 
     
     return plate
@@ -472,11 +494,13 @@ def add_community_function(plate, dynamics, assumptions, params, params_simulati
 
 
 def passage_monoculture(plate, f, scale = None, refresh_resource=True):
+    """
+    Reduced version of function Passage(), for passaging a large set of wells
+    """
     self = plate.copy()
     #HOUSEKEEPING
     if scale == None:
         scale = self.scale #Use scale from initialization by default
-#    f = np.asarray(f) #Allow for f to be a dataframe
     self.N[self.N<0] = 0 #Remove any negative values that may have crept in
     self.R[self.R<0] = 0
     

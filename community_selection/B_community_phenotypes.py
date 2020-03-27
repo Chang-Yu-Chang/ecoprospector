@@ -145,9 +145,6 @@ def f5_invader_growth(plate, assumptions):
     # Calculate the function by dividing the final x(t) with x(o) of pathogen 
     temp = plate.invasion_plate_t1["W0"]
     dominant_index = list(np.where(temp == np.max(temp))[0]) # Index of the most abundant speceis in the resident community
-    print("invader index = " + str(dominant_index))
-    print(plate.N.iloc[dominant_index])
-#    temp_index = list(np.where(plate.invasion_plate_t1["W0"] > 0)[0]) # Index of the invasive species
     invader_growth_along = np.sum(plate.invasion_plate_t1.iloc[dominant_index], axis = 0)
     invader_growth_together = np.sum(plate_test.N.iloc[dominant_index], axis = 0)
     
@@ -156,6 +153,38 @@ def f5_invader_growth(plate, assumptions):
 
     return function_invader_suppressed_growth
 
+
+def f5a_invader_growth(plate, assumptions):
+    """
+    Positive control for f5
+    Invade a large proportion of invaders
+
+    """
+    # Number of species and community
+    S_tot = plate.N.shape[0]
+    n_wells = plate.N.shape[1]
+    
+    # Dilute the tested communities
+    plate_test = plate.copy()
+    plate_test.Passage(np.eye(n_wells) * assumptions["dilution"])
+
+    # Coalesce the tested community with invasion community (or single invader) 
+    plate.invasion_plate_t0 = plate.invasion_plate_t0 * 1 / assumptions['scale']
+    plate_test.N = plate_test.N + plate.invasion_plate_t0
+
+    # Grow the coalesced communities
+    plate_test.Propagate(assumptions["n_propagation"])
+    
+    # Calculate the function by dividing the final x(t) with x(o) of pathogen 
+    temp = plate.invasion_plate_t1["W0"]
+    dominant_index = list(np.where(temp == np.max(temp))[0]) # Index of the most abundant speceis in the resident community
+    invader_growth_along = np.sum(plate.invasion_plate_t1.iloc[dominant_index], axis = 0)
+    invader_growth_together = np.sum(plate_test.N.iloc[dominant_index], axis = 0)
+    
+    #
+    function_invader_suppressed_growth = invader_growth_along / invader_growth_together
+
+    return function_invader_suppressed_growth
 
 def f6_resident_growth(plate, assumptions):
     """
@@ -197,6 +226,56 @@ def f6_resident_growth(plate, assumptions):
     function_resident_suppressed_growth = resident_growth_along / resident_growth_together
 
     return function_resident_suppressed_growth
+
+
+def f6a_resident_growth(plate, assumptions):
+    """
+    Community and the perturbed envionments (new environment)
+    
+    Positive control for f6 with only the dominant species in resident community 
+
+    """
+    # Number of species and community
+    S_tot = plate.N.shape[0]
+    n_wells = plate.N.shape[1]
+     
+    # Generate tested communities by copying plate
+    plate_test = plate.copy()
+    
+    # Index of the most abundant species (dominant) in the resident community
+    temp = plate.resident_plate_t1_N["W0"]
+    dominant_index = list(np.where(temp == np.max(temp))[0]) # Index of the most abundant speceis in the resident community
+    
+    # Prepare resident plate with only the dominant
+    resident_plate_t1_N_domiant = plate.resident_plate_t1_N.copy()
+    y = [i for i in range(len(plate.N.index))]
+    print(dominant_index)
+    resident_plate_t1_N_domiant.iloc[y[:dominant_index[0]] + y[dominant_index[0]+1:],:] = 0 # Set biomass of all non-dominant taxa to 0
+#    print(resident_plate_t1_N_domiant)
+#    print(plate.resident_plate_t1_N)
+    
+    # Coalescence tested community with the only the domiant species
+    plate_test.N = (plate.N + resident_plate_t1_N_domiant) / 2
+    plate_test.R = (plate.R + plate.resident_plate_t1_R) / 2
+    
+    # Use the fresh media set by tested communities
+    plate_test.R0 = plate.R0
+
+    # Dilute the coalesced communities
+    plate_test.Passage(np.eye(n_wells) * assumptions["dilution"])
+
+    # Grow the coalesced communities
+    plate_test.Propagate(assumptions["n_propagation"])
+    
+    # Biomass of dominant in the resident community, when growing with or without the plates
+    resident_growth_along = np.sum(plate.resident_plate_t1_N.iloc[dominant_index], axis = 0)
+    resident_growth_together = np.sum(plate_test.N.iloc[dominant_index], axis = 0)
+    
+    # Function calculated by the ratio of two biomass
+    function_resident_suppressed_growth = resident_growth_along / resident_growth_together
+
+    return function_resident_suppressed_growth
+
 
  
 def f7_resident_growth_community(plate, assumptions):

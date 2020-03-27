@@ -21,7 +21,6 @@ def no_selection(community_function):
     n_wells = len(community_function)
     return np.eye(n_wells)
 
- 
 def select_top(community_function):
     """
     Select the top community 

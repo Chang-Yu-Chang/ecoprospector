@@ -59,8 +59,8 @@ assumptions.update({
     "binary_threshold": 1,  
     # The parameters below will be passed to params_simulation
     "n_propagation": 1, # Length of propagation, or hours within a growth cycle
-    "n_transfer": 40, # Number of total transfer, or number of passage
-    "n_transfer_selection": 20, # Number of transfer implementing seleciton regimes
+    "n_transfer": 4, # Number of total transfer, or number of passage
+    "n_transfer_selection": 2, # Number of transfer implementing seleciton regimes
     "dilution": 1/1000, # Dilution factor at every transfer
     "n_inoc": 10**6,  #Number of cells sampled from the regional species at start
     "selected_function": "f1_additive"
@@ -68,6 +68,7 @@ assumptions.update({
 
 # Prepare experiment setup in this universe
 params, params_simulation = prepare_experiment(assumptions, seed = seed_temp)
+make_algorithms(params_simulation)
 
 # Make data directory if not existed yet
 data_directory = "data/raw/"
