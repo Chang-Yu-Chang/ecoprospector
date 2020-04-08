@@ -63,15 +63,54 @@ def sample_from_pool(plate_N, scale = 10**6, inocula = 10**6, migration = False,
 
     return N0
 
+
+if False:
+    if  'knock_in' in params_algorithm["algorithm_name"][0] and selection_algorithm == 'select_top':
+        winning_index = np.where(community_function >= np.max(community_function))[0][0]
+        for k in plate.N.columns:
+            if k != plate.N.columns[winning_index]:
+                s_id = np.random.choice(np.where(plate.N[k]==0)[0])
+                if 'isolates' in params_algorithm["algorithm_name"][0]:
+                    # Knock in an isolate that is 1) not in the resident community 2) have high monoculture function (above 90% isolates in the pool)
+                    temp = np.logical_and(np.array(plate.N[k]==0), plate.isolate_function >= np.percentile(plate.isolate_function, q = 90))
+                    s_id = np.random.choice(np.where(temp)[0]) ## add error check if no isolate does better than the community
+                plate.N[k][s_id]= 1/params_simulation["dilution"] * 1/assumptions["scale"]
+
+
+
 # Migrate from species pool to the plate 
-def migrate_from_pool(plate, migration_factor, scale, inocula):
-    if np.sum(migration_factor) !=0:
-        print('Migration')
-        migration_plate = sample_from_pool(plate.N, scale = scale, inocula = inocula, migration = True) * migration_factor # Migration factor is a list determined by migration algorithms and community function
-        plate_migrated = plate.N + migration_plate 
-        
-    else:
-        plate_migrated = plate.N
+def migrate_from_pool(plate, migration_factor, assumptions, community_function = None):
+    if assumptions["n_migration"] == 1: # knock_in_isolates
+        setattr(plate, "isolate_function", [i for i in range(2100)])
+        print(plate.isolate_function)
+        plate_migrated = plate.N.copy()
+        winning_index = np.where(community_function >= np.max(community_function))[0][0]
+        for k in plate.N.columns:
+            if k != plate.N.columns[winning_index]:
+#                temp = np.logical_and(np.array(plate.N[k]==0), plate.isolate_function >= np.percentile(plate.isolate_function, q = 90))
+#                s_id = np.random.choice(np.where(temp)[0])
+                s_id = np.random.choice(np.where(plate.N[k]==0)[0])
+                print(s_id)
+#                s_id = np.random.choice(temp)
+#                print(s_id)
+#                plate_migrated[k][s_id] = 1/assumptions["dilution"] * 1/assumptions["scale"]
+
+
+        # plate_migrated = plate.N.copy()
+        # winning_index = np.where(community_function >= np.max(community_function))[0][0]
+        # for k in plate.N.columns:
+        #     if k != plate.N.columns[winning_index]:
+        #         s_id = np.random.choice(np.where(plate.N[k]==0)[0])
+        #     plate_migrated[k][s_id] = 1/assumptions["dilution"] * 1/assumptions["scale"]
+
+    elif assumptions["n_migration"] != 1:
+        if np.sum(migration_factor) !=0:
+            print('Migration')
+            migration_plate = sample_from_pool(plate.N, scale = assumptions["scale"], inocula = assumptions["n_migration"], migration = True) * migration_factor # Migration factor is a list determined by migration algorithms and community function
+            plate_migrated = plate.N + migration_plate 
+            
+        else:
+            plate_migrated = plate.N
         
     return plate_migrated
 
@@ -217,7 +256,8 @@ def simulate_community(
 
         # Output the plate composition and community functions if write_composition set True
         if write_composition == True:
-            plate_data.to_csv(file_name + "-" + phenotype_algorithm + "-T" + "{:02d}".format(i + 1) + "-composition.txt", index = False) # Transfer = 0 means that it's before selection regime works upon
+            if ((i+1) == assumptions["n_transfer_selection"]) or ((i+1) == assumptions["n_transfer"]):
+                plate_data.to_csv(file_name + "-" + phenotype_algorithm + "-T" + "{:02d}".format(i + 1) + "-composition.txt", index = False) # Transfer = 0 means that it's before selection regime works upon
         if write_function == True:
             function_data.to_csv(file_name + "-" + phenotype_algorithm + "-T" + "{:02d}".format(i + 1) + "-function.txt", index = False)
 
@@ -233,7 +273,7 @@ def simulate_community(
         
         # Migration
         m = globals()[migration_algorithm](community_function) 
-        plate.N = migrate_from_pool(plate, migration_factor = m, scale = assumptions["scale"], inocula = params_simulation["n_inoc"])
+        plate.N = migrate_from_pool(plate, migration_factor = m, scale = assumptions["scale"], inocula = params_simulation["n_migration"]) # By default, n_migration is the same as n_inoc
 
         # Perturbation
         if  'knock_in' in params_algorithm["algorithm_name"][0] and selection_algorithm == 'select_top':
@@ -259,18 +299,75 @@ def simulate_community(
             dilution_matrix = np.eye(assumptions['n_wells'])
             dilution_matrix[winning_index,winning_index] = 0
             plate.Passage(np.eye(assumptions['n_wells'])* params_simulation["dilution"])
+        
         if 'resource' in params_algorithm["algorithm_name"][0] and selection_algorithm == 'select_top':
-            winning_index = np.where(community_function >= np.max(community_function))[0][0] 
-			#Remove fresh environment that was added by passage
+            winning_index = np.where(community_function >= np.max(community_function))[0][0]
+            #Remove fresh environment that was added by passage
             plate.R = plate.R - plate.R0
-			#change default fresh renvironment so that all subsequent rounds use R0
+            #change default fresh renvironment so that all subsequent rounds use R0
             for k in plate.R0.columns:
                 if k != plate.R0.columns[winning_index]: 
-                    r_id = np.random.choice(np.where(plate.R0[k]>=0)[0])
-                    plate.R0[k][r_id] = assumptions['R0_food']/10
-            plate.R0 = plate.R0/np.sum(plate.R0)*assumptions['R0_food']
-            ##add new fresh environment (so that this round uses R0
+    				#By default pick 2 resources at randomk
+                    r_id_remove = np.random.choice(np.where(plate.R0[k]>=0)[0]) 
+                    r_id_add = np.random.choice(np.where(plate.R0[k]>=0)[0])
+                    if 'add' in params_algorithm["algorithm_name"][0]: #remove from top and add to random
+                        r_id_remove = np.where(plate.R0[k]==np.max(plate.R0[k]))[0]
+                    if 'remove' in params_algorithm["algorithm_name"][0]: #remove from random and add to bottom
+                        r_id_add = np.where(plate.R0[k]==np.min(plate.R0[k]))[0]
+                    if 'rescale_add' in params_algorithm["algorithm_name"][0]:  # Increase Fraction of resource
+                        plate.R0[k][r_id_add] = plate.R0[k][r_id_add]*(1+params_simulation['R_percent']) #increase resource conc by fixed %
+                    elif 'rescale_remove' in params_algorithm["algorithm_name"][0]: # Decrease Fraction of resource
+                        plate.R0[k][r_id_remove] = plate.R0[k][r_id_remove]*(1-params_simulation['R_percent'])  #decrease resource 
+                    elif 'resource_old' in params_algorithm["algorithm_name"][0]:
+                        plate.R0[k] = plate.R0[k] * (1-params_simulation['R_percent']) #Dilute old resources
+                        plate.R0[k][r_id_add] = plate.R0[k][r_id_add] + (assumptions['R0_food']*params_simulation['R_percent'])
+                    else: #Default to resource swap.
+                        plate.R0[k][r_id_add] = plate.R0[k][r_id_add] + (plate.R0[k][r_id_remove]*params_simulation['R_percent']) #add new resources
+                        plate.R0[k][r_id_remove] = plate.R0[k][r_id_remove]*(1-params_simulation['R_percent']) #remove new resources
+            plate.R0 = plate.R0/np.sum(plate.R0)*assumptions['R0_food'] #Keep this to avoid floating point error and rescale when neeeded.
+            #add new fresh environment (so that this round uses R0
             plate.R = plate.R + plate.R0
+
+
+
+#         if 'resource' in params_algorithm["algorithm_name"][0] and ('old' not in params_algorithm["algorithm_name"][0]) and selection_algorithm == 'select_top':
+#             winning_index = np.where(community_function >= np.max(community_function))[0][0] 
+#             #Remove fresh environment that was added by passage
+#             plate.R = plate.R - plate.R0
+#             #change default fresh renvironment so that all subsequent rounds use R0
+#             for k in plate.R0.columns:
+#                 if k != plate.R0.columns[winning_index]: 
+#     				#By default pick 2 resources at randomk
+#                     r_id_remove = np.random.choice(np.where(plate.R0[k]>=0)[0]) 
+#                     r_id_add = np.random.choice(np.where(plate.R0[k]>=0)[0])
+#                     if 'add' in params_algorithm["algorithm_name"][0]: #remove from top and add to random
+#                     	r_id_remove = np.where(plate.R0[k]==np.max(plate.R0[k]))[0]
+#                     if 'remove' in params_algorithm["algorithm_name"][0]: #remove from random and add to bottom
+#                     	r_id_add = np.where(plate.R0[k]==np.min(plate.R0[k]))[0]
+#                     if 'rescale_add' in params_algorithm["algorithm_name"][0]:  # Increase Fraction of resource
+#                     	plate.R0[k][r_id_add] = plate.R0[k][r_id_add]*(1+params_simulation['R_percent']) #increase resource conc by fixed %
+#                     elif 'rescale_remove' in params_algorithm["algorithm_name"][0]: # Decrease Fraction of resource
+#                     	plate.R0[k][r_id_remove] = plate.R0[k][r_id_add]*(1-params_simulation['R_percent'])  #decrease resource conc by fixed %
+#                     else: #Default to resource swap.
+#                     	plate.R0[k][r_id_add] = plate.R0[k][r_id_add] + (plate.R0[k][r_id_remove]*params_simulation['R_percent']) #add new resources
+#                     	plate.R0[k][r_id_remove] = plate.R0[k][r_id_remove]*(1-params_simulation['R_percent']) #remove new resources
+#             plate.R0 = plate.R0/np.sum(plate.R0)*assumptions['R0_food'] #Keep this to avoid floating point error and rescale when neeeded.
+#             #add new fresh environment (so that this round uses R0
+#             plate.R = plate.R + plate.R0
+# 
+#         if 'resource_old' in params_algorithm["algorithm_name"][0] and selection_algorithm == 'select_top':
+#             winning_index = np.where(community_function >= np.max(community_function))[0][0] 
+# 			#Remove fresh environment that was added by passage
+#             plate.R = plate.R - plate.R0
+# 			#change default fresh renvironment so that all subsequent rounds use R0
+#             for k in plate.R0.columns:
+#                 if k != plate.R0.columns[winning_index]: 
+#                     r_id = np.random.choice(np.where(plate.R0[k]>=0)[0])
+#                     plate.R0[k][r_id] = assumptions['R0_food']/10
+#             plate.R0 = plate.R0/np.sum(plate.R0)*assumptions['R0_food']
+#             ##add new fresh environment (so that this round uses R0
+#             plate.R = plate.R + plate.R0
+
             
     print("\nAlgorithm "+ params_algorithm["algorithm_name"][0] + " finished")
 
@@ -325,14 +422,19 @@ def reshape_function_data(community_function_name, community_function, richness,
     
     # Number of wells
     number_well = len(richness)
+    """
+    if resource or migation is in the algorithm name, chage the assemly name
+    """
+
     # Make data.frame
-    temp_df = pd.DataFrame({"Assembly": np.repeat(assembly_type, number_well),
-    "CommunityPhenotypeName": np.repeat(community_function_name, number_well),
-    "Well": ["W" + str(i) for i in range(number_well)], 
-    "Transfer": np.repeat(str(transfer_loop_index), number_well), 
-    "CommunityPhenotype": temp_vector1,
-    "Richness": temp_vector2,
-    "Biomass": temp_vector3})
+    temp_df = pd.DataFrame({
+        "Assembly": np.repeat(assembly_type, number_well),
+        "CommunityPhenotypeName": np.repeat(community_function_name, number_well),
+        "Well": ["W" + str(i) for i in range(number_well)], 
+        "Transfer": np.repeat(str(transfer_loop_index), number_well), 
+        "CommunityPhenotype": temp_vector1,
+        "Richness": temp_vector2,
+        "Biomass": temp_vector3})
     
     # Turn the transfer columns as numeric
     temp_df[["Transfer"]] = temp_df[["Transfer"]].apply(pd.to_numeric)
@@ -341,7 +443,7 @@ def reshape_function_data(community_function_name, community_function, richness,
 
  
 
-def add_community_function(plate, dynamics, assumptions, params, params_simulation, params_algorithm):
+def add_community_function(plate, dynamics, assumptions, params, params_simulation, params_algorithm, seed):
     """
     Add the function attribute to the community
     
@@ -353,19 +455,20 @@ def add_community_function(plate, dynamics, assumptions, params, params_simulati
     if isolates calculate function for every isolate in monoculture.
     """
     np.random.seed(2)
+    plate_func = plate.copy()
 
     # Species function, f1 and f3
-    setattr(plate, "species_function", params_simulation["species_function"]) # Species function for additive community function
+    setattr(plate_func, "species_function", params_simulation["species_function"]) # Species function for additive community function
 
     # Interactive functions, f2 and f4
-    setattr(plate, "interaction_function", params_simulation["interaction_function"]) # Interactive function for interactive community function
-    setattr(plate, "interaction_function_p25", params_simulation["interaction_function_p25"])
+    setattr(plate_func, "interaction_function", params_simulation["interaction_function"]) # Interactive function for interactive community function
+    setattr(plate_func, "interaction_function_p25", params_simulation["interaction_function_p25"])
 
 
     # Invasion function f5 and resident function f6, f7 and f8 as well
     if ("invader" in params_simulation["selected_function"]) or ("resident" in params_simulation["selected_function"]):
         # Keep the initial plate R0 for function f7 
-        setattr(plate, "R0_initial", plate.R0)
+        setattr(plate_func, "R0_initial", plate_func.R0)
         
         assumptions_invasion = assumptions.copy()
         params_invasion = params.copy()
@@ -442,20 +545,20 @@ def add_community_function(plate, dynamics, assumptions, params, params_simulati
     
         if "invader" in params_simulation["selected_function"]:
             # Add the invasion plate to the attr of community
-            setattr(plate, "invasion_plate_t0", temp_df_t0_N)
-            setattr(plate, "invasion_plate_t1", temp_df_t1_N)
+            setattr(plate_func, "invasion_plate_t0", temp_df_t0_N)
+            setattr(plate_func, "invasion_plate_t1", temp_df_t1_N)
         elif "resident" in params_simulation["selected_function"]:
             # Add the resident plate to the attr of community
-            setattr(plate, "resident_plate_t0_N", temp_df_t0_N)
-            setattr(plate, "resident_plate_t1_N", temp_df_t1_N)
-            setattr(plate, "resident_plate_t0_R", temp_df_t0_R)
-            setattr(plate, "resident_plate_t1_R", temp_df_t1_R)
+            setattr(plate_func, "resident_plate_t0_N", temp_df_t0_N)
+            setattr(plate_func, "resident_plate_t1_N", temp_df_t1_N)
+            setattr(plate_func, "resident_plate_t0_R", temp_df_t0_R)
+            setattr(plate_func, "resident_plate_t1_R", temp_df_t1_R)
             ### Firstly are we preserving the paramaters for the isolate plat   
     
     
     # Single isolate functions 
     # Make a plate of all single isolates and measure function    
-    if 'isolate' in params_algorithm["algorithm_name"][0]:
+    if ('isolate' in params_algorithm["algorithm_name"][0]) or params_algorithm["algorithm_name"][0] == "migration":
         assumptions_isolate = assumptions.copy()
         params_isolate = params.copy()
         
@@ -485,19 +588,20 @@ def add_community_function(plate, dynamics, assumptions, params, params_simulati
         # Save the isolate functions
         isolate_function = np.array(np.sum(plate_isolate.N, axis = 0)) 
         print(isolate_function)
+        print(len(isolate_function))
 
-        setattr(plate, "isolate_function", isolate_function)
+        setattr(plate_func, "isolate_function", isolate_function)
 
     
-    return plate
+    return plate_func
 
 
 
-def passage_monoculture(plate, f, scale = None, refresh_resource=True):
+def passage_monoculture(plate_mono, f, scale = None, refresh_resource=True):
     """
     Reduced version of function Passage(), for passaging a large set of wells
     """
-    self = plate.copy()
+    self = plate_mono.copy()
     #HOUSEKEEPING
     if scale == None:
         scale = self.scale #Use scale from initialization by default
@@ -510,7 +614,7 @@ def passage_monoculture(plate, f, scale = None, refresh_resource=True):
     N = np.zeros(np.shape(self.N))
     
     self.N = self.N * f 
-    plate.N[plate.N <= 1./plate.scale] = 0
+    plate_mono.N[plate_mono.N <= 1./plate_mono.scale] = 0
 
     if refresh_resource:
         self.R = self.R * f

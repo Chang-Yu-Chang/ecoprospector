@@ -12,7 +12,7 @@ Python functions for selection algorithms during plate passage in 96-well plates
 import numpy as np
 import scipy as sp
 from functools import partial
-  
+
 def no_selection(community_function):
     """
     Direct well-to-well transfer without selection
@@ -242,5 +242,99 @@ def directed_selection_select(community_function):
         transfer_matrix[t_new[i], t_old[i]] = 1
     
     return transfer_matrix
+
+### Sub-lineage algorithms
+def Arora2019(community_function, n_rep=3):
+    """
+    Arora2019
+    Sub-divide wells of plate into lines where each 'line' consists of n_rep communities' 
+    Each round the highest function member of the line is used to colonize the next three triplicate wells of that line
+    """
+    n_wells = len(community_function)
+    n_lines = int(np.ceil(n_wells/n_rep)) #Number of lines
+    transfer_matrix = np.zeros((n_wells,n_wells))
+    for i in range(n_lines):
+	    sorted_community_function = np.sort(community_function[i*n_rep:(i*n_rep)+n_rep])
+	    cut_off = np.max(sorted_community_function)
+	    winner_index = np.where(community_function[i*n_rep:(i*n_rep)+n_rep] == cut_off)[0]
+	    transfer_matrix[i*n_rep:(i*n_rep)+n_rep, winner_index+i*n_rep] = 1
+    return transfer_matrix
+def Arora2019_control(community_function, n_rep=3):
+    """
+  	Same as Arora2019 except the line member is selected at Random
+    """
+    n_wells = len(community_function)
+    n_lines = int(np.ceil(n_wells/n_rep)) #Number of lines
+    transfer_matrix = np.zeros((n_wells,n_wells))
+    for i in range(n_lines):
+  	    sorted_community_function = np.sort(community_function[i*n_rep:(i*n_rep)+n_rep])
+  	    cut_off = np.max(sorted_community_function)
+  	    winner_index = np.random.randint(0,n_rep)
+  	    if winner_index+i*n_rep >= n_wells:
+  	    	  corrected_n_rep  = n_wells % n_rep
+  	    	  winner_index = np.random.randint(0,corrected_n_rep)
+  	    transfer_matrix[i*n_rep:(i*n_rep)+n_rep, winner_index+i*n_rep] = 1
+    return transfer_matrix
+def Raynaud2019a(community_function, n_lines=3):
+    """
+    Raynaud2019a
+    Sub-divide wells of plate into n_lines' 
+    Each round the highest function member of the line is used to colonize the  wells of that lineage
+    """
+    n_wells = len(community_function)
+    n_rep  = int(np.ceil(n_wells/n_lines)) #Number of replicates per line
+    transfer_matrix = np.zeros((n_wells,n_wells))
+    for i in range(n_lines):
+	    sorted_community_function = np.sort(community_function[i*n_rep:(i*n_rep)+n_rep])
+	    cut_off = np.max(sorted_community_function)
+	    winner_index = np.where(community_function[i*n_rep:(i*n_rep)+n_rep] == cut_off)[0]
+	    transfer_matrix[i*n_rep:(i*n_rep)+n_rep, winner_index+i*n_rep] = 1
+    return transfer_matrix
+def Raynaud2019a_control(community_function, n_lines=3):
+    """
+	Same as Raynaud2019a except the lineage member is selected at Random
+    """
+    n_wells = len(community_function)
+    n_rep  = int(np.ceil(n_wells/n_lines)) #Number of replicates per line
+    transfer_matrix = np.zeros((n_wells,n_wells))
+    for i in range(n_lines):
+	    sorted_community_function = np.sort(community_function[i*n_rep:(i*n_rep)+n_rep])
+	    cut_off = np.max(sorted_community_function)
+	    winner_index = np.random.randint(0,n_rep)
+	    if winner_index+i*n_rep >= n_wells:
+	    	  corrected_n_rep  = n_wells % n_rep
+	    	  winner_index = np.random.randint(0,corrected_n_rep)
+	    transfer_matrix[i*n_rep:(i*n_rep)+n_rep, winner_index+i*n_rep] = 1
+    return transfer_matrix
+def Raynaud2019b(community_function, n_lines=3):
+    """
+    same as Raynaud2019a except top from each lineage is pooled
+    """
+    n_wells = len(community_function)
+    n_rep  = int(np.ceil(n_wells/n_lines)) #Number of replicates per line
+    transfer_matrix = np.zeros((n_wells,n_wells))
+    for i in range(n_lines):
+	    sorted_community_function = np.sort(community_function[i*n_rep:(i*n_rep)+n_rep])
+	    cut_off = np.max(sorted_community_function)
+	    winner_index = np.where(community_function[i*n_rep:(i*n_rep)+n_rep] == cut_off)[0]
+	    transfer_matrix[:, winner_index+i*n_rep] = 1
+    return transfer_matrix
+def Raynaud2019b_control(community_function, n_lines=3):
+    """
+	Same as Raynaud2019b except the lineage member is selected at Random
+    """
+    n_wells = len(community_function)
+    n_rep  = int(np.ceil(n_wells/n_lines)) #Number of replicates per line
+    transfer_matrix = np.zeros((n_wells,n_wells))
+    for i in range(n_lines):
+	    sorted_community_function = np.sort(community_function[i*n_rep:(i*n_rep)+n_rep])
+	    cut_off = np.max(sorted_community_function)
+	    winner_index = np.random.randint(0,n_rep)
+	    if winner_index+i*n_rep >= n_wells:
+	    	  corrected_n_rep  = n_wells % n_rep
+	    	  winner_index = np.random.randint(0,corrected_n_rep)
+	    transfer_matrix[:, winner_index+i*n_rep] = 1
+    return transfer_matrix
+
 
 

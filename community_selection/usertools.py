@@ -63,7 +63,9 @@ assumptions.update({
     "n_transfer": 10, # Number of total transfer, or number of passage
     "n_transfer_selection": 5, # Number of transfer implementing seleciton regimes
     "dilution": 1/1000, # Dilution factor at every transfer
-    "n_inoc": 10**6,  #Number of cells sampled from the regional species at start
+    "n_inoc": 10**6,  # Number of cells sampled from the regional species at start
+    "n_migration": 10**6, # Number of cells to be migrated in the migration perturbation algorithm
+    "R_percent": 0, # Fracion of new resources to be spiked in to the media in the resource perturbation algorithm
     "selected_function": "f1_additive"
 })
 
@@ -112,7 +114,7 @@ def prepare_experiment(assumptions, seed = 1):
     function_species, function_interaction, function_interaction_p25 = draw_species_function(assumptions)
     
     # Subset parameters for simulation
-    temp_p = ["n_propagation", "n_transfer", "n_transfer_selection", "dilution", "n_inoc", "selected_function"]
+    temp_p = ["n_propagation", "n_transfer", "n_transfer_selection", "dilution", "n_inoc", "selected_function", "n_migration", "R_percent"]
     params_simulation = {key: value for key, value in assumptions.items() if key in temp_p}
     params_simulation.update({
         #"pool": species_pool, 
@@ -239,6 +241,24 @@ def make_algorithms(params_simulation):
         "migration_algorithm": "no_migration"
     })
 
+    ## Pool top 25%
+    pool_top25 = pd.DataFrame({
+        "algorithm_name": "pool_top25",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["pool_top25percent"] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
+        "migration_algorithm": "no_migration"
+    })  
+
+    ## Pool top 10%
+    pool_top10 = pd.DataFrame({
+        "algorithm_name": "pool_top10",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["pool_top10percent"] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
+        "migration_algorithm": "no_migration"
+    })  
+
     ## Pair top communities
     pair_top_communities = pd.DataFrame({
         "algorithm_name": "pair_top_communities",
@@ -307,7 +327,7 @@ def make_algorithms(params_simulation):
         "algorithm_name": "Panke_Buisse2015",
         "transfer": range(1, params_simulation["n_transfer"] + 1),
         "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["pool_top25percent" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
+        "selection_algorithm": ["pool_top28percent" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
         "migration_algorithm": "no_migration"
     })
     
@@ -428,6 +448,54 @@ def make_algorithms(params_simulation):
         "migration_algorithm": "no_migration"
     })
     
+    # Arora2019
+    Arora2019_V2 = pd.DataFrame({
+        "algorithm_name": "Arora2019_V2",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": ["Arora2019" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
+        "migration_algorithm": "no_migration"
+    })    
+    Arora2019_V2_control = pd.DataFrame({
+        "algorithm_name": "Arora2019_V2_control",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": ["Arora2019_control" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
+        "migration_algorithm": "no_migration"
+    })       
+    # Raynaud2019a
+    Raynaud2019a_V2	= pd.DataFrame({
+        "algorithm_name": "Raynaud2019a_V2",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": ["Raynaud2019a" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
+        "migration_algorithm": "no_migration"
+    })
+    
+    Raynaud2019a_V2_control	= pd.DataFrame({
+        "algorithm_name": "Raynaud2019a_V2_control",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": ["Raynaud2019a_control" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
+        "migration_algorithm": "no_migration"
+    }) 
+    # Raynaud2019b
+    Raynaud2019b_V2 = pd.DataFrame({
+        "algorithm_name": "Raynaud2019b_V2",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": ["Raynaud2019b" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
+        "migration_algorithm": "no_migration"
+    })
+    
+    Raynaud2019b_V2_control = pd.DataFrame({
+        "algorithm_name": "Raynaud2019b_V2_control",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": ["Raynaud2019b_control" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
+        "migration_algorithm": "no_migration"
+    })
+    
     
     #ctrl_pertubation
     ctrl = pd.DataFrame({
@@ -498,9 +566,54 @@ def make_algorithms(params_simulation):
         "algorithm_name": "resource",
         "transfer": range(1, params_simulation["n_transfer"] + 1),
         "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["select_top"] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])],
+        "migration_algorithm": "no_migration"
+    })
+    #Resource pertubation algorithms
+    resource = pd.DataFrame({
+        "algorithm_name": "resource",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
         "selection_algorithm": ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["select_top"] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
         "migration_algorithm": "no_migration"
     })  
+    resource_old = pd.DataFrame({
+        "algorithm_name": "resource_old",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["select_top"] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
+        "migration_algorithm": "no_migration"
+    })  
+    
+    resource_add = pd.DataFrame({
+        "algorithm_name": "resource_add",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["select_top"] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
+        "migration_algorithm": "no_migration"
+    })  
+    resource_remove = pd.DataFrame({
+        "algorithm_name": "resource_remove",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["select_top"] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
+        "migration_algorithm": "no_migration"
+    })  
+    resource_rescale_add = pd.DataFrame({
+        "algorithm_name": "resource_rescale_add",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["select_top"] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
+        "migration_algorithm": "no_migration"
+    })  
+    resource_rescale_remove = pd.DataFrame({
+        "algorithm_name": "resource_rescale_remove",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["select_top"] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
+        "migration_algorithm": "no_migration"
+    })  
+    
     
     #long experiments
     iterative_ctrl = pd.DataFrame({
@@ -545,11 +658,19 @@ def make_algorithms(params_simulation):
     
     # Save the algorithms
     algorithms = pd.concat([
-        simple_screening, positive_control, monoculture, directed_selection_migration, select_top25, select_top10, pair_top_communities, multiple_pair_top,
+        # Control
+        simple_screening, positive_control, monoculture, select_top25, select_top10, pool_top25, pool_top10,
+        # Directed selection
+        pair_top_communities, multiple_pair_top, directed_selection_migration,
+        # Literature
         Arora2019, Blouin2015, Blouin2015_control, Jochum2019, Mueller2019, Panke_Buisse2015, Penn2004,
         Raynaud2019a, Raynaud2019b, Swenson2000a, Swenson2000a_control, Swenson2000b, Swenson2000b_control, Swenson2000c,
         Williams2007a, Williams2007b, Wright2019, Xie2019a, Xie2019b,
-        ctrl, coalescence,migration,resource,bottleneck,knock_out,knock_in, knock_in_isolates,
+        Arora2019_V2, Arora2019_V2_control, Raynaud2019a_V2, Raynaud2019a_V2_control, Raynaud2019b_V2, Raynaud2019b_V2_control,
+        # Perturbation
+        ctrl, coalescence, migration, bottleneck, knock_out, knock_in, knock_in_isolates,
+        resource_old, resource, resource_add, resource_remove, resource_rescale_add, resource_rescale_remove,
+        # Iterative perturabation
         iterative_ctrl,iterative_resource,iterative_migration,iterative_resource_migration,iterative_coalescence])
     
     return algorithms
