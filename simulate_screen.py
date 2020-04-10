@@ -65,8 +65,8 @@ assumptions.update({
     "binary_threshold": 1,  
     # The parameters below will be passed to params_simulation
     "n_propagation": 1, # Length of propagation, or hours within a growth cycle
-    "n_transfer": 20, # Number of total transfer, or number of passage
-    "n_transfer_selection": 10, # Number of transfer implementing seleciton regimes
+    "n_transfer": 10, # Number of total transfer, or number of passage
+    "n_transfer_selection": 5, # Number of transfer implementing seleciton regimes
     "dilution": 1/1000, # Dilution factor at every transfer
     "n_inoc": 10**6,  #Number of cells sampled from the regional species at start
     "n_migration": 10**6, # Number of cells to be migrated in the migration perturbation algorithm
@@ -144,19 +144,14 @@ for i in range(0, params_simulation["n_transfer"]):
 
     # Append the composition to a list
     plate_data = reshape_plate_data(plate, transfer_loop_index = i + 1, assembly_type = assembly_type, community_function_name = phenotype_algorithm) # Transfer = 0 means that it's before selection regime works upon
-    plate_data_list.append(plate_data)
-
     # Community phenotype, richness, and biomass
     community_function = globals()[phenotype_algorithm](plate, assumptions = assumptions) # Community phenotype
     richness = np.sum(plate.N >= 1/assumptions["scale"], axis = 0) # Richness
     biomass = list(np.sum(plate.N, axis = 0)) # Biomass
     function_data = reshape_function_data(community_function_name = phenotype_algorithm, community_function = community_function, richness = richness, biomass = biomass, transfer_loop_index = i + 1 , assembly_type = assembly_type)        
-    community_function_list.append(function_data) # Transfer = 0 means that it's before selection regime works upon
-
     # Output the plate composition and community functions if write_composition set True
     if ((i+1) == assumptions["n_transfer_selection"]) or ((i+1) == assumptions["n_transfer"]):
-            plate_data.to_csv(file_name + "-" + phenotype_algorithm + "-T" + "{:02d}".format(i + 1) + "-composition.txt", index = False) # Transfer = 0 means that it's before selection regime works upon
-    
+        plate_data.to_csv(file_name + "-" + phenotype_algorithm + "-T" + "{:02d}".format(i + 1) + "-composition.txt", index = False) # Transfer = 0 means that it's before selection regime works upon
     function_data.to_csv(file_name + "-" + phenotype_algorithm + "-T" + "{:02d}".format(i + 1) + "-function.txt", index = False)
 
     # Save the plate object
@@ -170,7 +165,7 @@ for i in range(0, params_simulation["n_transfer"]):
 
     # Migration
     m = globals()[migration_algorithm](community_function) 
-    plate.N = migrate_from_pool(plate, migration_factor = m, scale = assumptions["scale"], inocula = params_simulation["n_migration"]) # By default, n_migration is the same as n_inoc
+    plate.N = migrate_from_pool(plate, migration_factor = m, assumptions = assumptions, community_function = community_function) # By default, n_migration is the same as n_inoc
 
 print("\nAlgorithm "+ params_algorithm["algorithm_name"][0] + " finished")
 

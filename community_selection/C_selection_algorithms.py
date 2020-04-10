@@ -21,6 +21,26 @@ def no_selection(community_function):
     n_wells = len(community_function)
     return np.eye(n_wells)
 
+def select_top_nth(community_function, n):
+    """
+    Select the top nth single community. Designed for perturbation effect
+    """
+    n_wells = len(community_function)
+    sorted_community_function = np.sort(community_function)[::-1]
+    cut_off = sorted_community_function[n-1] # The top nth
+    winner_index = np.where(community_function == cut_off)[0]
+
+    # Transfer matrix
+    transfer_matrix = np.zeros((n_wells,n_wells))
+    t_new = range(n_wells) # New wells
+    t_old = list(winner_index) * n_wells # Old wells
+        
+    # Fill in the transfer matrix
+    for i in range(n_wells):
+        transfer_matrix[t_new[i], t_old[i]] = 1
+  
+    return transfer_matrix
+
 def select_top(community_function):
     """
     Select the top community 

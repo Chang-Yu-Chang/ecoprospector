@@ -8,7 +8,7 @@ import pickle
 # External arguments
 seed_temp = int(sys.argv[1]) # Species pool number
 tested_phenotype = str(sys.argv[2]) # Tested communtiy function. Default to f1_additive 
-target_well = str(sys.argv[3]) # Target well for perturbation
+target_well = str(sys.argv[3]) # Target well for perturbation. Default is the number of rank of community
 perturbation = int(sys.argv[4]) # Perturbation treatment
 migration_strength = int(sys.argv[5]) # Migration strength n_migration. 1 = knock-in isolates, 10**6 = migration
 resource_strength = float(sys.argv[6]) # Resource stregnth R_percent.
@@ -76,8 +76,8 @@ assumptions.update({
     "binary_threshold": 1,  
     # The parameters below will be passed to params_simulation
     "n_propagation": 1, # Length of propagation, or hours within a growth cycle
-    "n_transfer": 4, # Number of total transfer, or number of passage
-    "n_transfer_selection": 2, # Number of transfer implementing seleciton regimes
+    "n_transfer": 10, # Number of total transfer, or number of passage
+    "n_transfer_selection": 5, # Number of transfer implementing seleciton regimes
     "dilution": 1/1000, # Dilution factor at every transfer
     "n_inoc": 10**6,  #Number of cells sampled from the regional species at start
     "n_migration": migration_strength, # Number of cells to be migrated in the migration perturbation algorithm
@@ -151,93 +151,100 @@ migration_algorithm = params_algorithm["migration_algorithm"][params_simulation[
 
 # Refill the plate with media
 community_function = globals()[params_algorithm["community_phenotype"][0]](plate, assumptions = assumptions) # Community phenotype
-transfer_matrix = globals()["no_selection"](community_function)
+transfer_matrix = select_top_nth(community_function, int(target_well[2:len(target_well)])) # Select the top nth community as the targeted perturbed
 plate.Passage(transfer_matrix * params_simulation["dilution"])
 
 # Perturbation
-# Migration
+## Migration
 m = globals()[migration_algorithm](community_function)
 plate.N = migrate_from_pool(plate, migration_factor = m, assumptions = assumptions, community_function = community_function) # By default, n_migration is the same as n_inoc
 
+## Resource 
+if 'resource' in params_algorithm["algorithm_name"][0] and selection_algorithm == 'select_top':
+    winning_index = np.where(community_function >= np.max(community_function))[0][0]
+    #Remove fresh environment that was added by passage
+    plate.R = plate.R - plate.R0
+    #change default fresh renvironment so that all subsequent rounds use R0
+    for k in plate.R0.columns:
+        if k != plate.R0.columns[winning_index]:
+			#By default pick 2 resources at randomk
+            r_id_remove = np.random.choice(np.where(plate.R0[k]>=0)[0])
+            r_id_add = np.random.choice(np.where(plate.R0[k]>=0)[0])
+            if 'add' in params_algorithm["algorithm_name"][0]: #remove from top and add to random
+                r_id_remove = np.where(plate.R0[k]==np.max(plate.R0[k]))[0]
+            if 'remove' in params_algorithm["algorithm_name"][0]: #remove from random and add to bottom
+                r_id_add = np.where(plate.R0[k]==np.min(plate.R0[k]))[0]
+            if 'rescale_add' in params_algorithm["algorithm_name"][0]:  # Increase Fraction of resource
+                plate.R0[k][r_id_add] = plate.R0[k][r_id_add]*(1+params_simulation['R_percent']) #increase resource conc by fixed %
+            elif 'rescale_remove' in params_algorithm["algorithm_name"][0]: # Decrease Fraction of resource
+                plate.R0[k][r_id_remove] = plate.R0[k][r_id_remove]*(1-params_simulation['R_percent'])  #decrease resource
+            elif 'resource_old' in params_algorithm["algorithm_name"][0]:
+                plate.R0[k] = plate.R0[k] * (1-params_simulation['R_percent']) #Dilute old resources
+                plate.R0[k][r_id_add] = plate.R0[k][r_id_add] + (assumptions['R0_food']*params_simulation['R_percent'])
+            else: #Default to resource swap.
+                plate.R0[k][r_id_add] = plate.R0[k][r_id_add] + (plate.R0[k][r_id_remove]*params_simulation['R_percent']) #add new resources
+                plate.R0[k][r_id_remove] = plate.R0[k][r_id_remove]*(1-params_simulation['R_percent']) #remove new resources
+    plate.R0 = plate.R0/np.sum(plate.R0)*assumptions['R0_food'] #Keep this to avoid floating point error and rescale when neeeded.
+    #add new fresh environment (so that this round uses R0
+    plate.R = plate.R + plate.R0
 
-
-# # Perturbation
-# if  'knock_in' in params_algorithm["algorithm_name"][0] and selection_algorithm == 'select_top':
-#     winning_index = np.where(community_function >= np.max(community_function))[0][0]
-#     for k in plate.N.columns:
-#         if k != plate.N.columns[winning_index]:
-#             s_id = np.random.choice(np.where(plate.N[k]==0)[0])
-#             if 'isolates' in params_algorithm["algorithm_name"][0]:
-#                 # Knock in an isolate that is 1) not in the resident community 2) have high monoculture function (above 90% isolates in the pool)
-#                 temp = np.logical_and(np.array(plate.N[k]==0), plate.isolate_function >= np.percentile(plate.isolate_function, q = 90))
-#                 s_id = np.random.choice(np.where(temp)[0]) ## add error check if no isolate does better than the community
-#             plate.N[k][s_id]= 1/params_simulation["dilution"] * 1/assumptions["scale"]
-# if 'knock_out' in params_algorithm["algorithm_name"][0] and selection_algorithm == 'select_top':
-#     winning_index = np.where(community_function >= np.max(community_function))[0][0]
-#     for k in plate.N.columns:
-#         if k != plate.N.columns[winning_index]:
-#             s_id = np.random.choice(np.where(plate.N[k]>0)[0])
-#             plate.N[k][s_id]=0
-# if 'bottleneck' in params_algorithm["algorithm_name"][0]  and selection_algorithm == 'select_top':
-#     winning_index = np.where(community_function >= np.max(community_function))[0][0]
-#     dilution_matrix = np.eye(assumptions['n_wells'])
-#     dilution_matrix[winning_index,winning_index] = 0
-#     plate.Passage(np.eye(assumptions['n_wells'])* params_simulation["dilution"])
-# 
-# if 'resource' in params_algorithm["algorithm_name"][0] and selection_algorithm == 'select_top':
-#     winning_index = np.where(community_function >= np.max(community_function))[0][0]
-#     #Remove fresh environment that was added by passage
-#     plate.R = plate.R - plate.R0
-#     #change default fresh renvironment so that all subsequent rounds use R0
-#     for k in plate.R0.columns:
-#         if k != plate.R0.columns[winning_index]:
-# 			#By default pick 2 resources at randomk
-#             r_id_remove = np.random.choice(np.where(plate.R0[k]>=0)[0])
-#             r_id_add = np.random.choice(np.where(plate.R0[k]>=0)[0])
-#             if 'add' in params_algorithm["algorithm_name"][0]: #remove from top and add to random
-#                 r_id_remove = np.where(plate.R0[k]==np.max(plate.R0[k]))[0]
-#             if 'remove' in params_algorithm["algorithm_name"][0]: #remove from random and add to bottom
-#                 r_id_add = np.where(plate.R0[k]==np.min(plate.R0[k]))[0]
-#             if 'rescale_add' in params_algorithm["algorithm_name"][0]:  # Increase Fraction of resource
-#                 plate.R0[k][r_id_add] = plate.R0[k][r_id_add]*(1+params_simulation['R_percent']) #increase resource conc by fixed %
-#             elif 'rescale_remove' in params_algorithm["algorithm_name"][0]: # Decrease Fraction of resource
-#                 plate.R0[k][r_id_remove] = plate.R0[k][r_id_remove]*(1-params_simulation['R_percent'])  #decrease resource
-#             elif 'resource_old' in params_algorithm["algorithm_name"][0]:
-#                 plate.R0[k] = plate.R0[k] * (1-params_simulation['R_percent']) #Dilute old resources
-#                 plate.R0[k][r_id_add] = plate.R0[k][r_id_add] + (assumptions['R0_food']*params_simulation['R_percent'])
-#             else: #Default to resource swap.
-#                 plate.R0[k][r_id_add] = plate.R0[k][r_id_add] + (plate.R0[k][r_id_remove]*params_simulation['R_percent']) #add new resources
-#                 plate.R0[k][r_id_remove] = plate.R0[k][r_id_remove]*(1-params_simulation['R_percent']) #remove new resources
-#     plate.R0 = plate.R0/np.sum(plate.R0)*assumptions['R0_food'] #Keep this to avoid floating point error and rescale when neeeded.
-#     #add new fresh environment (so that this round uses R0
-#     plate.R = plate.R + plate.R0
-
-#print(plate_screen["plate_N"]["W1"])
-#print(plate.N["W1"])
 
 
 # Save the inocula composition
-plate_data = reshape_plate_data(plate, transfer_loop_index = 0, assembly_type = assembly_type, community_function_name = params_algorithm["community_phenotype"][0]) # Initial state
-plate_data["Perturbation"] = perturbation
-plate_data["MigrationStrength"] = migration_strength
-plate_data["ResourceStrength"] = resource_strength
-# Save the initial function
-community_function = globals()[params_algorithm["community_phenotype"][0]](plate, assumptions = assumptions) # Community phenotype
-richness = np.sum(plate.N >= 1/assumptions["scale"], axis = 0) # Richness
-biomass = list(np.sum(plate.N, axis = 0)) # Biomass
-function_data = reshape_function_data(community_function_name = params_algorithm["community_phenotype"][0], community_function = community_function, richness = richness, biomass = biomass, transfer_loop_index = 0, assembly_type = assembly_type)        
-function_data["Perturbation"] = perturbation
-function_data["MigrationStrength"] = migration_strength
-function_data["ResourceStrength"] = resource_strength
-# Output the plate composition and community functions if write_composition set True
-plate_data.to_csv(file_name + "-" + params_algorithm["community_phenotype"][0] + "-T" + "{:02d}".format(params_simulation["n_transfer_selection"] + 1) + "-composition.txt", index = False)
-function_data.to_csv(file_name + "-" + params_algorithm["community_phenotype"][0] + "-T" + "{:02d}".format(params_simulation["n_transfer_selection"] + 1) + "-function.txt", index = False)
+# plate_data = reshape_plate_data(plate, transfer_loop_index = 0, assembly_type = assembly_type, community_function_name = params_algorithm["community_phenotype"][0]) # Initial state
+# plate_data["Perturbation"] = perturbation; plate_data["MigrationStrength"] = migration_strength; plate_data["ResourceStrength"] = resource_strength
+# # Save the initial function
+# community_function = globals()[params_algorithm["community_phenotype"][0]](plate, assumptions = assumptions) # Community phenotype
+# richness = np.sum(plate.N >= 1/assumptions["scale"], axis = 0) # Richness
+# biomass = list(np.sum(plate.N, axis = 0)) # Biomass
+# function_data = reshape_function_data(community_function_name = params_algorithm["community_phenotype"][0], community_function = community_function, richness = richness, biomass = biomass, transfer_loop_index = 0, assembly_type = assembly_type)        
+# function_data["Perturbation"] = perturbation; function_data["MigrationStrength"] = migration_strength; function_data["ResourceStrength"] = resource_strength
+# # Output the plate composition and community functions if write_composition set True
+# plate_data.to_csv(file_name + "-" + params_algorithm["community_phenotype"][0] + "-T05.5" +  "-composition.txt", index = False)
+# function_data.to_csv(file_name + "-" + params_algorithm["community_phenotype"][0] + "-T05.5" + "-function.txt", index = False)
+
+# plate_data.to_csv(file_name + "-" + params_algorithm["community_phenotype"][0] + "-T" + "{:02d}".format(params_simulation["n_transfer_selection"]+1) + "-composition.txt", index = False)
+# function_data.to_csv(file_name + "-" + params_algorithm["community_phenotype"][0] + "-T" + "{:02d}".format(params_simulation["n_transfer_selection"]+1) + "-function.txt", index = False)
 
 
 
+# Propagation
+print("\nStart propogation")
+# Run simulation. Starting from the first transfer of stablization
+for i in range(params_simulation["n_transfer_selection"], params_simulation["n_transfer"]):
+    # Algorithms used in this transfer
+    phenotype_algorithm = params_algorithm["community_phenotype"][i]
+    selection_algorithm = params_algorithm["selection_algorithm"][i]
+    migration_algorithm = params_algorithm["migration_algorithm"][i]
 
+    # Print the propagation progress
+    print("Transfer " + str(i+1))
 
+    # Propagation
+    plate.Propagate(params_simulation["n_propagation"])
 
+    # Save the inocula composition
+    plate_data = reshape_plate_data(plate, transfer_loop_index = i + 1, assembly_type = assembly_type, community_function_name = params_algorithm["community_phenotype"][0]) # Initial state
+    plate_data["Perturbation"] = perturbation; plate_data["MigrationStrength"] = migration_strength; plate_data["ResourceStrength"] = resource_strength
+    # Save the initial function
+    community_function = globals()[params_algorithm["community_phenotype"][0]](plate, assumptions = assumptions) # Community phenotype
+    richness = np.sum(plate.N >= 1/assumptions["scale"], axis = 0) # Richness
+    biomass = list(np.sum(plate.N, axis = 0)) # Biomass
+    function_data = reshape_function_data(community_function_name = params_algorithm["community_phenotype"][0], community_function = community_function, richness = richness, biomass = biomass, transfer_loop_index = i+1, assembly_type = assembly_type)        
+    function_data["Perturbation"] = perturbation; function_data["MigrationStrength"] = migration_strength; function_data["ResourceStrength"] = resource_strength
+    # Output the plate composition and community functions if write_composition set True
+    if (i == assumptions["n_transfer_selection"]) or (i+1) == assumptions["n_transfer"]:
+            plate_data.to_csv(file_name + "-" + phenotype_algorithm + "-T" + "{:02d}".format(i + 1) + "-composition.txt", index = False) # Transfer = 0 means that it's before selection regime works upon
+    function_data.to_csv(file_name + "-" + phenotype_algorithm + "-T" + "{:02d}".format(i + 1) + "-function.txt", index = False)
 
+    # Passage and tranfer matrix
+    transfer_matrix = globals()["no_selection"](community_function)
+    plate.Passage(transfer_matrix * params_simulation["dilution"])
+
+    # Migration
+    m = globals()["no_migration"](community_function) 
+    plate.N = migrate_from_pool(plate, migration_factor = m, assumptions = assumptions, community_function = community_function) # By default, n_migration is the same as n_inoc
+
+print("\nAlgorithm "+ params_algorithm["algorithm_name"][0] + " finished")
 
 

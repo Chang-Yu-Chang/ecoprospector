@@ -81,8 +81,8 @@ if False:
 # Migrate from species pool to the plate 
 def migrate_from_pool(plate, migration_factor, assumptions, community_function = None):
     if assumptions["n_migration"] == 1: # knock_in_isolates
-        setattr(plate, "isolate_function", [i for i in range(2100)])
-        print(plate.isolate_function)
+        # setattr(plate, "isolate_function", [i for i in range(2100)])
+        # print(plate.isolate_function)
         plate_migrated = plate.N.copy()
         winning_index = np.where(community_function >= np.max(community_function))[0][0]
         for k in plate.N.columns:
@@ -90,7 +90,7 @@ def migrate_from_pool(plate, migration_factor, assumptions, community_function =
 #                temp = np.logical_and(np.array(plate.N[k]==0), plate.isolate_function >= np.percentile(plate.isolate_function, q = 90))
 #                s_id = np.random.choice(np.where(temp)[0])
                 s_id = np.random.choice(np.where(plate.N[k]==0)[0])
-                print(s_id)
+                # print(s_id)
 #                s_id = np.random.choice(temp)
 #                print(s_id)
 #                plate_migrated[k][s_id] = 1/assumptions["dilution"] * 1/assumptions["scale"]
@@ -443,7 +443,7 @@ def reshape_function_data(community_function_name, community_function, richness,
 
  
 
-def add_community_function(plate, dynamics, assumptions, params, params_simulation, params_algorithm, seed):
+def add_community_function(plate, dynamics, assumptions, params, params_simulation, params_algorithm):
     """
     Add the function attribute to the community
     
@@ -558,7 +558,7 @@ def add_community_function(plate, dynamics, assumptions, params, params_simulati
     
     # Single isolate functions 
     # Make a plate of all single isolates and measure function    
-    if ('isolate' in params_algorithm["algorithm_name"][0]) or params_algorithm["algorithm_name"][0] == "migration":
+    if ('isolate' in params_algorithm["algorithm_name"][0]):# or (assumptions["n_migration"] == 1):
         assumptions_isolate = assumptions.copy()
         params_isolate = params.copy()
         
@@ -587,8 +587,8 @@ def add_community_function(plate, dynamics, assumptions, params, params_simulati
 
         # Save the isolate functions
         isolate_function = np.array(np.sum(plate_isolate.N, axis = 0)) 
-        print(isolate_function)
-        print(len(isolate_function))
+        # print(isolate_function)
+        # print(len(isolate_function))
 
         setattr(plate_func, "isolate_function", isolate_function)
 
