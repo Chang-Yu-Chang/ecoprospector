@@ -64,55 +64,56 @@ def sample_from_pool(plate_N, scale = 10**6, inocula = 10**6, migration = False,
     return N0
 
 
-if False:
-    if  'knock_in' in params_algorithm["algorithm_name"][0] and selection_algorithm == 'select_top':
-        winning_index = np.where(community_function >= np.max(community_function))[0][0]
-        for k in plate.N.columns:
-            if k != plate.N.columns[winning_index]:
-                s_id = np.random.choice(np.where(plate.N[k]==0)[0])
-                if 'isolates' in params_algorithm["algorithm_name"][0]:
-                    # Knock in an isolate that is 1) not in the resident community 2) have high monoculture function (above 90% isolates in the pool)
-                    temp = np.logical_and(np.array(plate.N[k]==0), plate.isolate_function >= np.percentile(plate.isolate_function, q = 90))
-                    s_id = np.random.choice(np.where(temp)[0]) ## add error check if no isolate does better than the community
-                plate.N[k][s_id]= 1/params_simulation["dilution"] * 1/assumptions["scale"]
-
 
 
 # Migrate from species pool to the plate 
-def migrate_from_pool(plate, migration_factor, assumptions, community_function = None):
-    if assumptions["n_migration"] == 1: # knock_in_isolates
-        # setattr(plate, "isolate_function", [i for i in range(2100)])
-        # print(plate.isolate_function)
-        plate_migrated = plate.N.copy()
-        winning_index = np.where(community_function >= np.max(community_function))[0][0]
-        for k in plate.N.columns:
-            if k != plate.N.columns[winning_index]:
-#                temp = np.logical_and(np.array(plate.N[k]==0), plate.isolate_function >= np.percentile(plate.isolate_function, q = 90))
-#                s_id = np.random.choice(np.where(temp)[0])
-                s_id = np.random.choice(np.where(plate.N[k]==0)[0])
-                # print(s_id)
-#                s_id = np.random.choice(temp)
-#                print(s_id)
-#                plate_migrated[k][s_id] = 1/assumptions["dilution"] * 1/assumptions["scale"]
-
-
-        # plate_migrated = plate.N.copy()
-        # winning_index = np.where(community_function >= np.max(community_function))[0][0]
-        # for k in plate.N.columns:
-        #     if k != plate.N.columns[winning_index]:
-        #         s_id = np.random.choice(np.where(plate.N[k]==0)[0])
-        #     plate_migrated[k][s_id] = 1/assumptions["dilution"] * 1/assumptions["scale"]
-
-    elif assumptions["n_migration"] != 1:
+def migrate_from_pool(plate,migration_factor,assumptions,power_law = True,community_function = None):
+    '''
+    If power_law pool is true than sample n_migration cells from species pool following pair law distribution
+    If power_law is false sample s_migration species from isolates with each species starting at a cell count to survive dilution
+    If community function is passed in as n argument it will skip the best performing community.
+    '''
+    if power_law:
         if np.sum(migration_factor) !=0:
-            print('Migration')
             migration_plate = sample_from_pool(plate.N, scale = assumptions["scale"], inocula = assumptions["n_migration"], migration = True) * migration_factor # Migration factor is a list determined by migration algorithms and community function
             plate_migrated = plate.N + migration_plate 
-            
         else:
             plate_migrated = plate.N
-        
+    else: 
+        plate_migrated = plate.N.copy()
+        if community_function is None:
+            winning_index = 0
+        else:
+            winning_index = np.where(community_function >= np.max(community_function))[0][0]
+        for k in plate.N.columns:
+            if k != plate.N.columns[winning_index] or community_function is None:
+                for j in range(0,assumptions['s_migration']):
+                    s_id = np.random.choice(np.where(plate.N[k]==0)[0])
+                    plate.N[k][s_id]= 1/assumptions["dilution"] * 1/assumptions["scale"] * 1/assumptions['s_migration']
+        else:
+            plate_migrated = plate.N
     return plate_migrated
+
+# def migrate_from_pool(plate, migration_factor, assumptions, community_function = None):
+#     if assumptions["n_migration"] == 1: # knock_in_isolates
+#         # setattr(plate, "isolate_function", [i for i in range(2100)])
+#         # print(plate.isolate_function)
+#         plate_migrated = plate.N.copy()
+#         winning_index = np.where(community_function >= np.max(community_function))[0][0]
+#         for k in plate.N.columns:
+#             if k != plate.N.columns[winning_index]:
+#                 s_id = np.random.choice(np.where(plate.N[k]==0)[0])
+# 
+#     elif assumptions["n_migration"] != 1:
+#         if np.sum(migration_factor) !=0:
+#             print('Migration')
+#             migration_plate = sample_from_pool(plate.N, scale = assumptions["scale"], inocula = assumptions["n_migration"], migration = True) * migration_factor # Migration factor is a list determined by migration algorithms and community function
+#             plate_migrated = plate.N + migration_plate 
+#             
+#         else:
+#             plate_migrated = plate.N
+#         
+#     return plate_migrated
 
 
 # Make rich medium
@@ -273,101 +274,79 @@ def simulate_community(
         
         # Migration
         m = globals()[migration_algorithm](community_function) 
-        plate.N = migrate_from_pool(plate, migration_factor = m, scale = assumptions["scale"], inocula = params_simulation["n_migration"]) # By default, n_migration is the same as n_inoc
+        plate.N = migrate_from_pool(plate, migration_factor = m, assumptions = assumptions) # By default, n_migration is the same as n_inoc
 
-        # Perturbation
-        if  'knock_in' in params_algorithm["algorithm_name"][0] and selection_algorithm == 'select_top':
-            winning_index = np.where(community_function >= np.max(community_function))[0][0] 
-            for k in plate.N.columns:
-                if k != plate.N.columns[winning_index]:
-                    s_id = np.random.choice(np.where(plate.N[k]==0)[0])
-                    if 'isolates' in params_algorithm["algorithm_name"][0]:
-                        # Knock in an isolate that is 1) not in the resident community 2) have high monoculture function (above 90% isolates in the pool)  
-                        temp = np.logical_and(np.array(plate.N[k]==0), plate.isolate_function >= np.percentile(plate.isolate_function, q = 90))
-#                        temp = np.logical_and(np.array(plate.N[k]==0), (plate.isolate_function > community_function[winning_index]))
-#                        isolate_function = plate.isolate_function[:,None]
-                        s_id = np.random.choice(np.where(temp)[0]) ## add error check if no isolate does better than the community
-                    plate.N[k][s_id]= 1/params_simulation["dilution"] * 1/assumptions["scale"]
-        if 'knock_out' in params_algorithm["algorithm_name"][0] and selection_algorithm == 'select_top':
-            winning_index = np.where(community_function >= np.max(community_function))[0][0]
-            for k in plate.N.columns:
-                if k != plate.N.columns[winning_index]:
-                    s_id = np.random.choice(np.where(plate.N[k]>0)[0])
-                    plate.N[k][s_id]=0        
+        # Perturbation section
         if 'bottleneck' in params_algorithm["algorithm_name"][0]  and selection_algorithm == 'select_top':
             winning_index = np.where(community_function >= np.max(community_function))[0][0] 
             dilution_matrix = np.eye(assumptions['n_wells'])
             dilution_matrix[winning_index,winning_index] = 0
-            plate.Passage(np.eye(assumptions['n_wells'])* params_simulation["dilution"])
-        
+            if params_algorithm["algorithm_name"][0] == "bottleneck_1000":
+                plate.Passage(dilution_matrix / 1000)
+            if params_algorithm["algorithm_name"][0] == "bottleneck_10000":
+                plate.Passage(dilution_matrix / 10000)
+            if params_algorithm["algorithm_name"][0] == "bottleneck_100000":
+                plate.Passage(dilution_matrix / 100000)
+        if  'knock_in' in params_algorithm["algorithm_name"][0] and selection_algorithm == 'select_top':
+            selected = [] #Tracks pertubation id's to make sure we are not repeating the same one twice
+            winning_index = np.where(community_function >= np.max(community_function))[0][0] 
+            for k in plate.N.columns:
+                if k != plate.N.columns[winning_index]:
+                    sel = [x for x in np.where(plate.N[k]==0)[0] if x not in selected] #List to be selected from
+                    if 'isolates' in params_algorithm["algorithm_name"][0]:
+                        # Knock in an isolate that is 1) not in the resident community 2) have high monoculture function (above 90% isolates in the pool)  
+                        temp = np.logical_and(np.array(plate.N[k]==0), plate.isolate_function >= np.percentile(plate.isolate_function, q = 90))
+                        sel = [x for x in np.where(temp)[0] if x not in selected] #List to be selected from                
+                    if len(sel) == 0:
+                        continue
+                    s_id = np.random.choice(sel)
+                    selected.append(s_id)
+                    plate.N[k][s_id]= 1/params_simulation["dilution"] * 1/assumptions["scale"]
+        if 'knock_out' in params_algorithm["algorithm_name"][0] and selection_algorithm == 'select_top':
+            selected = [] #Tracks pertubation id's to make sure we are not repeating the same one twice=
+            winning_index = np.where(community_function >= np.max(community_function))[0][0]
+            for k in plate.N.columns:
+                if k != plate.N.columns[winning_index]:
+                    sel = [x for x in np.where(plate.N[k]>0)[0] if x not in selected] #List to be selected from
+                    if len(sel) == 0: #If you've already knocked out every species skip
+                        continue
+                    s_id = np.random.choice(sel)
+                    selected.append(s_id)
+                    plate.N[k][s_id]=0      
         if 'resource' in params_algorithm["algorithm_name"][0] and selection_algorithm == 'select_top':
+            selected = [] #Tracks pertubation id's to make sure we are not repeating the same one twice
             winning_index = np.where(community_function >= np.max(community_function))[0][0]
             #Remove fresh environment that was added by passage
             plate.R = plate.R - plate.R0
             #change default fresh renvironment so that all subsequent rounds use R0
             for k in plate.R0.columns:
                 if k != plate.R0.columns[winning_index]: 
-    				#By default pick 2 resources at randomk
-                    r_id_remove = np.random.choice(np.where(plate.R0[k]>=0)[0]) 
-                    r_id_add = np.random.choice(np.where(plate.R0[k]>=0)[0])
+                    #By default pick 2 resources at randomk
+                    sel = [(x,y) for x in np.where(plate.R0[k]>=0)[0] for y in np.where(plate.R0[k]>=0)[0] if x !=y]
+                    sel = [x for x in sel if x not in selected]
                     if 'add' in params_algorithm["algorithm_name"][0]: #remove from top and add to random
-                        r_id_remove = np.where(plate.R0[k]==np.max(plate.R0[k]))[0]
+                        top = np.where(plate.R0[k]==np.max(plate.R0[k]))[0]
+                        sel = [x for x in sel if x[0] ==top]
                     if 'remove' in params_algorithm["algorithm_name"][0]: #remove from random and add to bottom
-                        r_id_add = np.where(plate.R0[k]==np.min(plate.R0[k]))[0]
+                        bottom = np.where(plate.R0[k]==np.min(plate.R0[k]))[0]
+                        sel = [x for x in sel if x[1] ==bottom]
+                    if len(sel) == 0: #If you've done every possible resource pertubation skip.
+                        continue
+                    r_id = sel[np.random.choice(len(sel))]
+                    selected.append(r_id)   
                     if 'rescale_add' in params_algorithm["algorithm_name"][0]:  # Increase Fraction of resource
-                        plate.R0[k][r_id_add] = plate.R0[k][r_id_add]*(1+params_simulation['R_percent']) #increase resource conc by fixed %
+                        plate.R0[k][r_id[0]] = plate.R0[k][r_id[0]]*(1+params_simulation['R_percent']) #increase resource conc by fixed %
                     elif 'rescale_remove' in params_algorithm["algorithm_name"][0]: # Decrease Fraction of resource
-                        plate.R0[k][r_id_remove] = plate.R0[k][r_id_remove]*(1-params_simulation['R_percent'])  #decrease resource 
+                        plate.R0[k][r_id[1]] = plate.R0[k][r_id[1]]*(1-params_simulation['R_percent'])  #decrease resource 
                     elif 'resource_old' in params_algorithm["algorithm_name"][0]:
                         plate.R0[k] = plate.R0[k] * (1-params_simulation['R_percent']) #Dilute old resources
-                        plate.R0[k][r_id_add] = plate.R0[k][r_id_add] + (assumptions['R0_food']*params_simulation['R_percent'])
+                        plate.R0[k][r_id[0]] = plate.R0[k][r_id[0]] + (assumptions['R0_food']*params_simulation['R_percent'])
                     else: #Default to resource swap.
-                        plate.R0[k][r_id_add] = plate.R0[k][r_id_add] + (plate.R0[k][r_id_remove]*params_simulation['R_percent']) #add new resources
-                        plate.R0[k][r_id_remove] = plate.R0[k][r_id_remove]*(1-params_simulation['R_percent']) #remove new resources
+                        plate.R0[k][r_id[0]] = plate.R0[k][r_id[0]] + (plate.R0[k][r_id[1]]*params_simulation['R_percent']) #add new resources
+                        plate.R0[k][r_id[1]] = plate.R0[k][r_id[1]]*(1-params_simulation['R_percent']) #remove new resources
             plate.R0 = plate.R0/np.sum(plate.R0)*assumptions['R0_food'] #Keep this to avoid floating point error and rescale when neeeded.
             #add new fresh environment (so that this round uses R0
             plate.R = plate.R + plate.R0
-
-
-
-#         if 'resource' in params_algorithm["algorithm_name"][0] and ('old' not in params_algorithm["algorithm_name"][0]) and selection_algorithm == 'select_top':
-#             winning_index = np.where(community_function >= np.max(community_function))[0][0] 
-#             #Remove fresh environment that was added by passage
-#             plate.R = plate.R - plate.R0
-#             #change default fresh renvironment so that all subsequent rounds use R0
-#             for k in plate.R0.columns:
-#                 if k != plate.R0.columns[winning_index]: 
-#     				#By default pick 2 resources at randomk
-#                     r_id_remove = np.random.choice(np.where(plate.R0[k]>=0)[0]) 
-#                     r_id_add = np.random.choice(np.where(plate.R0[k]>=0)[0])
-#                     if 'add' in params_algorithm["algorithm_name"][0]: #remove from top and add to random
-#                     	r_id_remove = np.where(plate.R0[k]==np.max(plate.R0[k]))[0]
-#                     if 'remove' in params_algorithm["algorithm_name"][0]: #remove from random and add to bottom
-#                     	r_id_add = np.where(plate.R0[k]==np.min(plate.R0[k]))[0]
-#                     if 'rescale_add' in params_algorithm["algorithm_name"][0]:  # Increase Fraction of resource
-#                     	plate.R0[k][r_id_add] = plate.R0[k][r_id_add]*(1+params_simulation['R_percent']) #increase resource conc by fixed %
-#                     elif 'rescale_remove' in params_algorithm["algorithm_name"][0]: # Decrease Fraction of resource
-#                     	plate.R0[k][r_id_remove] = plate.R0[k][r_id_add]*(1-params_simulation['R_percent'])  #decrease resource conc by fixed %
-#                     else: #Default to resource swap.
-#                     	plate.R0[k][r_id_add] = plate.R0[k][r_id_add] + (plate.R0[k][r_id_remove]*params_simulation['R_percent']) #add new resources
-#                     	plate.R0[k][r_id_remove] = plate.R0[k][r_id_remove]*(1-params_simulation['R_percent']) #remove new resources
-#             plate.R0 = plate.R0/np.sum(plate.R0)*assumptions['R0_food'] #Keep this to avoid floating point error and rescale when neeeded.
-#             #add new fresh environment (so that this round uses R0
-#             plate.R = plate.R + plate.R0
-# 
-#         if 'resource_old' in params_algorithm["algorithm_name"][0] and selection_algorithm == 'select_top':
-#             winning_index = np.where(community_function >= np.max(community_function))[0][0] 
-# 			#Remove fresh environment that was added by passage
-#             plate.R = plate.R - plate.R0
-# 			#change default fresh renvironment so that all subsequent rounds use R0
-#             for k in plate.R0.columns:
-#                 if k != plate.R0.columns[winning_index]: 
-#                     r_id = np.random.choice(np.where(plate.R0[k]>=0)[0])
-#                     plate.R0[k][r_id] = assumptions['R0_food']/10
-#             plate.R0 = plate.R0/np.sum(plate.R0)*assumptions['R0_food']
-#             ##add new fresh environment (so that this round uses R0
-#             plate.R = plate.R + plate.R0
-
             
     print("\nAlgorithm "+ params_algorithm["algorithm_name"][0] + " finished")
 

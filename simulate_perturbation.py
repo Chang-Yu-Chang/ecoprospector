@@ -10,7 +10,7 @@ seed_temp = int(sys.argv[1]) # Species pool number
 tested_phenotype = str(sys.argv[2]) # Tested communtiy function. Default to f1_additive 
 target_well = str(sys.argv[3]) # Target well for perturbation. Default is the number of rank of community
 perturbation = int(sys.argv[4]) # Perturbation treatment
-migration_strength = int(sys.argv[5]) # Migration strength n_migration. 1 = knock-in isolates, 10**6 = migration
+migration_strength = int(sys.argv[5]) # Migration strength n_migration. 1 = knock-in one species, 
 resource_strength = float(sys.argv[6]) # Resource stregnth R_percent.
 
 print("\nSpecies pool: " +  str(seed_temp))
@@ -80,7 +80,8 @@ assumptions.update({
     "n_transfer_selection": 5, # Number of transfer implementing seleciton regimes
     "dilution": 1/1000, # Dilution factor at every transfer
     "n_inoc": 10**6,  #Number of cells sampled from the regional species at start
-    "n_migration": migration_strength, # Number of cells to be migrated in the migration perturbation algorithm
+    "n_migration": 1000, # Number of cells to be migrated in the migration perturbation algorithm
+    "s_migration": migration_strength, # Number of species to be migrated in the migration perturbation algorithm
     "R_percent": resource_strength, # Fracion of new resources to be spiked in to the media in the resource perturbation algorithm
     "selected_function": "f1_additive"
 })
@@ -157,7 +158,7 @@ plate.Passage(transfer_matrix * params_simulation["dilution"])
 # Perturbation
 ## Migration
 m = globals()[migration_algorithm](community_function)
-plate.N = migrate_from_pool(plate, migration_factor = m, assumptions = assumptions, community_function = community_function) # By default, n_migration is the same as n_inoc
+plate.N = migrate_from_pool(plate, migration_factor = m, assumptions = assumptions, power_law = False, community_function = community_function) # By default, n_migration is the same as n_inoc
 
 ## Resource 
 if 'resource' in params_algorithm["algorithm_name"][0] and selection_algorithm == 'select_top':

@@ -259,6 +259,93 @@ def make_algorithms(params_simulation):
         "migration_algorithm": "no_migration"
     })  
 
+    # Select top 25% and bottleneck or pool top 25% and bottleneck
+    select_top25_bottleneck_10 = pd.DataFrame({
+        "algorithm_name": "select_top25_bottleneck_10",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["select_top_25_bottleneck_10"] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
+        "migration_algorithm": "no_migration"
+    })  
+    select_top25_bottleneck_100 = pd.DataFrame({
+        "algorithm_name": "select_top25_bottleneck_100",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["select_top_25_bottleneck_100"] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
+        "migration_algorithm": "no_migration"
+    })  
+    select_top25_bottleneck_1000 = pd.DataFrame({
+        "algorithm_name": "select_top25_bottleneck_1000",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["select_top_25_bottleneck_1000"] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
+        "migration_algorithm": "no_migration"
+    })  
+    select_top25_bottleneck_10000 = pd.DataFrame({
+        "algorithm_name": "select_top25_bottleneck_10000",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["select_top_25_bottleneck_10000"] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
+        "migration_algorithm": "no_migration"
+    })
+    select_top25_bottleneck_100000 = pd.DataFrame({
+        "algorithm_name": "select_top25_bottleneck_100000",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["select_top_25_bottleneck_100000"] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
+        "migration_algorithm": "no_migration"
+    })  
+    select_top25_bottleneck_1000000 = pd.DataFrame({
+        "algorithm_name": "select_top25_bottleneck_1000000",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["select_top_25_bottleneck_1000000"] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
+        "migration_algorithm": "no_migration"
+    })  
+    pool_top25_bottleneck_10 = pd.DataFrame({
+        "algorithm_name": "pool_top25_bottleneck_10",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["pool_top_25_bottleneck_10"] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
+        "migration_algorithm": "no_migration"
+    })  
+    pool_top25_bottleneck_100 = pd.DataFrame({
+        "algorithm_name": "pool_top25_bottleneck_100",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["pool_top_25_bottleneck_100"] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
+        "migration_algorithm": "no_migration"
+    })  
+    pool_top25_bottleneck_1000 = pd.DataFrame({
+        "algorithm_name": "pool_top25_bottleneck_1000",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["pool_top_25_bottleneck_1000"] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
+        "migration_algorithm": "no_migration"
+    })  
+    pool_top25_bottleneck_10000 = pd.DataFrame({
+        "algorithm_name": "pool_top25_bottleneck_10000",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["pool_top_25_bottleneck_10000"] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
+        "migration_algorithm": "no_migration"
+    })  
+    pool_top25_bottleneck_100000 = pd.DataFrame({
+        "algorithm_name": "pool_top25_bottleneck_100000",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["pool_top_25_bottleneck_100000"] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
+        "migration_algorithm": "no_migration"
+    })  
+    pool_top25_bottleneck_1000000 = pd.DataFrame({
+        "algorithm_name": "pool_top25_bottleneck_1000000",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["pool_top_25_bottleneck_1000000"] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
+        "migration_algorithm": "no_migration"
+    })  
+
+
     ## Pair top communities
     pair_top_communities = pd.DataFrame({
         "algorithm_name": "pair_top_communities",
@@ -301,6 +388,24 @@ def make_algorithms(params_simulation):
         "transfer": range(1, params_simulation["n_transfer"] + 1),
         "community_phenotype": params_simulation["selected_function"],
         "selection_algorithm": ["pool_top10percent_control" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
+        "migration_algorithm": "no_migration"
+    })
+    
+    # Chang2020
+    Chang2020 = pd.DataFrame({
+        "algorithm_name": "Chang2020",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": ["select_top25percent" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
+        "migration_algorithm": "no_migration"
+    })
+
+    # Chang2020_control
+    Chang2020_control = pd.DataFrame({
+        "algorithm_name": "Chang2020_control",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": ["select_top25percent_control" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
         "migration_algorithm": "no_migration"
     })
     
@@ -429,7 +534,16 @@ def make_algorithms(params_simulation):
         "selection_algorithm": ["pool_top10percent" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
         "migration_algorithm": "no_migration"
     })
-
+    
+    # Wright2019_control
+    Wright2019_control = pd.DataFrame({
+        "algorithm_name": "Wright2019_control",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": ["pool_top10percent_control" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
+        "migration_algorithm": "no_migration"
+    })
+    
     # Xie2019a
     Xie2019a = pd.DataFrame({
         "algorithm_name": "Xie2019a",
@@ -543,6 +657,33 @@ def make_algorithms(params_simulation):
         "migration_algorithm": "no_migration"
     })      
     
+    # Bottleneck addition 1000
+    bottleneck_1000 = pd.DataFrame({
+        "algorithm_name": "bottleneck_1000",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["select_top"] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
+        "migration_algorithm": "no_migration"
+    })      
+    
+    # Bottleneck addition 10000
+    bottleneck_10000 = pd.DataFrame({
+        "algorithm_name": "bottleneck_10000",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["select_top"] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
+        "migration_algorithm": "no_migration"
+    })      
+    
+    # Bottleneck addition 100000
+    bottleneck_100000 = pd.DataFrame({
+        "algorithm_name": "bottleneck_100000",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["select_top"] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
+        "migration_algorithm": "no_migration"
+    })      
+    
     #Coalescence_Pertubation
     coalescence = pd.DataFrame({
         "algorithm_name": "coalescence",
@@ -613,7 +754,7 @@ def make_algorithms(params_simulation):
         "selection_algorithm": ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["select_top"] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
         "migration_algorithm": "no_migration"
     })  
-    
+
     
     #long experiments
     iterative_ctrl = pd.DataFrame({
@@ -660,15 +801,18 @@ def make_algorithms(params_simulation):
     algorithms = pd.concat([
         # Control
         simple_screening, positive_control, monoculture, select_top25, select_top10, pool_top25, pool_top10,
+        select_top25_bottleneck_10, select_top25_bottleneck_100, select_top25_bottleneck_1000, select_top25_bottleneck_10000, select_top25_bottleneck_100000, select_top25_bottleneck_1000000,
+        pool_top25_bottleneck_10, pool_top25_bottleneck_100, pool_top25_bottleneck_1000, pool_top25_bottleneck_10000, pool_top25_bottleneck_100000, pool_top25_bottleneck_1000000,
         # Directed selection
         pair_top_communities, multiple_pair_top, directed_selection_migration,
         # Literature
-        Arora2019, Blouin2015, Blouin2015_control, Jochum2019, Mueller2019, Panke_Buisse2015, Penn2004,
+        Arora2019, Blouin2015, Blouin2015_control, Chang2020, Chang2020_control, Jochum2019, Mueller2019, Panke_Buisse2015, Penn2004,
         Raynaud2019a, Raynaud2019b, Swenson2000a, Swenson2000a_control, Swenson2000b, Swenson2000b_control, Swenson2000c,
-        Williams2007a, Williams2007b, Wright2019, Xie2019a, Xie2019b,
+        Williams2007a, Williams2007b, Wright2019, Wright2019_control, Xie2019a, Xie2019b,
         Arora2019_V2, Arora2019_V2_control, Raynaud2019a_V2, Raynaud2019a_V2_control, Raynaud2019b_V2, Raynaud2019b_V2_control,
         # Perturbation
         ctrl, coalescence, migration, bottleneck, knock_out, knock_in, knock_in_isolates,
+        bottleneck_1000, bottleneck_10000, bottleneck_100000,
         resource_old, resource, resource_add, resource_remove, resource_rescale_add, resource_rescale_remove,
         # Iterative perturabation
         iterative_ctrl,iterative_resource,iterative_migration,iterative_resource_migration,iterative_coalescence])
