@@ -190,25 +190,6 @@ if 'resource' in params_algorithm["algorithm_name"][0] and selection_algorithm =
     plate.R = plate.R + plate.R0
 
 
-
-# Save the inocula composition
-# plate_data = reshape_plate_data(plate, transfer_loop_index = 0, assembly_type = assembly_type, community_function_name = params_algorithm["community_phenotype"][0]) # Initial state
-# plate_data["Perturbation"] = perturbation; plate_data["MigrationStrength"] = migration_strength; plate_data["ResourceStrength"] = resource_strength
-# # Save the initial function
-# community_function = globals()[params_algorithm["community_phenotype"][0]](plate, assumptions = assumptions) # Community phenotype
-# richness = np.sum(plate.N >= 1/assumptions["scale"], axis = 0) # Richness
-# biomass = list(np.sum(plate.N, axis = 0)) # Biomass
-# function_data = reshape_function_data(community_function_name = params_algorithm["community_phenotype"][0], community_function = community_function, richness = richness, biomass = biomass, transfer_loop_index = 0, assembly_type = assembly_type)        
-# function_data["Perturbation"] = perturbation; function_data["MigrationStrength"] = migration_strength; function_data["ResourceStrength"] = resource_strength
-# # Output the plate composition and community functions if write_composition set True
-# plate_data.to_csv(file_name + "-" + params_algorithm["community_phenotype"][0] + "-T05.5" +  "-composition.txt", index = False)
-# function_data.to_csv(file_name + "-" + params_algorithm["community_phenotype"][0] + "-T05.5" + "-function.txt", index = False)
-
-# plate_data.to_csv(file_name + "-" + params_algorithm["community_phenotype"][0] + "-T" + "{:02d}".format(params_simulation["n_transfer_selection"]+1) + "-composition.txt", index = False)
-# function_data.to_csv(file_name + "-" + params_algorithm["community_phenotype"][0] + "-T" + "{:02d}".format(params_simulation["n_transfer_selection"]+1) + "-function.txt", index = False)
-
-
-
 # Propagation
 print("\nStart propogation")
 # Run simulation. Starting from the first transfer of stablization

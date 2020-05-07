@@ -94,28 +94,6 @@ def migrate_from_pool(plate,migration_factor,assumptions,power_law = True,commun
             plate_migrated = plate.N
     return plate_migrated
 
-# def migrate_from_pool(plate, migration_factor, assumptions, community_function = None):
-#     if assumptions["n_migration"] == 1: # knock_in_isolates
-#         # setattr(plate, "isolate_function", [i for i in range(2100)])
-#         # print(plate.isolate_function)
-#         plate_migrated = plate.N.copy()
-#         winning_index = np.where(community_function >= np.max(community_function))[0][0]
-#         for k in plate.N.columns:
-#             if k != plate.N.columns[winning_index]:
-#                 s_id = np.random.choice(np.where(plate.N[k]==0)[0])
-# 
-#     elif assumptions["n_migration"] != 1:
-#         if np.sum(migration_factor) !=0:
-#             print('Migration')
-#             migration_plate = sample_from_pool(plate.N, scale = assumptions["scale"], inocula = assumptions["n_migration"], migration = True) * migration_factor # Migration factor is a list determined by migration algorithms and community function
-#             plate_migrated = plate.N + migration_plate 
-#             
-#         else:
-#             plate_migrated = plate.N
-#         
-#     return plate_migrated
-
-
 # Make rich medium
 def make_rich_medium(plate_R, assumptions):
     """
@@ -206,7 +184,7 @@ def simulate_community(
     # Add the attributes that are essential to the function measurement to the plate objects 
     print("\nAdding attributes that are essential to the community function to the plate object")
     plate = add_community_function(plate, dynamics, assumptions, params, params_simulation, params_algorithm)
-    
+
     # Empty list for saving data
     plate_data_list = list() # Plate composition
     community_function_list = list() # Community function
@@ -280,13 +258,14 @@ def simulate_community(
         if 'bottleneck' in params_algorithm["algorithm_name"][0]  and selection_algorithm == 'select_top':
             winning_index = np.where(community_function >= np.max(community_function))[0][0] 
             dilution_matrix = np.eye(assumptions['n_wells'])
-            dilution_matrix[winning_index,winning_index] = 0
-            if params_algorithm["algorithm_name"][0] == "bottleneck_1000":
-                plate.Passage(dilution_matrix / 1000)
-            if params_algorithm["algorithm_name"][0] == "bottleneck_10000":
-                plate.Passage(dilution_matrix / 10000)
-            if params_algorithm["algorithm_name"][0] == "bottleneck_100000":
-                plate.Passage(dilution_matrix / 100000)
+            dilution_matrix[winning_index,winning_index] = 1
+            # For additional bottleneck. For example, bottleneck_10 means the total dilution factor is 1000*10 = 10000
+            if params_algorithm["algorithm_name"][0] == "bottleneck_1":
+                plate.Passage(dilution_matrix / 1)
+            if params_algorithm["algorithm_name"][0] == "bottleneck_10":
+                plate.Passage(dilution_matrix / 10)
+            if params_algorithm["algorithm_name"][0] == "bottleneck_100":
+                plate.Passage(dilution_matrix / 100)
         if  'knock_in' in params_algorithm["algorithm_name"][0] and selection_algorithm == 'select_top':
             selected = [] #Tracks pertubation id's to make sure we are not repeating the same one twice
             winning_index = np.where(community_function >= np.max(community_function))[0][0] 
@@ -342,8 +321,21 @@ def simulate_community(
                         plate.R0[k] = plate.R0[k] * (1-params_simulation['R_percent']) #Dilute old resources
                         plate.R0[k][r_id[0]] = plate.R0[k][r_id[0]] + (assumptions['R0_food']*params_simulation['R_percent'])
                     else: #Default to resource swap.
-                        plate.R0[k][r_id[0]] = plate.R0[k][r_id[0]] + (plate.R0[k][r_id[1]]*params_simulation['R_percent']) #add new resources
-                        plate.R0[k][r_id[1]] = plate.R0[k][r_id[1]]*(1-params_simulation['R_percent']) #remove new resources
+                        # For resource_add with R_percent 0.1, 0.5, and 1
+                        if "resource_add_10" in params_algorithm["algorithm_name"][0]:
+                            plate.R0[k][r_id[0]] = plate.R0[k][r_id[0]] + (plate.R0[k][r_id[1]]*0.1) #add new resources
+                            plate.R0[k][r_id[1]] = plate.R0[k][r_id[1]]*(1-0.1) #remove new resources
+                        elif "resource_add_2" in params_algorithm["algorithm_name"][0]:
+                            plate.R0[k][r_id[0]] = plate.R0[k][r_id[0]] + (plate.R0[k][r_id[1]]*0.5) #add new resources
+                            plate.R0[k][r_id[1]] = plate.R0[k][r_id[1]]*(1-0.5) #remove new resources
+                        elif "resource_add_1" in params_algorithm["algorithm_name"][0]:
+                            plate.R0[k][r_id[0]] = plate.R0[k][r_id[0]] + (plate.R0[k][r_id[1]]*1) #add new resources
+                            plate.R0[k][r_id[1]] = plate.R0[k][r_id[1]]*(1-1) #remove new resources
+                        # Else default remain the same
+                        else:
+                            plate.R0[k][r_id[0]] = plate.R0[k][r_id[0]] + (plate.R0[k][r_id[1]]*params_simulation['R_percent']) #add new resources
+                            plate.R0[k][r_id[1]] = plate.R0[k][r_id[1]]*(1-params_simulation['R_percent']) #remove new resources
+
             plate.R0 = plate.R0/np.sum(plate.R0)*assumptions['R0_food'] #Keep this to avoid floating point error and rescale when neeeded.
             #add new fresh environment (so that this round uses R0
             plate.R = plate.R + plate.R0

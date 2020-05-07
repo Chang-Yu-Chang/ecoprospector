@@ -105,7 +105,8 @@ def prepare_experiment(assumptions, seed = 1):
     np.random.seed(seed) 
     
     # Make parameters
-    params = MakeParams(assumptions) 
+    params = MakeParams(assumptions) # When rerun, moved to after the functions are drawn to prevent MakeParams() messes up the seed
+
     
     # Generate a species pool with the species abundance
     #species_pool = make_regional_pool(assumptions) 
@@ -122,6 +123,7 @@ def prepare_experiment(assumptions, seed = 1):
         "interaction_function": function_interaction,
         "interaction_function_p25": function_interaction_p25
     })
+    
     
     return params, params_simulation
 
@@ -391,18 +393,36 @@ def make_algorithms(params_simulation):
         "migration_algorithm": "no_migration"
     })
     
-    # Chang2020
-    Chang2020 = pd.DataFrame({
-        "algorithm_name": "Chang2020",
+    # Chang2020a
+    Chang2020a = pd.DataFrame({
+        "algorithm_name": "Chang2020a",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": ["select_top16percent" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
+        "migration_algorithm": "no_migration"
+    })
+
+    # Chang2020a_control
+    Chang2020a_control = pd.DataFrame({
+        "algorithm_name": "Chang2020a_control",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": ["select_top16percent_control" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
+        "migration_algorithm": "no_migration"
+    })    
+    
+    # Chang2020b
+    Chang2020b = pd.DataFrame({
+        "algorithm_name": "Chang2020b",
         "transfer": range(1, params_simulation["n_transfer"] + 1),
         "community_phenotype": params_simulation["selected_function"],
         "selection_algorithm": ["select_top25percent" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
         "migration_algorithm": "no_migration"
     })
 
-    # Chang2020_control
-    Chang2020_control = pd.DataFrame({
-        "algorithm_name": "Chang2020_control",
+    # Chang2020b_control
+    Chang2020b_control = pd.DataFrame({
+        "algorithm_name": "Chang2020b_control",
         "transfer": range(1, params_simulation["n_transfer"] + 1),
         "community_phenotype": params_simulation["selected_function"],
         "selection_algorithm": ["select_top25percent_control" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
@@ -657,27 +677,27 @@ def make_algorithms(params_simulation):
         "migration_algorithm": "no_migration"
     })      
     
-    # Bottleneck addition 1000
-    bottleneck_1000 = pd.DataFrame({
-        "algorithm_name": "bottleneck_1000",
+    # Bottleneck additional 1 -> the same as the original bottleneck
+    bottleneck_1 = pd.DataFrame({
+        "algorithm_name": "bottleneck_1",
         "transfer": range(1, params_simulation["n_transfer"] + 1),
         "community_phenotype": params_simulation["selected_function"],
         "selection_algorithm": ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["select_top"] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
         "migration_algorithm": "no_migration"
     })      
     
-    # Bottleneck addition 10000
-    bottleneck_10000 = pd.DataFrame({
-        "algorithm_name": "bottleneck_10000",
+    # Bottleneck additional 10
+    bottleneck_10 = pd.DataFrame({
+        "algorithm_name": "bottleneck_10",
         "transfer": range(1, params_simulation["n_transfer"] + 1),
         "community_phenotype": params_simulation["selected_function"],
         "selection_algorithm": ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["select_top"] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
         "migration_algorithm": "no_migration"
     })      
     
-    # Bottleneck addition 100000
-    bottleneck_100000 = pd.DataFrame({
-        "algorithm_name": "bottleneck_100000",
+    # Bottleneck additional 10
+    bottleneck_100 = pd.DataFrame({
+        "algorithm_name": "bottleneck_100",
         "transfer": range(1, params_simulation["n_transfer"] + 1),
         "community_phenotype": params_simulation["selected_function"],
         "selection_algorithm": ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["select_top"] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
@@ -707,14 +727,6 @@ def make_algorithms(params_simulation):
         "algorithm_name": "resource",
         "transfer": range(1, params_simulation["n_transfer"] + 1),
         "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["select_top"] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])],
-        "migration_algorithm": "no_migration"
-    })
-    #Resource pertubation algorithms
-    resource = pd.DataFrame({
-        "algorithm_name": "resource",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
         "selection_algorithm": ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["select_top"] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
         "migration_algorithm": "no_migration"
     })  
@@ -732,7 +744,31 @@ def make_algorithms(params_simulation):
         "community_phenotype": params_simulation["selected_function"],
         "selection_algorithm": ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["select_top"] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
         "migration_algorithm": "no_migration"
-    })  
+    })
+    
+    # Reource add. The number indicates the inverse of R_percent. For example _10 means R_percent = 0.1, _2 means R_percent = 0.5
+    resource_add_10 = pd.DataFrame({
+        "algorithm_name": "resource_add_10",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["select_top"] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
+        "migration_algorithm": "no_migration"
+    })
+    resource_add_2 = pd.DataFrame({
+        "algorithm_name": "resource_add_2",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["select_top"] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
+        "migration_algorithm": "no_migration"
+    })
+    resource_add_1 = pd.DataFrame({
+        "algorithm_name": "resource_add_1",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["select_top"] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
+        "migration_algorithm": "no_migration"
+    })
+    
     resource_remove = pd.DataFrame({
         "algorithm_name": "resource_remove",
         "transfer": range(1, params_simulation["n_transfer"] + 1),
@@ -803,17 +839,19 @@ def make_algorithms(params_simulation):
         simple_screening, positive_control, monoculture, select_top25, select_top10, pool_top25, pool_top10,
         select_top25_bottleneck_10, select_top25_bottleneck_100, select_top25_bottleneck_1000, select_top25_bottleneck_10000, select_top25_bottleneck_100000, select_top25_bottleneck_1000000,
         pool_top25_bottleneck_10, pool_top25_bottleneck_100, pool_top25_bottleneck_1000, pool_top25_bottleneck_10000, pool_top25_bottleneck_100000, pool_top25_bottleneck_1000000,
-        # Directed selection
+        # Directed selection. deprecated algorithms
         pair_top_communities, multiple_pair_top, directed_selection_migration,
         # Literature
-        Arora2019, Blouin2015, Blouin2015_control, Chang2020, Chang2020_control, Jochum2019, Mueller2019, Panke_Buisse2015, Penn2004,
+        Arora2019, Blouin2015, Blouin2015_control, Chang2020a, Chang2020a_control, Chang2020b, Chang2020b_control, 
+        Jochum2019, Mueller2019, Panke_Buisse2015, Penn2004,
         Raynaud2019a, Raynaud2019b, Swenson2000a, Swenson2000a_control, Swenson2000b, Swenson2000b_control, Swenson2000c,
         Williams2007a, Williams2007b, Wright2019, Wright2019_control, Xie2019a, Xie2019b,
         Arora2019_V2, Arora2019_V2_control, Raynaud2019a_V2, Raynaud2019a_V2_control, Raynaud2019b_V2, Raynaud2019b_V2_control,
         # Perturbation
         ctrl, coalescence, migration, bottleneck, knock_out, knock_in, knock_in_isolates,
-        bottleneck_1000, bottleneck_10000, bottleneck_100000,
         resource_old, resource, resource_add, resource_remove, resource_rescale_add, resource_rescale_remove,
+        bottleneck_1, bottleneck_10, bottleneck_100,
+        resource_add_10, resource_add_2, resource_add_1,
         # Iterative perturabation
         iterative_ctrl,iterative_resource,iterative_migration,iterative_resource_migration,iterative_coalescence])
     
