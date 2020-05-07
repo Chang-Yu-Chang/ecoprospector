@@ -7,7 +7,7 @@ This package is designed for executing selection and migration algorithms on com
 
 ## Dependencies
 
-This package heavily depends on [community-simulator](https://github.com/Emergent-Behaviors-in-Biology/community-simulator), which depends on Numpy, Pandas, Matplotlib, SciPy that are all included in Anaconda distribution.  
+`community-selection` package heavily depends on [community-simulator](https://github.com/Emergent-Behaviors-in-Biology/community-simulator) (developed by the Mehta group and this package was described in their [paper](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0230430)), which depends on Numpy, Pandas, Matplotlib, SciPy that are all included in Anaconda distribution.  
 
 
 ## Documentation
