@@ -8,7 +8,7 @@ deprecated/*
 figure/*
 data/*
 script/*
-algorithm/*
+report/*
 
 # Python notebook
 *.ipynb
