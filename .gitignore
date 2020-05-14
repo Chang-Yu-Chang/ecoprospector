@@ -9,6 +9,7 @@ figure/*
 data/*
 script/*
 report/*
+wrapper/*
 
 # Python notebook
 *.ipynb

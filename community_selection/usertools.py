@@ -5,6 +5,11 @@ Created on Mar 09 2020
 @author: changyuchang
 """
 
+"""
+Default parameters and algorithms
+"""
+
+
 import numpy as np
 import scipy as sp
 

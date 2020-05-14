@@ -302,7 +302,7 @@ def simulate_community(
                 if k != plate.R0.columns[winning_index]: 
                     #By default pick 2 resources at randomk
                     sel = [(x,y) for x in np.where(plate.R0[k]>=0)[0] for y in np.where(plate.R0[k]>=0)[0] if x !=y]
-                    sel = [x for x in sel if x not in selected]
+                    sel = [x for x in sel if x not in selected] 
                     if 'add' in params_algorithm["algorithm_name"][0]: #remove from top and add to random
                         top = np.where(plate.R0[k]==np.max(plate.R0[k]))[0]
                         sel = [x for x in sel if x[0] ==top]
@@ -312,7 +312,7 @@ def simulate_community(
                     if len(sel) == 0: #If you've done every possible resource pertubation skip.
                         continue
                     r_id = sel[np.random.choice(len(sel))]
-                    selected.append(r_id)   
+                    selected.append(r_id) 
                     if 'rescale_add' in params_algorithm["algorithm_name"][0]:  # Increase Fraction of resource
                         plate.R0[k][r_id[0]] = plate.R0[k][r_id[0]]*(1+params_simulation['R_percent']) #increase resource conc by fixed %
                     elif 'rescale_remove' in params_algorithm["algorithm_name"][0]: # Decrease Fraction of resource
