@@ -284,6 +284,7 @@ def Arora2019(community_function, n_rep=3):
 	    winner_index = np.where(community_function[i*n_rep:(i*n_rep)+n_rep] == cut_off)[0]
 	    transfer_matrix[i*n_rep:(i*n_rep)+n_rep, winner_index+i*n_rep] = 1
     return transfer_matrix
+    
 def Arora2019_control(community_function, n_rep=3):
     """
   	Same as Arora2019 except the line member is selected at Random
