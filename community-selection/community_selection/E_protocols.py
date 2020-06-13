@@ -187,14 +187,6 @@ def make_algorithms(params_simulation):
         "migration_algorithm": "no_migration"
     })  
     
-    # Arora2019
-    Arora2019 = pd.DataFrame({
-        "algorithm_name": "Arora2019",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["select_top33percent" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    })
     
     # Blouin2015
     Blouin2015 = pd.DataFrame({
@@ -405,14 +397,14 @@ def make_algorithms(params_simulation):
     
     # Arora2019
     Arora2019 = pd.DataFrame({
-        "algorithm_name": "Arora2019_V2",
+        "algorithm_name": "Arora2019",
         "transfer": range(1, params_simulation["n_transfer"] + 1),
         "community_phenotype": params_simulation["selected_function"],
         "selection_algorithm": ["Arora2019" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
         "migration_algorithm": "no_migration"
     })    
     Arora2019_control = pd.DataFrame({
-        "algorithm_name": "Arora2019_V2_control",
+        "algorithm_name": "Arora2019_control",
         "transfer": range(1, params_simulation["n_transfer"] + 1),
         "community_phenotype": params_simulation["selected_function"],
         "selection_algorithm": ["Arora2019_control" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
@@ -482,11 +474,10 @@ def make_algorithms(params_simulation):
         pool_top25_bottleneck_10, pool_top25_bottleneck_100, pool_top25_bottleneck_1000, 
         pool_top25_bottleneck_10000, pool_top25_bottleneck_100000, pool_top25_bottleneck_1000000,
         # Literature
-        Arora2019, Blouin2015, Blouin2015_control, Chang2020a, Chang2020a_control, Chang2020b, Chang2020b_control, 
+        Arora2019, Arora2019_control, Blouin2015, Blouin2015_control, Chang2020a, Chang2020a_control, Chang2020b, Chang2020b_control, 
         Jochum2019, Mueller2019, Panke_Buisse2015, Penn2004,
-        Raynaud2019a, Raynaud2019b, Swenson2000a, Swenson2000a_control, Swenson2000b, Swenson2000b_control, Swenson2000c,
+        Raynaud2019a, Raynaud2019a_control, Raynaud2019b, Raynaud2019b_control, Swenson2000a, Swenson2000a_control, Swenson2000b, Swenson2000b_control, Swenson2000c,
         Williams2007a, Williams2007b, Wright2019, Wright2019_control, Xie2019a, Xie2019b,
-        Arora2019, Arora2019_control, Raynaud2019a, Raynaud2019a_control, Raynaud2019b, Raynaud2019b_control,
         # directed selection
         directed_selection,directed_selection_long])
     

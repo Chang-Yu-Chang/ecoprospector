@@ -91,6 +91,7 @@ def migrate_from_pool(plate,migration_factor,params_simulation,power_law = True,
     If power_law pool is true than sample n cells from species pool following power law distribution (default is same as inoculum)
     If power_law is false sample s_migration species from isolates with each total number of cells equivalent to n
     '''
+    from community_selection.usertools import sample_from_pool
     if n is None:
         n = params_simulation['n_migration']
     if power_law:
@@ -101,12 +102,15 @@ def migrate_from_pool(plate,migration_factor,params_simulation,power_law = True,
         else:
             plate_migrated = plate.N
     else: 
-        plate_migrated = plate.N.copy()
-        for k in plate_migrated.N.columns:
-            if migration_factor[np.where(plate_migrated.N.columns == k)[0]]>0: 
-                for j in range(0,params_simulation['s_migration']):
-                    s_id = np.random.choice(np.where(plate.N[k]==0)[0])
-                    plate_migrated.N[k][s_id]= n * 1/params_simulation["scale"] * 1/params_simulation['s_migration']
+        if np.sum(migration_factor) !=0:
+            migration_plate = plate.N.copy()
+            migration_plate[:]  =0
+            for k in plate.N.columns:
+                if migration_factor[np.where(plate.N.columns == k)[0]]>0: 
+                    for j in range(0,params_simulation['s_migration']):
+                        s_id = np.random.choice(np.where(plate.N[k]==0)[0])
+                        migration_plate[k][s_id]= n * 1/params_simulation["scale"] * 1/params_simulation['s_migration']
+            plate_migrated = plate.N + migration_plate
         else:
             plate_migrated = plate.N
     return plate_migrated
@@ -181,16 +185,16 @@ def resource_perturb(plate,params_simulation,keep):
 				plate.R0[k][r_id] = plate.R0[k][r_id]*(1-params_simulation['r_percent']) 
 			elif params_simulation['r_type'] == 'old':
 				plate.R0[k] = plate.R0[k] * (1-params_simulation['R_percent']) #Dilute old resource
-				plate.R0[k][r_id] = plate.R0[k][r_id] + (assumptions['R0_food']*params_simulation['R_percent']) #Add fixed percent
+				plate.R0[k][r_id] = plate.R0[k][r_id] + (params_simulation['R0_food']*params_simulation['R_percent']) #Add fixed percent
 			else:
 				plate.R0[k][r_id[0]] = plate.R0[k][r_id[0]] + (plate.R0[k][r_id[1]]*params_simulation['r_percent']) #add new resources
 				plate.R0[k][r_id[1]] = plate.R0[k][r_id[1]]*(1-params_simulation['r_percent']) #remove new resources
 			# Remove chosen pertubation as option for subsequent loop
 			metabolite_choice = [x for x in metabolite_choice if x != r_id]
-	plate.R0 = plate.R0/np.sum(plate.R0)*assumptions['R0_food'] #Keep this to avoid floating point error and rescale when neeeded.
+	plate.R0 = plate.R0/np.sum(plate.R0)*params_simulation['R0_food'] #Keep this to avoid floating point error and rescale when neeeded.
 	#add new fresh environment (so that this round uses R0
 	plate.R = plate.R + plate.R0
-	return platew
+	return plate
             	
 # Main function for simulating community
 def perturb(plate,params_simulation,keep):
@@ -199,46 +203,45 @@ def perturb(plate,params_simulation,keep):
 	if params_simulation['bottleneck']:
 		dilution_matrix = np.eye(params_simulation['n_wells'])*params_simulation['bottleneck_size'] 
 		dilution_matrix[keep,keep] = 1
+		old_R = plate.R.copy()
 		plate.Passage(dilution_matrix)
-	#knock_in isolates absent from all communities
-	elif params_simulation['knock_in']:
+		plate.R = old_R.copy()	#knock_in isolates absent from all communities
+	if params_simulation['knock_in']:
 		knock_in_list = np.where(np.logical_and(np.array(np.sum(plate.N,axis=1) ==0.0) , plate.isolate_function >= np.percentile(plate.isolate_function, q = 100*params_simulation['knock_in_threshold'])))[0]
 		for k in plate.N.columns:
-			if k == plate.N.column[keep] or len(knock_in_list) ==0.0:
+			if k == plate.N.columns[keep] or len(knock_in_list) ==0.0:
 				continue
 			else:
 				s_id = np.random.choice(knock_in_list) 
-				plate.N[k][s_id]= 1/params_simulation["dilution"] * 1/assumptions["scale"] #Knock in enough to survive 1 dilution even with no growth
+				plate.N[k][s_id]= 1/params_simulation["dilution"] * 1/params_simulation["scale"] #Knock in enough to survive 1 dilution even with no growth
 				knock_in_list = knock_in_list[knock_in_list != s_id] 
 	#knock_out isolates present in all communities
-	elif params_simulation['knock_out']:
+	if params_simulation['knock_out']:
 		knock_out_list = np.where(np.sum(plate.N>0.0,axis=1) == params_simulation['n_wells'])[0]
 		for k in plate.N.columns:
-			if k == plate.N.column[keep] or len(knock_in_list) ==0.0:
+			if k == plate.N.columns[keep] or len(knock_out_list) ==0.0:
 				continue
 			else:
-				s_id = np.random.choice(knock_in_list) 
+				s_id = np.random.choice(knock_out_list) 
 				plate.N[k][s_id]= 0
-				knock_in_list = knock_in_list[knock_in_list != s_id] 
+				knock_out_list = knock_out_list[knock_out_list != s_id] 
 	#Migrate taxa into the best performing community. By default migrations are done using power law model but can tune the diversity of migration using s_migration
-	elif params_simulation['migration']:
+	if params_simulation['migration']:
 		migration_factor = np.ones(params_simulation['n_wells'])
 		migration_factor[keep] = 0
 		if np.isfinite(params_simulation['s_migration']):
-			plate = migrate_from_pool(plate,migration_factor,params_simulation,power_law=False,n=params_simulation['n_migration_ds'])
+			plate.N = migrate_from_pool(plate,migration_factor,params_simulation,power_law=False,n=params_simulation['n_migration_ds'])
 		else:
-			plate = migrate_from_pool(plate,migration_factor,params_simulation,power_law = True,n=params_simulation['n_migration_ds'])
+			plate.N = migrate_from_pool(plate,migration_factor,params_simulation,power_law = True,n=params_simulation['n_migration_ds'])
 	#Migrate taxa into the best performing community. By default migrations are done using power law model but can tune the diversity of migration using s_migration
-	elif params_simulation['coalescence']:
+	if params_simulation['coalescence']:
 		plate.Propagate(params_simulation["n_propagation"])
 		plate.N = plate.N*(1-params_simulation['frac_coalescence']) + plate.prior_N*params_simulation['frac_coalescence']
 		plate.R = plate.R*(1-params_simulation['frac_coalescence']) + plate.prior_R*params_simulation['frac_coalescence']
 		plate.Passage(np.eye(params_simulation['n_wells'])*params_simulation['dilution'] )
 	#Shift_R0
-	elif params_simulation['resource_shift']:
+	if params_simulation['resource_shift']:
 		plate = resource_perturb(plate,params_simulation,keep)
-	else:
-		pass
 	return plate
 	
 def simulate_community( 

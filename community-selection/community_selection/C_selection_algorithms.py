@@ -89,10 +89,10 @@ def temp_select_top(community_function, p):
     n_wells = len(community_function)
     sorted_community_function = np.sort(community_function)
     cut_off = sorted_community_function[int(np.round(len(community_function)*(1-p))) - 1]
-    winner_index = np.where(community_function >= cut_off)[0][::-1] # Reverse the list so the higher 
+    winner_index = np.where(community_function > cut_off)[0][::-1] # Reverse the list so the higher 
     transfer_matrix = np.zeros((n_wells,n_wells))
     t_new = range(n_wells) # New wells
-    t_old = list(winner_index) * int(np.round(1/p)) # Old wells
+    t_old = list(winner_index) * (int(np.round(1/p) + 1)) # Old wells
     for i in range(n_wells):
         transfer_matrix[t_new[i], t_old[i]] = 1
     return transfer_matrix
@@ -104,14 +104,14 @@ for i in [10, 15, 16, 20, 25, 28, 30, 33, 40, 50, 60]:
 ## Select top n% control
 def temp_select_top_control(community_function, p):
     n_wells = len(community_function)
-    randomized_community_function = community_function
+    randomized_community_function = community_function.copy()
     np.random.shuffle(randomized_community_function)
     sorted_community_function = np.sort(randomized_community_function)
     cut_off = sorted_community_function[int(np.round(len(randomized_community_function)*(1-p))) - 1]
-    winner_index = np.where(randomized_community_function >= cut_off)[0][::-1] # Reverse the list so the higher 
+    winner_index = np.where(randomized_community_function > cut_off)[0][::-1] # Reverse the list so the higher 
     transfer_matrix = np.zeros((n_wells,n_wells))
     t_new = range(n_wells) # New wells
-    t_old = list(winner_index) * int(np.round(1/p)) # Old wells
+    t_old = list(winner_index) * (int(np.round(1/p)+1)) # Old wells
     for i in range(n_wells):
         transfer_matrix[t_new[i], t_old[i]] = 1
     return transfer_matrix
@@ -127,7 +127,7 @@ def temp_pool_top(community_function, p):
     cut_off = sorted_community_function[int(np.round(len(community_function)*(1-p))) - 1]
     winner_index = np.where(community_function > cut_off)[0][::-1] # Reverse the list so the higher 
     transfer_matrix = np.zeros((n_wells,n_wells))
-    transfer_matrix[:, winner_index] = 1
+    transfer_matrix[:, list(winner_index)] = 1
     return transfer_matrix
 
 for i in [10, 15, 16, 20, 25, 28, 30, 33, 40, 50, 60]:
@@ -136,7 +136,7 @@ for i in [10, 15, 16, 20, 25, 28, 30, 33, 40, 50, 60]:
 ## Pooling control
 def temp_pool_top_control(community_function, p):
     n_wells = len(community_function)
-    randomized_community_function = community_function
+    randomized_community_function = community_function.copy()
     np.random.shuffle(randomized_community_function)
     sorted_community_function = np.sort(randomized_community_function)
     cut_off = sorted_community_function[int(np.round(len(randomized_community_function)*(1-p))) - 1]
