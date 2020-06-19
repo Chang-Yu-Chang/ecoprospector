@@ -158,6 +158,10 @@ def draw_species_function(assumptions):
     # Interaction-specific function, 2-D n by n array
     function_interaction = np.random.normal(0, assumptions["sigma"] * assumptions["alpha"], size = S_tot * S_tot).reshape(S_tot, S_tot)
     function_interaction_p25 = np.random.binomial(1, 0.25, S_tot**2).reshape(S_tot, S_tot) * np.array(np.random.normal(0, assumptions["sigma"] * assumptions["alpha"], size = S_tot * S_tot)).reshape(S_tot, S_tot)
+    
+    ## Remove diagonals in the interation matrix
+    np.fill_diagonal(function_interaction, 0)
+    np.fill_diagonal(function_interaction_p25, 0)
 
     return function_species, function_interaction, function_interaction_p25
 
