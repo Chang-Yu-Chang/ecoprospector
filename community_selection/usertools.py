@@ -62,7 +62,7 @@ def plot_transfer_matrix(transfer_matrix):
     ax.set_ylabel('New well',fontsize=14)
     ax.set_title(r'Transfer Matrix',fontsize=14)
     plt.show()
-    
+
 def make_assumptions(input_file,row):
 	'''  Generate the assumptions dictionary from input file and row of input file '''
 	#Load row dat and default assumptions
@@ -165,6 +165,23 @@ def draw_species_function(assumptions):
 
     return function_species, function_interaction, function_interaction_p25
 
+def draw_species_cost(per_capita_function, assumptions):
+    """
+    Draw species-specific function cost
+    k_i is a conversion factor that specifies cost per function 
+    """
+    
+    if assumptions["cost_mean"] !=0:
+        cost_var = assumptions["cost_sd"]**2
+        cost_k = assumptions["cost_mean"]**2/cost_var
+        cost_theta = cost_var/assumptions["cost_mean"]
+        cost = np.random.gamma(shape = cost_k, scale = cost_theta, size = len(per_capita_function))
+        g0 = assumptions["g0"]
+        gi = g0/(1-per_capita_function*cost)
+    else: 
+        gi = np.repeat(assumptions["g0"], len(per_capita_function))
+    
+    return gi
 
 def make_medium(plate_R,assumptions):
     """
@@ -198,7 +215,6 @@ def make_medium(plate_R,assumptions):
         R0 = plate_R
     return R0
 
-    
 def make_plate(assumptions,params):
     """
     prepares the plate
@@ -379,7 +395,13 @@ def prepare_experiment(assumptions):
     print("\nGenerate species paramaters")
     np.random.seed(assumptions['seed']) 
     params = MakeParams(assumptions) 
-  
+    
+    print("\nDraw per-capita function and cost")
+    function_species, function_interaction, function_interaction_p25 = draw_species_function(assumptions)
+    params.update({"function_species": function_species, "function_interaction": function_interaction, "function_interaction_p25": function_interaction_p25})
+    gi = draw_species_cost(function_species, assumptions)
+    params.update({"g": gi})
+    
     print("\nConstructing plate")
     np.random.seed(assumptions['seed']) 
     plate = make_plate(assumptions,params)
@@ -400,3 +422,7 @@ def prepare_experiment(assumptions):
     params_simulation  =  dict((k, assumptions[k]) for k in assumptions.keys() if k not in params.keys())
     
     return params, params_simulation , params_algorithm, plate
+
+
+
+
