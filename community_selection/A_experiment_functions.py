@@ -271,7 +271,7 @@ def simulate_community(
     # Save the inocula composition
     if params_simulation['save_composition']:
         plate_data_list = list() # Plate composition
-        plate_data =   reshape_plate_data(plate, params_simulation,transfer_loop_index=0)  # Initial state
+        plate_data = reshape_plate_data(plate, params_simulation,transfer_loop_index=0)  # Initial state
         plate_data_list.append(plate_data)
         composition_filename = params_simulation['output_dir'] + params_simulation['exp_id'] + '_composition.txt'   
         
@@ -327,10 +327,11 @@ def simulate_community(
         m = globals()[migration_algorithm](community_function) 
         plate.N = migrate_from_pool(plate, migration_factor = m, params_simulation = params_simulation) # By default, n_migration is the same as n_inoc
         
-        #perturb (whilst keeping the best)
-        if selection_algorithm == 'select_top' and params_simulation['directed_selection']:
-            plate  = perturb(plate,params_simulation,keep =  np.where(community_function >= np.max(community_function))[0][0])
-        
+        # Perturbation
+        if (i+1) % params_simulation['n_transfer_selection'] == 0 and params_simulation['directed_selection'] and params_simulation['n_transfer'] != (i+1):
+            keep = 0 # Always keep the first communtiy, by the design of selection transfer matrix, this is always the top of selected communities
+            plate = perturb(plate,params_simulation, keep = keep)
+
     if params_simulation['save_composition']:
         pd.concat(plate_data_list).to_csv(composition_filename ,index=False)
     if params_simulation['save_function']:

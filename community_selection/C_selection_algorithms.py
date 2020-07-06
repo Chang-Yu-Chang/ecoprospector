@@ -49,7 +49,7 @@ def select_top(community_function):
     n_wells = len(community_function)
     
     # Winner wells
-    winner_index = np.where(community_function >= np.max(community_function))[0][::-1] # Reverse the list so the higher 
+    winner_index = np.where(community_function >= np.max(community_function))[0][::-1] 
     
     # Transfer matrix
     transfer_matrix = np.zeros((n_wells,n_wells))
@@ -69,7 +69,7 @@ def select_top_dog(community_function):
   n_wells = len(community_function)
   sorted_community_function = np.sort(community_function)
   cut_off = sorted_community_function[int(np.round(len(community_function)*0.5)) - 1]
-  winner_index = np.where(community_function >= cut_off)[0][::-1] # Reverse the list so the higher 
+  winner_index = np.where(community_function >= cut_off)[0][::-1] 
   
   # Transfer matrix
   transfer_matrix = np.zeros((n_wells,n_wells))
@@ -88,11 +88,11 @@ def select_top_dog(community_function):
 def temp_select_top(community_function, p):
     n_wells = len(community_function)
     sorted_community_function = np.sort(community_function)
-    cut_off = sorted_community_function[int(np.round(len(community_function)*(1-p))) - 1]
-    winner_index = np.where(community_function > cut_off)[0][::-1] # Reverse the list so the higher 
+    cut_off = sorted_community_function[int(np.floor(len(community_function)*(1-p)))]
+    winner_index = np.where(community_function >= cut_off)[0][::-1] 
     transfer_matrix = np.zeros((n_wells,n_wells))
     t_new = range(n_wells) # New wells
-    t_old = list(winner_index) * (int(np.round(1/p) + 1)) # Old wells
+    t_old = list(winner_index) * (int(np.ceil(1/p) + 1)) # Old wells
     for i in range(n_wells):
         transfer_matrix[t_new[i], t_old[i]] = 1
     return transfer_matrix
@@ -107,11 +107,11 @@ def temp_select_top_control(community_function, p):
     randomized_community_function = community_function.copy()
     np.random.shuffle(randomized_community_function)
     sorted_community_function = np.sort(randomized_community_function)
-    cut_off = sorted_community_function[int(np.round(len(randomized_community_function)*(1-p))) - 1]
-    winner_index = np.where(randomized_community_function > cut_off)[0][::-1] # Reverse the list so the higher 
+    cut_off = sorted_community_function[int(np.floor(len(randomized_community_function)*(1-p)))]
+    winner_index = np.where(randomized_community_function >= cut_off)[0][::-1] 
     transfer_matrix = np.zeros((n_wells,n_wells))
     t_new = range(n_wells) # New wells
-    t_old = list(winner_index) * (int(np.round(1/p)+1)) # Old wells
+    t_old = list(winner_index) * (int(np.ceil(1/p)+1)) # Old wells
     for i in range(n_wells):
         transfer_matrix[t_new[i], t_old[i]] = 1
     return transfer_matrix
@@ -124,8 +124,8 @@ for i in [10, 15, 16, 20, 25, 28, 30, 33, 40, 50, 60]:
 def temp_pool_top(community_function, p):
     n_wells = len(community_function)
     sorted_community_function = np.sort(community_function)
-    cut_off = sorted_community_function[int(np.round(len(community_function)*(1-p))) - 1]
-    winner_index = np.where(community_function > cut_off)[0][::-1] # Reverse the list so the higher 
+    cut_off = sorted_community_function[int(np.floor(len(community_function)*(1-p)))]
+    winner_index = np.where(community_function >= cut_off)[0][::-1] 
     transfer_matrix = np.zeros((n_wells,n_wells))
     transfer_matrix[:, list(winner_index)] = 1
     return transfer_matrix
@@ -139,8 +139,8 @@ def temp_pool_top_control(community_function, p):
     randomized_community_function = community_function.copy()
     np.random.shuffle(randomized_community_function)
     sorted_community_function = np.sort(randomized_community_function)
-    cut_off = sorted_community_function[int(np.round(len(randomized_community_function)*(1-p))) - 1]
-    winner_index = np.where(randomized_community_function > cut_off)[0][::-1] # Reverse the list so the higher 
+    cut_off = sorted_community_function[int(np.floor(len(randomized_community_function)*(1-p)))]
+    winner_index = np.where(randomized_community_function >= cut_off)[0][::-1] 
     transfer_matrix = np.zeros((n_wells,n_wells))
     transfer_matrix[:, winner_index] = 1
     return transfer_matrix
@@ -223,7 +223,7 @@ def coalescence(community_function):
     n_wells = len(community_function)
     
     # Winner wells
-    winner_index = np.where(community_function >= np.max(community_function))[0][::-1] # Reverse the list so the higher 
+    winner_index = np.where(community_function >= np.max(community_function))[0][::-1] 
     
     # Transfer matrix
     transfer_matrix = np.eye(n_wells)
@@ -361,124 +361,4 @@ def Raynaud2019b_control(community_function, n_lines=3):
 	    	  winner_index = np.random.randint(0,corrected_n_rep)
 	    transfer_matrix[:, winner_index+i*n_rep] = 1
     return transfer_matrix
-
-
-# Bottleneck sizes
-
-def select_top_25_bottleneck_10(community_function, p=0.25):
-    n_wells = len(community_function)
-    sorted_community_function = np.sort(community_function)
-    cut_off = sorted_community_function[int(np.round(len(community_function)*(1-p))) - 1]
-    winner_index = np.where(community_function >= cut_off)[0][::-1] # Reverse the list so the higher 
-    transfer_matrix = np.zeros((n_wells,n_wells))
-    t_new = range(n_wells) # New wells
-    t_old = list(winner_index) * int(np.round(1/p)) # Old wells
-    for i in range(n_wells):
-        transfer_matrix[t_new[i], t_old[i]] = 1.0
-    return transfer_matrix*0.1
-def select_top_25_bottleneck_100(community_function, p=0.25):
-    n_wells = len(community_function)
-    sorted_community_function = np.sort(community_function)
-    cut_off = sorted_community_function[int(np.round(len(community_function)*(1-p))) - 1]
-    winner_index = np.where(community_function >= cut_off)[0][::-1] # Reverse the list so the higher 
-    transfer_matrix = np.zeros((n_wells,n_wells))
-    t_new = range(n_wells) # New wells
-    t_old = list(winner_index) * int(np.round(1/p)) # Old wells
-    for i in range(n_wells):
-        transfer_matrix[t_new[i], t_old[i]] = 1.0
-    return transfer_matrix*0.01
-def select_top_25_bottleneck_1000(community_function, p=0.25):
-    n_wells = len(community_function)
-    sorted_community_function = np.sort(community_function)
-    cut_off = sorted_community_function[int(np.round(len(community_function)*(1-p))) - 1]
-    winner_index = np.where(community_function >= cut_off)[0][::-1] # Reverse the list so the higher 
-    transfer_matrix = np.zeros((n_wells,n_wells))
-    t_new = range(n_wells) # New wells
-    t_old = list(winner_index) * int(np.round(1/p)) # Old wells
-    for i in range(n_wells):
-        transfer_matrix[t_new[i], t_old[i]] = 1.0
-    return transfer_matrix*0.001
-def select_top_25_bottleneck_10000(community_function, p=0.25):
-    n_wells = len(community_function)
-    sorted_community_function = np.sort(community_function)
-    cut_off = sorted_community_function[int(np.round(len(community_function)*(1-p))) - 1]
-    winner_index = np.where(community_function >= cut_off)[0][::-1] # Reverse the list so the higher 
-    transfer_matrix = np.zeros((n_wells,n_wells))
-    t_new = range(n_wells) # New wells
-    t_old = list(winner_index) * int(np.round(1/p)) # Old wells
-    for i in range(n_wells):
-        transfer_matrix[t_new[i], t_old[i]] = 1.0
-    return transfer_matrix*0.0001
-def pool_top_25_bottleneck_10(community_function, p=0.25):
-    n_wells = len(community_function)
-    sorted_community_function = np.sort(community_function)
-    cut_off = sorted_community_function[int(np.round(len(community_function)*(1-p))) - 1]
-    winner_index = np.where(community_function > cut_off)[0][::-1] # Reverse the list so the higher 
-    transfer_matrix = np.zeros((n_wells,n_wells))
-    transfer_matrix[:, winner_index] = 1.0
-    return transfer_matrix*0.1
-def pool_top_25_bottleneck_100(community_function, p=0.25):
-    n_wells = len(community_function)
-    sorted_community_function = np.sort(community_function)
-    cut_off = sorted_community_function[int(np.round(len(community_function)*(1-p))) - 1]
-    winner_index = np.where(community_function > cut_off)[0][::-1] # Reverse the list so the higher 
-    transfer_matrix = np.zeros((n_wells,n_wells))
-    transfer_matrix[:, winner_index] = 1.0
-    return transfer_matrix*0.01
-def pool_top_25_bottleneck_1000(community_function, p=0.25):
-    n_wells = len(community_function)
-    sorted_community_function = np.sort(community_function)
-    cut_off = sorted_community_function[int(np.round(len(community_function)*(1-p))) - 1]
-    winner_index = np.where(community_function > cut_off)[0][::-1] # Reverse the list so the higher 
-    transfer_matrix = np.zeros((n_wells,n_wells))
-    transfer_matrix[:, winner_index] = 1.0
-    return transfer_matrix*0.001
-def pool_top_25_bottleneck_10000(community_function, p=0.25):
-    n_wells = len(community_function)
-    sorted_community_function = np.sort(community_function)
-    cut_off = sorted_community_function[int(np.round(len(community_function)*(1-p))) - 1]
-    winner_index = np.where(community_function > cut_off)[0][::-1] # Reverse the list so the higher 
-    transfer_matrix = np.zeros((n_wells,n_wells))
-    transfer_matrix[:, winner_index] = 1.0
-    return transfer_matrix*0.0001
-
-
-def pool_top_25_bottleneck_100000(community_function, p=0.25):
-    n_wells = len(community_function)
-    sorted_community_function = np.sort(community_function)
-    cut_off = sorted_community_function[int(np.round(len(community_function)*(1-p))) - 1]
-    winner_index = np.where(community_function > cut_off)[0][::-1] # Reverse the list so the higher 
-    transfer_matrix = np.zeros((n_wells,n_wells))
-    transfer_matrix[:, winner_index] = 1.0
-    return transfer_matrix*0.00001
-def pool_top_25_bottleneck_1000000(community_function, p=0.25):
-    n_wells = len(community_function)
-    sorted_community_function = np.sort(community_function)
-    cut_off = sorted_community_function[int(np.round(len(community_function)*(1-p))) - 1]
-    winner_index = np.where(community_function > cut_off)[0][::-1] # Reverse the list so the higher 
-    transfer_matrix = np.zeros((n_wells,n_wells))
-    transfer_matrix[:, winner_index] = 1.0
-    return transfer_matrix*0.000001
-def select_top_25_bottleneck_100000(community_function, p=0.25):
-    n_wells = len(community_function)
-    sorted_community_function = np.sort(community_function)
-    cut_off = sorted_community_function[int(np.round(len(community_function)*(1-p))) - 1]
-    winner_index = np.where(community_function >= cut_off)[0][::-1] # Reverse the list so the higher 
-    transfer_matrix = np.zeros((n_wells,n_wells))
-    t_new = range(n_wells) # New wells
-    t_old = list(winner_index) * int(np.round(1/p)) # Old wells
-    for i in range(n_wells):
-        transfer_matrix[t_new[i], t_old[i]] = 1.0
-    return transfer_matrix*0.00001
-def select_top_25_bottleneck_1000000(community_function, p=0.25):
-    n_wells = len(community_function)
-    sorted_community_function = np.sort(community_function)
-    cut_off = sorted_community_function[int(np.round(len(community_function)*(1-p))) - 1]
-    winner_index = np.where(community_function >= cut_off)[0][::-1] # Reverse the list so the higher 
-    transfer_matrix = np.zeros((n_wells,n_wells))
-    t_new = range(n_wells) # New wells
-    t_old = list(winner_index) * int(np.round(1/p)) # Old wells
-    for i in range(n_wells):
-        transfer_matrix[t_new[i], t_old[i]] = 1.0
-    return transfer_matrix*0.000001
 
