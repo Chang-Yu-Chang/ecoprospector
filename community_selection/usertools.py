@@ -4,7 +4,6 @@
 Created on Mar 09 2020
 @author: changyuchang
 """
-
 import numpy as np
 import scipy as sp
 import pandas as pd
@@ -319,7 +318,8 @@ def add_community_function(plate, assumptions, params):
     
         print("\nFinished Stabilizing monoculture plate")
     return plate
-   
+
+ 
 def save_plate(assumptions, plate):
     """ 
     Save the initial plate in a pickle file. Like saving a frozen stock at -80C
@@ -328,6 +328,7 @@ def save_plate(assumptions, plate):
         import dill as pickle
         with open(assumptions['output_dir'] + assumptions['exp_id'] + ".p", "wb") as f:
             pickle.dump(plate, f)
+   
    
 def overwrite_plate(plate, assumptions):
     """ 

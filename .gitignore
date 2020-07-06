@@ -5,17 +5,7 @@ __pycache__/
 
 # Folders
 deprecated/*
-figure/*
-data/*
-script/*
-report/*
-wrapper/*
 
-# Python notebook
-*.ipynb
-simulate_algorithm.py
-simulate_perturbation.py
-simulate_screen.py
 
 # R documents
 *.Rproj
@@ -97,7 +87,6 @@ target/
 
 # Jupyter Notebook
 .ipynb_checkpoints
-CommunityLevelSelection_V6_Experiment2.ipynb
 
 # pyenv
 .python-version

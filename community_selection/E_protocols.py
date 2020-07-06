@@ -4,16 +4,11 @@
 Created on Nov 26 2019
 @author: changyuchang
 """
-
-"""
-This python script contains the different protocols (that combine selection and migration regimes
-"""
-
 import numpy as np
 import scipy as sp
 import pandas as pd
 
-# Make library of algorithms
+
 def make_algorithm_library():
     """
     Show the table of algorithms in this package
@@ -27,7 +22,7 @@ def make_algorithm_library():
     module_dir = re.sub("__init__.py", "", module_dir) 
     
     # 
-    algorithm_types = ["community_phenotypes", "selection_algorithms", "migration_algorithms"]
+    algorithm_types = ["community_phenotypes", "selection_algorithms", "perturbation_algorithms"]
     algorithms = list()
     
     for i in range(len(algorithm_types)):
@@ -54,341 +49,95 @@ def make_algorithm_library():
      
     return pd.concat(algorithms)
     
-def make_algorithms(params_simulation):
-    # Algorithms
-    ## Simple screening
-    simple_screening = pd.DataFrame({
-        "algorithm_name": "simple_screening",
+    
+def make_protocol(params_simulation, protocol_name, selection_algorithm = None, repeated_selection = False):
+    """
+    Make protocol for one experimental protocol 
+    """
+    temp_df = pd.DataFrame({
+        "algorithm_name": protocol_name,
         "transfer": range(1, params_simulation["n_transfer"] + 1),
         "community_phenotype": params_simulation["selected_function"],
         "selection_algorithm": "no_selection",
         "migration_algorithm": "no_migration"
     })
-
-    ## Select top 25%
-    select_top25 = pd.DataFrame({
-        "algorithm_name": "select_top25",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["select_top25percent"] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    })  
-
-    ## Select top 10%
-    select_top10 = pd.DataFrame({
-        "algorithm_name": "select_top10",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["select_top10percent"] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    })
-
-    ## Pool top 25%
-    pool_top25 = pd.DataFrame({
-        "algorithm_name": "pool_top25",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["pool_top25percent"] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    })  
-
-    ## Pool top 10%
-    pool_top10 = pd.DataFrame({
-        "algorithm_name": "pool_top10",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["pool_top10percent"] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    })  
-    
-    
-    # Blouin2015
-    Blouin2015 = pd.DataFrame({
-        "algorithm_name": "Blouin2015",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["pool_top10percent" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    })
-    
-    # Blouin2015 control
-    Blouin2015_control = pd.DataFrame({
-        "algorithm_name": "Blouin2015_control",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["pool_top10percent_control" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    })
-    
-    # Chang2020a
-    Chang2020a = pd.DataFrame({
-        "algorithm_name": "Chang2020a",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["select_top16percent" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    })
-
-    # Chang2020a_control
-    Chang2020a_control = pd.DataFrame({
-        "algorithm_name": "Chang2020a_control",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["select_top16percent_control" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    })    
-    
-    # Chang2020b
-    Chang2020b = pd.DataFrame({
-        "algorithm_name": "Chang2020b",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["select_top25percent" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    })
-
-    # Chang2020b_control
-    Chang2020b_control = pd.DataFrame({
-        "algorithm_name": "Chang2020b_control",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["select_top25percent_control" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    })
-    
-    # Jochum2019
-    Jochum2019 = pd.DataFrame({
-        "algorithm_name": "Jochum2019",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["pool_top10percent" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    })
-    
-    # Mueller2019
-    Mueller2019 = pd.DataFrame({
-        "algorithm_name": "Mueller2019",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["pool_top25percent" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    })
-    
-    # Panke-Buisse2015
-    Panke_Buisse2015 = pd.DataFrame({
-        "algorithm_name": "Panke_Buisse2015",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["pool_top28percent" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    })
-    
-    # Penn2004
-    Penn2004 = pd.DataFrame({
-        "algorithm_name": "Penn2004",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["Williams2007a" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    })
-    
-    # Raynaud2019a
-    Raynaud2019a = pd.DataFrame({
-        "algorithm_name": "Raynaud2019a",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["select_top10percent" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    })
-    
-    # Raynaud2019b
-    Raynaud2019b = pd.DataFrame({
-        "algorithm_name": "Raynaud2019b",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["pool_top10percent" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    })
-    
-    # Swenson2000a
-    Swenson2000a = pd.DataFrame({
-        "algorithm_name": "Swenson2000a",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["pool_top20percent" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    })
-    
-    # Swenson2000a control
-    Swenson2000a_control = pd.DataFrame({
-        "algorithm_name": "Swenson2000a_control",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["pool_top20percent_control" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    })
-
-    # Swenson2000b
-    Swenson2000b = pd.DataFrame({
-        "algorithm_name": "Swenson2000b",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["select_top25percent" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    })
-    
-    # Swenson2000b_control
-    Swenson2000b_control = pd.DataFrame({
-        "algorithm_name": "Swenson2000b_control",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["select_top25percent_control" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    })
-    
-    # Swenson2000c
-    Swenson2000c = pd.DataFrame({
-        "algorithm_name": "Swenson2000c",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["pool_top20percent" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    })
-    
-    # Williams2007a
-    Williams2007a = pd.DataFrame({
-        "algorithm_name": "Williams2007a",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["Williams2007a" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    })
-    
-    # Williams2007b
-    Williams2007b = pd.DataFrame({
-        "algorithm_name": "Williams2007b",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["Williams2007b" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    })
         
-    # Wright2019
-    Wright2019 = pd.DataFrame({
-        "algorithm_name": "Wright2019",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["pool_top10percent" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    })
+    if repeated_selection: 
+        temp_df["selection_algorithm"] = [selection_algorithm for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])]
     
-    # Wright2019_control
-    Wright2019_control = pd.DataFrame({
-        "algorithm_name": "Wright2019_control",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["pool_top10percent_control" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    })
+    elif repeated_selection == False:
+        temp_df["selection_algorithm"] = ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + [selection_algorithm] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])]
     
-    # Xie2019a
-    Xie2019a = pd.DataFrame({
-        "algorithm_name": "Xie2019a",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["select_top_dog" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    })
+    return temp_df
     
-    # Xie2019b
-    Xie2019b = pd.DataFrame({
-        "algorithm_name": "Xie2019b",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["select_top10percent" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    })
-    
-    # Arora2019
-    Arora2019 = pd.DataFrame({
-        "algorithm_name": "Arora2019",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["Arora2019" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    })    
-    Arora2019_control = pd.DataFrame({
-        "algorithm_name": "Arora2019_control",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["Arora2019_control" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    })       
-    # Raynaud2019a
-    Raynaud2019a	= pd.DataFrame({
-        "algorithm_name": "Raynaud2019a",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["Raynaud2019a" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    })
-    
-    Raynaud2019a_control	= pd.DataFrame({
-        "algorithm_name": "Raynaud2019a_control",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["Raynaud2019a_control" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    }) 
-    # Raynaud2019b
-    Raynaud2019b = pd.DataFrame({
-        "algorithm_name": "Raynaud2019b",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["Raynaud2019b" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    })
-    
-    Raynaud2019b_control = pd.DataFrame({
-        "algorithm_name": "Raynaud2019b_control",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["Raynaud2019b_control" for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    })
+
+def make_algorithms(params_simulation):
+    """
+    Make a comprehensive dataframe of all protocols 
+    """
     
     
-    #directed_selection
-    directed_selection = pd.DataFrame({
-        "algorithm_name": "directed_selection",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["select_top"] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])], 
-        "migration_algorithm": "no_migration"
-    })
+    # Control
+    simple_screening = make_protocol(params_simulation, "simple_screening")
+    select_top25 = make_protocol(params_simulation, protocol_name = "select_top25", selection_algorithm = "select_top25percent", repeated_selection = False)
+    select_top10 = make_protocol(params_simulation, protocol_name = "select_top10", selection_algorithm = "select_top10percent", repeated_selection = False)
+    pool_top25 = make_protocol(params_simulation, protocol_name = "pool_top25", selection_algorithm = "pool_top25percent", repeated_selection = False)
+    pool_top10 = make_protocol(params_simulation, protocol_name = "pool_top10", selection_algorithm = "pool_top10percent", repeated_selection = False)
     
-    #long experiments
-    directed_selection_long = pd.DataFrame({
-        "algorithm_name": "directed_selection_long",
-        "transfer": range(1, params_simulation["n_transfer"] + 1),
-        "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": np.tile(["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["select_top"],int(params_simulation["n_transfer"]/params_simulation["n_transfer_selection"])).tolist(), 
-        "migration_algorithm": "no_migration"
-    })  
+    # Experimental protocols
+    Blouin2015 = make_protocol(params_simulation, protocol_name = "Blouin2015", selection_algorithm = "pool_top10percent", repeated_selection = True)
+    Blouin2015_control = make_protocol(params_simulation, protocol_name = "Blouin2015_control", selection_algorithm = "pool_top10percent_control", repeated_selection = True)
+    Chang2020a = make_protocol(params_simulation, protocol_name = "Chang2020a", selection_algorithm = "select_top16percent", repeated_selection = True)
+    Chang2020a_control = make_protocol(params_simulation, protocol_name = "Chang2020a_control", selection_algorithm = "select_top16percent_control", repeated_selection = True)
+    Chang2020b = make_protocol(params_simulation, protocol_name = "Chang2020b", selection_algorithm = "select_top25percent", repeated_selection = True)
+    Chang2020b_control = make_protocol(params_simulation, protocol_name = "Chang2020b_control", selection_algorithm = "select_top25percent_control", repeated_selection = True)
+    Jochum2019 = make_protocol(params_simulation, protocol_name = "Jochum2019", selection_algorithm = "pool_top10percent", repeated_selection = True)
+    Mueller2019 = make_protocol(params_simulation, protocol_name = "Mueller2019", selection_algorithm = "pool_top25percent", repeated_selection = True)
+    Panke_Buisse2015 = make_protocol(params_simulation, protocol_name = "Panke_Buisse2015", selection_algorithm = "pool_top28_percent", repeated_selection = True)
+    Swenson2000a = make_protocol(params_simulation, protocol_name = "Swenson2000a", selection_algorithm = "pool_top20percent", repeated_selection = True)
+    Swenson2000a_control = make_protocol(params_simulation, protocol_name = "Swenson2000a_control", selection_algorithm = "pool_top20percent_control", repeated_selection = True)
+    Swenson2000b = make_protocol(params_simulation, protocol_name = "Swenson2000b", selection_algorithm = "select_top25percent", repeated_selection = True)
+    Swenson2000b_control = make_protocol(params_simulation, protocol_name = "Swenson2000b_control", selection_algorithm = "select_top25percent_control", repeated_selection = True)
+    Swenson2000c = make_protocol(params_simulation, protocol_name = "Swenson2000c", selection_algorithm = "pool_top20percent", repeated_selection = True)
+    Wright2019 = make_protocol(params_simulation, protocol_name = "Wright2019", selection_algorithm = "pool_top10percent", repeated_selection = True)
+    Wright2019_control = make_protocol(params_simulation, protocol_name = "Wright2019_control", selection_algorithm = "pool_top10percent_control", repeated_selection = True)
     
+    # Sub-lineage protocols
+    Arora2019 = make_protocol(params_simulation, protocol_name = "Arora2019", selection_algorithm = "Arora2019", repeated_selection = True)
+    Arora2019_control = make_protocol(params_simulation, protocol_name = "Arora2019_control", selection_algorithm = "Arora2019_control", repeated_selection = True)
+    Raynaud2019a = make_protocol(params_simulation, protocol_name = "Raynaud2019a", selection_algorithm = "Raynaud2019a", repeated_selection = True)
+    Raynaud2019a_control = make_protocol(params_simulation, protocol_name = "Raynaud2019a_control", selection_algorithm = "Raynaud2019a_control", repeated_selection = True)
+    Raynaud2019b = make_protocol(params_simulation, protocol_name = "Raynaud2019b", selection_algorithm = "Raynaud2019b", repeated_selection = True)
+    Raynaud2019b_control = make_protocol(params_simulation, protocol_name = "Raynaud2019b_control", selection_algorithm = "Raynaud2019b_control", repeated_selection = True)
     
-    # Save the algorithms
+    # Theory
+    Penn2004 = make_protocol(params_simulation, protocol_name = "Penn2004", selection_algorithm = "Williams2007a", repeated_selection = True)
+    Williams2007a = make_protocol(params_simulation, protocol_name = "Williams2007a", selection_algorithm = "Williams2007a", repeated_selection = True)
+    Williams2007b = make_protocol(params_simulation, protocol_name = "Williams2007b", selection_algorithm = "Williams2007b", repeated_selection = True)
+    Xie2019a = make_protocol(params_simulation, protocol_name = "Xie2019a", selection_algorithm = "select_top_dog", repeated_selection = True)
+    Xie2019b = make_protocol(params_simulation, protocol_name = "Xie2019b", selection_algorithm = "select_top10percent", repeated_selection = True)
+    
     algorithms = pd.concat([
-        # Controls
-        simple_screening, 
-        select_top25, select_top10, 
-        pool_top25, pool_top10,
-        # Literature
-        Arora2019, Arora2019_control, Blouin2015, Blouin2015_control, Chang2020a, Chang2020a_control, Chang2020b, Chang2020b_control, 
-        Jochum2019, Mueller2019, Panke_Buisse2015, Penn2004,
-        Raynaud2019a, Raynaud2019a_control, Raynaud2019b, Raynaud2019b_control, Swenson2000a, Swenson2000a_control, Swenson2000b, Swenson2000b_control, Swenson2000c,
-        Williams2007a, Williams2007b, Wright2019, Wright2019_control, Xie2019a, Xie2019b,
-        # directed selection
-        directed_selection,directed_selection_long])
+        # Control
+        simple_screening, select_top25, select_top10, pool_top25, pool_top10,
+        # Experimental protocols
+        Blouin2015, Blouin2015_control, Chang2020a, Chang2020a_control, Chang2020b, Chang2020b_control, 
+        Jochum2019, Mueller2019, Panke_Buisse2015, 
+        Swenson2000a, Swenson2000a_control, Swenson2000b, Swenson2000b_control, Swenson2000c,
+        Wright2019, Wright2019_control,
+        # Sub-lineage protocols
+        Arora2019, Arora2019_control, Raynaud2019a, Raynaud2019a_control, Raynaud2019b, Raynaud2019b_control, 
+        # Theory
+        Penn2004, Williams2007a, Williams2007b, Xie2019a, Xie2019b,
+        ])
+
     
     return algorithms
+    
+    
+    
+    
+    
+    
+    
+

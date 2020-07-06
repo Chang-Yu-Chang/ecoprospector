@@ -4,11 +4,6 @@
 Created on Nov 26 2019
 @author: changyuchang
 """
-
-"""
-Python functions for computing the community-level phenotypes
-"""
-
 import numpy as np
 import scipy as sp
 
@@ -74,7 +69,6 @@ def f2a_interaction(plate, params_simulation):
     return additive_term + interaction_term
 
 
-
 def f3_additive_binary(plate, params_simulation):
     """
     Complex community function
@@ -90,6 +84,7 @@ def f3_additive_binary(plate, params_simulation):
     community_function = np.sum(plate_temp.N.values * plate_temp.species_function[:,None], axis = 0)
 
     return community_function
+
 
 def f4_interaction_binary(plate, params_simulation):
     """
@@ -120,6 +115,7 @@ def f4_interaction_binary(plate, params_simulation):
         interaction_term[i] = np.sum(community_composition_square * plate_temp.interaction_function)
     
     return additive_term + interaction_term
+
 
 def f5_invader_growth(plate, params_simulation):
     """
@@ -153,6 +149,7 @@ def f5_invader_growth(plate, params_simulation):
     function_invader_suppressed_growth = invader_growth_along / invader_growth_together
 
     return function_invader_suppressed_growth
+
 
 # Compute the distances from the target resource 
 # This function is from Jean

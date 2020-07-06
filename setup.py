@@ -3,14 +3,13 @@
 
 from setuptools import setup
 
-setup(name='community_selection',
+setup(name='Ecoprospector',
       version='0.0.9999',
-      description='Simulate community selection algorithms',
-      url='https://github.com/Chang-Yu-Chang/community-selection',
+      description='Simulate community selection protocols',
+      url='https://github.com/Chang-Yu-Chang/Ecoprospector',
       author= ['Chang-Yu Chang', 'Jean Villa'], 
-      author_email=['chang-yu.chang@yale.edu', 'jean.vila@yale.edu'],
+      author_email=['chang-yu.chang@yale.edu'],
       license='MIT',
-      packages=['community_selection'],
-      py_modules = ['community_selection'],
+      packages = ['community_selection', 'community_simulator'],
       zip_safe=False)
 
