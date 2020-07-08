@@ -11,5 +11,6 @@ setup(name='Ecoprospector',
       author_email=['chang-yu.chang@yale.edu'],
       license='MIT',
       packages = ['community_selection', 'community_simulator'],
+      scripts = ['commandline_tool/Ecoprospector'],
       zip_safe=False)
 
