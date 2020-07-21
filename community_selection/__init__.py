@@ -14,7 +14,7 @@ from multiprocessing import Pool
 from functools import partial
 from community_simulator import Community
 
-class Metacommunity(community_simulator.Community):
+class Metacommunity(Community):
     """
     Inherited object from community-simulator package. 
     

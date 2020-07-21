@@ -15,22 +15,14 @@ def make_algorithm_library():
     """
     import re
     import pandas as pd
-    
-    # Find directory of community_selection modultes
     import community_selection
     module_dir = community_selection.__file__
     module_dir = re.sub("__init__.py", "", module_dir) 
-    
-    # 
-    algorithm_types = ["community_phenotypes", "selection_algorithms", "perturbation_algorithms"]
+    algorithm_types = ["community_traits", "selection_matrices", "perturbations"]
     algorithms = list()
     
     for i in range(len(algorithm_types)):
-    
-        # Open files
         file_algorithm_phenotype = open(module_dir + ["B", "C", "D"][i] + "_" + algorithm_types[i] + ".py", "r")
-        
-        # Read lines
         line_list = list()
         line = file_algorithm_phenotype.readline()
         cnt = 1
@@ -40,11 +32,8 @@ def make_algorithm_library():
             line_list.append(line.strip())
             cnt += 1
         
-        # Regular expression
         algorithm_names = re.findall("def \w+", " ".join(line_list))
         list_algorithm = [re.sub("^def ", "", x) for x in algorithm_names]
-        
-        # Write the files
         algorithms.append(pd.DataFrame({"AlgorithmType": re.sub("s$", "", algorithm_types[i]), "AlgorithmName": list_algorithm}))
      
     return pd.concat(algorithms)

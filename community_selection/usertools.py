@@ -10,7 +10,7 @@ import pandas as pd
 from community_simulator import *
 from community_simulator.usertools import *
 from community_selection import Metacommunity
-from community_selection.A_experiment_functions import *
+from community_selection.A_experiments import *
 from community_selection.E_protocols import *
 
 def sample_from_pool(plate_N, assumptions,n=None):
@@ -22,8 +22,8 @@ def sample_from_pool(plate_N, assumptions,n=None):
     plate_N = consumer data.frame
     pool = 1-D array that defines the species relative abundances in the pool
     """
-    S_tot = plate_N.shape[0] # Total number of species in the pool
-    N0 = np.zeros((plate_N.shape)) # Make empty plate
+    S_tot = plate_N.shape[0] 
+    N0 = np.zeros((plate_N.shape))
     consumer_index = plate_N.index
     well_names = plate_N.columns
     if n is None:
