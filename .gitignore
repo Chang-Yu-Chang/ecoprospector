@@ -5,7 +5,8 @@ __pycache__/
 
 # Folders
 deprecated/*
-
+*.ipynb
+*.png
 
 # R documents
 *.Rproj

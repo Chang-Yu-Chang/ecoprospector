@@ -59,7 +59,6 @@ def make_protocol(params_simulation, protocol_name, selection_algorithm = None, 
         "transfer": range(1, params_simulation["n_transfer"] + 1),
         "community_phenotype": params_simulation["selected_function"],
         "selection_algorithm": "no_selection",
-        "migration_algorithm": "no_migration"
     })
         
     if repeated_selection: 

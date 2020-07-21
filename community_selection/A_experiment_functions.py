@@ -191,7 +191,7 @@ def simulate_community(params, params_simulation, params_algorithm, plate):
         # Algorithms used in this transfer
         phenotype_algorithm = params_algorithm["community_phenotype"][i]
         selection_algorithm = params_algorithm["selection_algorithm"][i]
-        migration_algorithm = params_algorithm["migration_algorithm"][i]
+#        migration_algorithm = params_algorithm["migration_algorithm"][i]
         print("Transfer " + str(i+1))
 
         # Propagation
@@ -202,7 +202,7 @@ def simulate_community(params, params_simulation, params_algorithm, plate):
         
         # Append the composition to a list
         if params_simulation['save_composition'] and ((i+1) % params_simulation['composition_lograte'] == 0):
-            plate_data =   reshape_plate_data(plate, params_simulation,transfer_loop_index=i+1)  # Initial state
+            plate_data = reshape_plate_data(plate, params_simulation,transfer_loop_index=i+1)  # Initial state
             plate_data_list.append(plate_data)
 
         if params_simulation['save_function'] and ((i+1) % params_simulation['function_lograte'] == 0):
@@ -224,8 +224,8 @@ def simulate_community(params, params_simulation, params_algorithm, plate):
             plate.Passage(transfer_matrix * params_simulation["dilution"])
         
         # Migration
-        m = globals()[migration_algorithm](community_function) 
-        plate.N = migrate_from_pool(plate, migration_factor = m, params_simulation = params_simulation) # By default, n_migration is the same as n_inoc
+        # m = globals()[migration_algorithm](community_function) 
+        # plate.N = migrate_from_pool(plate, migration_factor = m, params_simulation = params_simulation) # By default, n_migration is the same as n_inoc
         
         # Perturbation
         if (i+1) % params_simulation['n_transfer_selection'] == 0 and params_simulation['directed_selection'] and params_simulation['n_transfer'] != (i+1):
