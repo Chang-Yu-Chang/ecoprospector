@@ -10,7 +10,7 @@ setup(name='Ecoprospector',
       author= ['Chang-Yu Chang', 'Jean Villa'], 
       author_email=['chang-yu.chang@yale.edu'],
       license='MIT',
-      packages = ['community_selection', 'community_simulator'],
+      packages = ['community_selection'],
       scripts = ['commandline_tool/Ecoprospector'],
       zip_safe=False)
 

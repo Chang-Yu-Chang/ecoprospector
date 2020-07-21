@@ -9,6 +9,7 @@ import scipy as sp
 import pandas as pd
 from community_simulator import *
 from community_simulator.usertools import *
+from community_selection import Metacommunity
 from community_selection.A_experiment_functions import *
 from community_selection.E_protocols import *
 
@@ -229,7 +230,7 @@ def make_plate(assumptions,params):
     # Make initial state
     init_state = MakeInitialState(assumptions)
     
-    plate = Community(init_state, dynamics, params, scale = assumptions["scale"], parallel = False) 
+    plate = Metacommunity(init_state, dynamics, params, scale = assumptions["scale"], parallel = False) 
     
     # Add media to plate (overrides community simulator)
     plate.R = make_medium(plate.R, assumptions)
