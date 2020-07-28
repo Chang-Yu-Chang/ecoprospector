@@ -6,18 +6,14 @@ import scipy as sp
 import pandas as pd
 import time
 
-#Community simulator packages
-from community_simulator import *
-from community_simulator.usertools import *
-
-#Community selection packages
+# Community selection packages
 from community_selection.usertools import *
 
 input_csv = str(sys.argv[1]) # Input file name
 row_number = int(sys.argv[2]) # Which row of experiment to run
 
 assumptions = make_assumptions(input_csv, row_number)
-params, params_simulation , params_algorithm, plate = prepare_experiment(assumptions)
+params, params_simulation, params_algorithm, plate = prepare_experiment(assumptions)
 simulate_community(params = params, params_simulation = params_simulation, params_algorithm = params_algorithm,plate = plate)
 save_plate(assumptions, plate)     #Save plate (will onlys save if assumptions specify that)
 
