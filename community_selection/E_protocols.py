@@ -15,14 +15,22 @@ def make_algorithm_library():
     """
     import re
     import pandas as pd
+    
+    # Find directory of community_selection modultes
     import community_selection
     module_dir = community_selection.__file__
     module_dir = re.sub("__init__.py", "", module_dir) 
-    algorithm_types = ["community_traits", "selection_matrices", "perturbations"]
+    
+    # 
+    algorithm_types = ["community_phenotypes", "selection_algorithms", "perturbation_algorithms"]
     algorithms = list()
     
     for i in range(len(algorithm_types)):
+    
+        # Open files
         file_algorithm_phenotype = open(module_dir + ["B", "C", "D"][i] + "_" + algorithm_types[i] + ".py", "r")
+        
+        # Read lines
         line_list = list()
         line = file_algorithm_phenotype.readline()
         cnt = 1
@@ -32,8 +40,11 @@ def make_algorithm_library():
             line_list.append(line.strip())
             cnt += 1
         
+        # Regular expression
         algorithm_names = re.findall("def \w+", " ".join(line_list))
         list_algorithm = [re.sub("^def ", "", x) for x in algorithm_names]
+        
+        # Write the files
         algorithms.append(pd.DataFrame({"AlgorithmType": re.sub("s$", "", algorithm_types[i]), "AlgorithmName": list_algorithm}))
      
     return pd.concat(algorithms)
@@ -47,14 +58,13 @@ def make_protocol(params_simulation, protocol_name, selection_algorithm = None, 
         "algorithm_name": protocol_name,
         "transfer": range(1, params_simulation["n_transfer"] + 1),
         "community_phenotype": params_simulation["selected_function"],
-        "selection_algorithm": "no_selection",
-    })
-        
-    if repeated_selection: 
-        temp_df["selection_algorithm"] = [selection_algorithm for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])]
-    
-    elif repeated_selection == False:
-        temp_df["selection_algorithm"] = ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + [selection_algorithm] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])]
+        "selection_algorithm": "no_selection"
+        })
+    if protocol_name != "simple_screening":
+        if repeated_selection: 
+            temp_df["selection_algorithm"] = [selection_algorithm for i in range(params_simulation["n_transfer_selection"])] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])]
+        elif repeated_selection == False:
+            temp_df["selection_algorithm"] = ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + [selection_algorithm] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])]
     
     return temp_df
     
@@ -105,6 +115,15 @@ def make_algorithms(params_simulation):
     Xie2019a = make_protocol(params_simulation, protocol_name = "Xie2019a", selection_algorithm = "select_top_dog", repeated_selection = True)
     Xie2019b = make_protocol(params_simulation, protocol_name = "Xie2019b", selection_algorithm = "select_top10percent", repeated_selection = True)
     
+    
+    #directed_selection
+    directed_selection = pd.DataFrame({
+        "algorithm_name": "directed_selection",
+        "transfer": range(1, params_simulation["n_transfer"] + 1),
+        "community_phenotype": params_simulation["selected_function"],
+        "selection_algorithm": ["no_selection" for i in range(params_simulation["n_transfer_selection"]-1)] + ["select_top"] + ["no_selection" for i in range(params_simulation["n_transfer"] - params_simulation["n_transfer_selection"])]
+    })
+    
     algorithms = pd.concat([
         # Control
         simple_screening, select_top25, select_top10, pool_top25, pool_top10,
@@ -117,6 +136,7 @@ def make_algorithms(params_simulation):
         Arora2019, Arora2019_control, Raynaud2019a, Raynaud2019a_control, Raynaud2019b, Raynaud2019b_control, 
         # Theory
         Penn2004, Williams2007a, Williams2007b, Xie2019a, Xie2019b,
+        directed_selection
         ])
 
     

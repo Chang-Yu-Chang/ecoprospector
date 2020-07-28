@@ -9,8 +9,7 @@ import scipy as sp
 import pandas as pd
 from community_simulator import *
 from community_simulator.usertools import *
-from community_selection import Metacommunity
-from community_selection.A_experiments import *
+from community_selection.A_experiment_functions import *
 from community_selection.E_protocols import *
 
 def sample_from_pool(plate_N, assumptions,n=None):
@@ -22,8 +21,8 @@ def sample_from_pool(plate_N, assumptions,n=None):
     plate_N = consumer data.frame
     pool = 1-D array that defines the species relative abundances in the pool
     """
-    S_tot = plate_N.shape[0] 
-    N0 = np.zeros((plate_N.shape))
+    S_tot = plate_N.shape[0] # Total number of species in the pool
+    N0 = np.zeros((plate_N.shape)) # Make empty plate
     consumer_index = plate_N.index
     well_names = plate_N.columns
     if n is None:
@@ -230,7 +229,7 @@ def make_plate(assumptions,params):
     # Make initial state
     init_state = MakeInitialState(assumptions)
     
-    plate = Metacommunity(init_state, dynamics, params, scale = assumptions["scale"], parallel = False) 
+    plate = Community(init_state, dynamics, params, scale = assumptions["scale"], parallel = False) 
     
     # Add media to plate (overrides community simulator)
     plate.R = make_medium(plate.R, assumptions)

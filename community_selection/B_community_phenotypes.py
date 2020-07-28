@@ -10,9 +10,10 @@ import scipy as sp
 
 def f1_additive(plate, params_simulation):
     """
-    Additive community function (F1)
+    Additive community function(F1)
     
-    plate = Metacommunity object
+    plate = plate object from package
+    k = an 1-D array of saturation factors. set k = np.zeros(n) for binary function (species presence or absense)
     """
     
     community_function = np.sum(plate.N.values * plate.species_function[:,None], axis = 0)
@@ -24,7 +25,8 @@ def f2_interaction(plate, params_simulation):
     """
     Additive community function with interaction (F2)
     
-    plate = Metacommunity object
+    plate = plate object from package
+    species_function = a n by n 2-D array; n is the size of species pool
     """
 
     # Number of species in the pool 

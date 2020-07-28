@@ -4,7 +4,7 @@
 
 This package is designed for executing protocols on artificially selecting microbial communities of desired selected functions. The simulation is based on batch culture in which the microbial consumer-resource dynamics undergoes.
 
-A preprint describing the use of `Ecoprospector` for directly evolving communities is here.
+See the [preprint](https://www.biorxiv.org/content/10.1101/2020.07.24.214775v2) that uses `Ecoprospector` to simulate directed evolution of microbial communities.
 
 ## Dependencies
 
@@ -12,13 +12,14 @@ A preprint describing the use of `Ecoprospector` for directly evolving communiti
 
 A python development setup by [Anaconda](https://docs.anaconda.com/anaconda/install/) will be sufficient to implement `Ecoprospector`.
 
-## Documentation
-
-Please see the Jupyter notebook `Ecoprospector.ipynb` for explanations on the main functions of the pacakge. 
-
 ## Installation
 
 ### Mac and Linux
 
-Clone this github repository to local. Browse to the `Ecoprospector` directory in Terminal, and enter `pip install -e .`
+Clone this github repository to local using 
+`$ git clone https://github.com/Chang-Yu-Chang/Ecoprospector`
+
+Browse to the `Ecoprospector` directory in Terminal, and enter 
+
+`$ pip install -e .`
 
