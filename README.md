@@ -2,7 +2,7 @@
 
 > Design protocol for artificially selecting microbial communities
 
-This package is designed for executing community-level selection protocols to engineer microbial communities toward desired selected functions. The simulation is based on batch culture in which the microbial consumer-resource dynamics undergoes.
+This package is designed for executing community-level selection protocols to engineer microbial communities toward desired functions. The simulation is based on batch culture and the microbes in a community interact via   consumer-resource dynamics.
 
 See our [preprint](https://www.biorxiv.org/content/10.1101/2020.07.24.214775v2) that uses Ecoprospector to study a range of selection strategies of directed evolution of microbial communities.
 
@@ -34,14 +34,11 @@ With the mapping file (csv), executing one experiment is simple as
 $ Ecoprospector mapping_file.csv 0
 ```
 
-For more examples and usage, please refer to the [documentation][https://ecoprospector.readthedocs.io/en/latest/].
+For more examples and usage, please refer to the [documentation](https://ecoprospector.readthedocs.io/en/latest/).
 
 ## Development setup
 
-Ecoprospector package depends on [community-simulator](https://github.com/Emergent-Behaviors-in-Biology/community-simulator) (developed by the Mehta group and described in their [paper](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0230430)), which depends on Numpy, Pandas, Matplotlib, SciPy that are all included in Anaconda distribution. 
-
 A python development setup by [Anaconda](https://docs.anaconda.com/anaconda/install/) will be sufficient to implement Ecoprospector.
-
 
 ## Release History
 
@@ -60,11 +57,4 @@ Distributed under the MIT license. See ``LICENSE`` for more information.
 
 [https://github.com/Chang-Yu-Chang/Ecoprospector](https://github.com/Chang-Yu-Chang/Ecoprospector)
 
-## Contributing
-
-1. Fork it (<https://github.com/Chang-Yu-Chang/Ecoprospector/fork>)
-2. Create your feature branch (`git checkout -b feature/fooBar`)
-3. Commit your changes (`git commit -am 'Add some fooBar'`)
-4. Push to the branch (`git push origin feature/fooBar`)
-5. Create a new Pull Request
 
