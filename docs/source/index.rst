@@ -43,10 +43,19 @@ Documentation
 =====================
 .. toctree::
    :maxdepth: 2
+   :caption: Getting Started
    
    content/installation
    content/quickstart
+
+.. toctree::
+   :maxdepth: 2
+   :caption: User Guide
+   
    content/usertools
    content/mapping_file
    content/protocol
+   
+   
+
 
