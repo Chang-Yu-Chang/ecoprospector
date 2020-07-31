@@ -19,7 +19,7 @@ Install the development version
 
 Clone the github repository  to a local directory ::
 
-    $ git clone https://github.com/Chang-Yu-Chang/Ecoprospector .
+    $ git clone https://github.com/Chang-Yu-Chang/ecoprospector .
 
 Then browse to the Ecoprospector directory and install package ::
 

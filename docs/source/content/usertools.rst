@@ -1,7 +1,7 @@
 User Tools
 ==========
 
-Main functions in Ecoprospector
+Main functions in ecoprospector
 
 
 

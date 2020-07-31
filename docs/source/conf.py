@@ -18,7 +18,7 @@ from sphinx.locale import _
 
 # -- Project information -----------------------------------------------------
 master_doc = 'index'
-project = 'Ecoprospector'
+project = 'ecoprospector'
 copyright = '2020, Chang-Yu Chang'
 author = 'Chang-Yu Chang'
 

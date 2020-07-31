@@ -1,13 +1,13 @@
 Quick Start Guide 
 =================
 
-This page provides a quick start guide for using Ecoprospector with an single input :code:`.csv` file. If you do not know how to configurate :code:`.csv` file, please read :ref:`Input Mapping File` for more details on each parameter.
+This page provides a quick start guide for using ecoprospector with an single input :code:`.csv` file. If you do not know how to configurate :code:`.csv` file, please read :ref:`Input Mapping File` for more details on each parameter.
 
-We created a commandline tool so you can run Ecoprospector , For example in Terminal on Mac, enter
+You can execute a experiments in a command line to quickly run an experiment. For example in Terminal on Mac, enter
 
 .. code-block:: bash
 
-    $ Ecoprospector mapping_file.csv 0
+    $ ecoprospector mapping_file.csv 0
 
 Where mapping_file.csv is the input :code:`csv` file and i is the row (0-indexed) specifying the experiment to be run. 
 
