@@ -15,6 +15,189 @@ from community_selection.B_community_phenotypes import *
 from community_selection.C_selection_algorithms import *
 from community_selection.D_perturbation_algorithms import *
 
+def MakeMatrices(assumptions):
+    """
+    Inherited function from community-simulator package
+    
+    Changes:
+    
+    - Add BINARY_GAMMA SAMPLING
+    """
+    #PREPARE VARIABLES
+    #Force number of species to be an array:
+    if isinstance(assumptions['MA'],numbers.Number):
+        assumptions['MA'] = [assumptions['MA']]
+    if isinstance(assumptions['SA'],numbers.Number):
+        assumptions['SA'] = [assumptions['SA']]
+    #Force numbers of species to be integers:
+    assumptions['MA'] = np.asarray(assumptions['MA'],dtype=int)
+    assumptions['SA'] = np.asarray(assumptions['SA'],dtype=int)
+    assumptions['Sgen'] = int(assumptions['Sgen'])
+    #Default waste type is last type in list:
+    if 'waste_type' not in assumptions.keys():
+        assumptions['waste_type']=len(assumptions['MA'])-1
+
+    #Extract total numbers of resources, consumers, resource types, and consumer families:
+    M = np.sum(assumptions['MA'])
+    T = len(assumptions['MA'])
+    S = np.sum(assumptions['SA'])+assumptions['Sgen']
+    F = len(assumptions['SA'])
+    M_waste = assumptions['MA'][assumptions['waste_type']]
+    #Construct lists of names of resources, consumers, resource types, and consumer families:
+    resource_names = ['R'+str(k) for k in range(M)]
+    type_names = ['T'+str(k) for k in range(T)]
+    family_names = ['F'+str(k) for k in range(F)]
+    consumer_names = ['S'+str(k) for k in range(S)]
+    waste_name = type_names[assumptions['waste_type']]
+    resource_index = [[type_names[m] for m in range(T) for k in range(assumptions['MA'][m])],
+                      resource_names]
+    consumer_index = [[family_names[m] for m in range(F) for k in range(assumptions['SA'][m])]
+                      +['GEN' for k in range(assumptions['Sgen'])],consumer_names]
+    
+    #PERFORM GAUSSIAN SAMPLING
+    if assumptions['sampling'] == 'Gaussian':
+        #Initialize dataframe:
+        c = pd.DataFrame(np.zeros((S,M)),columns=resource_index,index=consumer_index)
+        #Add Gaussian-sampled values, biasing consumption of each family towards its preferred resource:
+        for k in range(F):
+            for j in range(T):
+                if k==j:
+                    c_mean = (assumptions['muc']/M)*(1+assumptions['q']*(M-assumptions['MA'][j])/assumptions['MA'][j])
+                    c_var = (assumptions['sigc']**2/M)*(1+assumptions['q']*(M-assumptions['MA'][j])/assumptions['MA'][j])
+                else:
+                    c_mean = (assumptions['muc']/M)*(1-assumptions['q'])
+                    c_var = (assumptions['sigc']**2/M)*(1-assumptions['q'])
+                c.loc['F'+str(k)]['T'+str(j)] = c_mean + np.random.randn(assumptions['SA'][k],assumptions['MA'][j])*np.sqrt(c_var)
+        if 'GEN' in c.index:
+            c_mean = assumptions['muc']/M
+            c_var = assumptions['sigc']**2/M
+            c.loc['GEN'] = c_mean + np.random.randn(assumptions['Sgen'],M)*np.sqrt(c_var)
+                    
+    #PERFORM BINARY SAMPLING
+    elif assumptions['sampling'] == 'Binary':
+        assert assumptions['muc'] < M*assumptions['c1'], 'muc not attainable with given M and c1.'
+        #Construct uniform matrix at total background consumption rate c0:
+        c = pd.DataFrame(np.ones((S,M))*assumptions['c0']/M,columns=resource_index,index=consumer_index)
+        #Sample binary random matrix blocks for each pair of family/resource type:
+        for k in range(F):
+            for j in range(T):
+                if k==j:
+                    p = (assumptions['muc']/(M*assumptions['c1']))*(1+assumptions['q']*(M-assumptions['MA'][j])/assumptions['MA'][j])
+                else:
+                    p = (assumptions['muc']/(M*assumptions['c1']))*(1-assumptions['q'])
+                    
+                c.loc['F'+str(k)]['T'+str(j)] = (c.loc['F'+str(k)]['T'+str(j)].values 
+                                                + assumptions['c1']*BinaryRandomMatrix(assumptions['SA'][k],assumptions['MA'][j],p))
+        #Sample uniform binary random matrix for generalists:
+        if 'GEN' in c.index:
+            p = assumptions['muc']/(M*assumptions['c1'])
+            c.loc['GEN'] = c.loc['GEN'].values + assumptions['c1']*BinaryRandomMatrix(assumptions['Sgen'],M,p)
+
+    elif assumptions['sampling'] == 'Gamma':
+        #Initialize dataframe
+        c = pd.DataFrame(np.zeros((S,M)),columns=resource_index,index=consumer_index)
+        #Add Gamma-sampled values, biasing consumption of each family towards its preferred resource
+        for k in range(F):
+            for j in range(T):
+                if k==j:
+                    c_mean = (assumptions['muc']/M)*(1+assumptions['q']*(M-assumptions['MA'][j])/assumptions['MA'][j])
+                    c_var = (assumptions['sigc']**2/M)*(1+assumptions['q']*(M-assumptions['MA'][j])/assumptions['MA'][j])
+                    thetac = c_var/c_mean
+                    kc = c_mean**2/c_var
+                    c.loc['F'+str(k)]['T'+str(j)] = np.random.gamma(kc,scale=thetac,size=(assumptions['SA'][k],assumptions['MA'][j]))
+                else:
+                    c_mean = (assumptions['muc']/M)*(1-assumptions['q'])
+                    c_var = (assumptions['sigc']**2/M)*(1-assumptions['q'])
+                    thetac = c_var/c_mean
+                    kc = c_mean**2/c_var
+                    c.loc['F'+str(k)]['T'+str(j)] = np.random.gamma(kc,scale=thetac,size=(assumptions['SA'][k],assumptions['MA'][j]))
+        if 'GEN' in c.index:
+            c_mean = assumptions['muc']/M
+            c_var = assumptions['sigc']**2/M
+            thetac = c_var/c_mean
+            kc = c_mean**2/c_var
+            c.loc['GEN'] = np.random.gamma(kc,scale=thetac,size=(assumptions['Sgen'],M))
+    
+    #PERFORM UNIFORM SAMPLING
+    elif assumptions['sampling'] == 'Uniform':
+        #Initialize dataframe:
+        c = pd.DataFrame(np.zeros((S,M)),columns=resource_index,index=consumer_index)
+        #Add uniformly sampled values, biasing consumption of each family towards its preferred resource:
+        for k in range(F):
+            for j in range(T):
+                if k==j:
+                    c_mean = (assumptions['muc']/M)*(1+assumptions['q']*(M-assumptions['MA'][j])/assumptions['MA'][j])
+                else:
+                    c_mean = (assumptions['muc']/M)*(1-assumptions['q'])
+                c.loc['F'+str(k)]['T'+str(j)] = c_mean + (np.random.rand(assumptions['SA'][k],assumptions['MA'][j])-0.5)*assumptions['b']
+        if 'GEN' in c.index:
+            c_mean = assumptions['muc']/M
+            c.loc['GEN'] = c_mean + (np.random.rand(assumptions['Sgen'],M)-0.5)*assumptions['b']
+    
+    #PERFORM BINARY_GAMMA SAMPLING
+    elif assumptions['sampling'] == 'Binary_Gamma':
+        assert assumptions['muc'] < M*assumptions['c1'], 'muc not attainable with given M and c1.'
+        #Construct uniform matrix at total background consumption rate c0:
+        c = pd.DataFrame(np.ones((S,M))*assumptions['c0']/M,columns=resource_index,index=consumer_index)
+        #Sample binary random matrix blocks for each pair of family/resource type:
+        for k in range(F):
+            for j in range(T):
+                if k==j:
+                    p = (assumptions['muc']/(M*assumptions['c1']))*(1+assumptions['q']*(M-assumptions['MA'][j])/assumptions['MA'][j])
+                    c_mean = (assumptions['muc']/M)*(1+assumptions['q']*(M-assumptions['MA'][j])/assumptions['MA'][j])
+                    c_var = (assumptions['sigc']**2/M)*(1+assumptions['q']*(M-assumptions['MA'][j])/assumptions['MA'][j])
+                else:
+                    p = (assumptions['muc']/(M*assumptions['c1']))*(1-assumptions['q'])
+                    c_mean = (assumptions['muc']/M)*(1-assumptions['q'])
+                    c_var = (assumptions['sigc']**2/M)*(1-assumptions['q'])
+                c_mean_binary = assumptions['c0']+ assumptions['c1']*p
+                c_var_binary = assumptions['c1']**2 *p*(1-p)
+                c_mean_gamma = c_mean/c_mean_binary
+                c_var_gamma = (c_var - c_var_binary*(c_mean_gamma**2))/(c_var_binary + c_mean_binary**2)
+                thetac = c_var_gamma/c_mean_gamma
+                kc = c_mean_gamma**2/c_var_gamma
+                c.loc['F'+str(k)]['T'+str(j)] = (c.loc['F'+str(k)]['T'+str(j)].values + assumptions['c1']*BinaryRandomMatrix(assumptions['SA'][k],assumptions['MA'][j],p))*np.random.gamma(kc,scale=thetac,size=(assumptions['SA'][k],assumptions['MA'][j]))
+        #Sample uniform binary random matrix for generalists:
+        if 'GEN' in c.index:
+            p = assumptions['muc']/(M*assumptions['c1'])
+            c_mean = assumptions['muc']/M
+            c_var = assumptions['sigc']**2/M
+            c_mean_binary = assumptions['c0']+ assumptions['c1']*p
+            c_var_binary = assumptions['c1']**2 *p*(1-p)
+            c_mean_gamma = c_mean/c_mean_binary
+            c_var_gamma = (c_var - c_var_binary*(c_mean_gamma**2))/(c_var_binary + c_mean_binary**2)
+            thetac = c_var_gamma/c_mean_gamma
+            kc = c_mean_gamma**2/c_var_gamma
+            c.loc['GEN'] = (c.loc['GEN'].values + assumptions['c1']*BinaryRandomMatrix(assumptions['Sgen'],M,p))*np.random.gamma(kc,scale=thetac,size=(assumptions['Sgen'],M))
+    else:
+        print('Invalid distribution choice. Valid choices are kind=Gaussian and kind=Binary.')
+        return 'Error'
+
+    #SAMPLE METABOLIC MATRIX FROM DIRICHLET DISTRIBUTION
+    DT = pd.DataFrame(np.zeros((M,M)),index=c.keys(),columns=c.keys())
+    for type_name in type_names:
+        MA = len(DT.loc[type_name])
+        if type_name is not waste_name:
+            #Set background secretion levels
+            p = pd.Series(np.ones(M)*(1-assumptions['fs']-assumptions['fw'])/(M-MA-M_waste),index = DT.keys())
+            #Set self-secretion level
+            p.loc[type_name] = assumptions['fs']/MA
+            #Set waste secretion level
+            p.loc[waste_name] = assumptions['fw']/M_waste
+            #Sample from dirichlet
+            DT.loc[type_name] = dirichlet(p/assumptions['sparsity'],size=MA)
+        else:
+            if M > MA:
+                #Set background secretion levels
+                p = pd.Series(np.ones(M)*(1-assumptions['fw']-assumptions['fs'])/(M-MA),index = DT.keys())
+                #Set self-secretion level
+                p.loc[type_name] = (assumptions['fw']+assumptions['fs'])/MA
+            else:
+                p = pd.Series(np.ones(M)/M,index = DT.keys())
+            #Sample from dirichlet
+            DT.loc[type_name] = dirichlet(p/assumptions['sparsity'],size=MA)
+        
+    return c, DT.T
 
 def reshape_plate_data(plate, params_simulation,transfer_loop_index):
     """
