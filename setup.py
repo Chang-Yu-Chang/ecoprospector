@@ -4,7 +4,7 @@
 from setuptools import setup
 
 setup(name='ecoprospector',
-      version='0.0.9999',
+      version='0.0.1',
       description='Simulate community selection protocols',
       url='https://github.com/Chang-Yu-Chang/ecoprospector',
       author= ['Chang-Yu Chang', 'Jean Villa'], 
