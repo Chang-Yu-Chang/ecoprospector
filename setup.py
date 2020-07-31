@@ -3,14 +3,14 @@
 
 from setuptools import setup
 
-setup(name='Ecoprospector',
+setup(name='ecoprospector',
       version='0.0.9999',
       description='Simulate community selection protocols',
-      url='https://github.com/Chang-Yu-Chang/Ecoprospector',
+      url='https://github.com/Chang-Yu-Chang/ecoprospector',
       author= ['Chang-Yu Chang', 'Jean Villa'], 
       author_email=['chang-yu.chang@yale.edu'],
       license='MIT',
       packages = ['community_selection'],
-      scripts = ['commandline_tool/Ecoprospector'],
+      scripts = ['commandline_tool/ecoprospector'],
       zip_safe=False)
 

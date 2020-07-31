@@ -9,6 +9,7 @@ import scipy as sp
 import pandas as pd
 from community_simulator import *
 from community_simulator.usertools import *
+from community_selection.__init__ import *
 from community_selection.A_experiment_functions import *
 from community_selection.E_protocols import *
 
@@ -340,7 +341,7 @@ def overwrite_plate(plate, assumptions):
     df = pd.read_csv(assumptions["overwrite_plate"])
     
     # By default, use the latest transfer to avoid well name conflict
-    df = df[df.Transfer == np.max(df.Transfer])]
+    df = df[df.Transfer == np.max(df.Transfer)]
     
     # If only one community, repeat filling this community into n_wells wells
     if len(df["Well"].unique()) == 1:

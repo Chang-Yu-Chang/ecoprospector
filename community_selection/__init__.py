@@ -11,6 +11,7 @@ import copy
 import community_selection
 from multiprocessing import Pool
 from functools import partial
+
 from community_simulator import Community
 
 class Metacommunity(Community):
