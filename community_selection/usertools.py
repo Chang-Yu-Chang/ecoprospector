@@ -338,6 +338,10 @@ def overwrite_plate(plate, assumptions):
     assert(os.path.isfile(assumptions['overwrite_plate'])), "The overwrite_plate does not exist"
     # Read the input data file
     df = pd.read_csv(assumptions["overwrite_plate"])
+    
+    # By default, use the latest transfer to avoid well name conflict
+    df = df[df.Transfer == np.max(df.Transfer])]
+    
     # If only one community, repeat filling this community into n_wells wells
     if len(df["Well"].unique()) == 1:
         temp_df = df.copy()
