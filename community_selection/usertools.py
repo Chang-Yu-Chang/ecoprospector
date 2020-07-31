@@ -119,12 +119,12 @@ def make_assumptions(input_file,row):
 		else:
 			assumptions['frac_coalescence'] = float(assumptions['frac_coalescence'])
 	
-	#If migration is True and no n_migration_ds is set defaults to n_inoc
+	#If migration is True and no n_migration is set defaults to n_inoc
 	if assumptions['migration']: 
-		if pd.isnull(assumptions['n_migration_ds']):
-			assumptions['n_migration_ds'] =assumptions['n_inoc']
+		if pd.isnull(assumptions['n_migration']):
+			assumptions['n_migration'] =assumptions['n_inoc']
 		else:
-			assumptions['n_migration_ds'] = int(assumptions['n_migration_ds'])
+			assumptions['n_migration'] = int(assumptions['n_migration'])
 			
 		if pd.isnull(assumptions['s_migration']):
 			pass
@@ -152,11 +152,11 @@ def draw_species_function(assumptions):
     S_tot = int(np.sum(assumptions['SA']) + assumptions['Sgen']) 
     
     # Species-specific function, 1-D array
-    function_species = np.random.normal(0, assumptions["sigma"], size = S_tot)
+    function_species = np.random.normal(0, assumptions["sigma_func"], size = S_tot)
     
     # Interaction-specific function, 2-D n by n array
-    function_interaction = np.random.normal(0, assumptions["sigma"] * assumptions["alpha"], size = S_tot * S_tot).reshape(S_tot, S_tot)
-    function_interaction_p25 = np.random.binomial(1, 0.25, S_tot**2).reshape(S_tot, S_tot) * np.array(np.random.normal(0, assumptions["sigma"] * assumptions["alpha"], size = S_tot * S_tot)).reshape(S_tot, S_tot)
+    function_interaction = np.random.normal(0, assumptions["sigma_func"] * assumptions["alpha_func"], size = S_tot * S_tot).reshape(S_tot, S_tot)
+    function_interaction_p25 = np.random.binomial(1, 0.25, S_tot**2).reshape(S_tot, S_tot) * np.array(np.random.normal(0, assumptions["sigma_func"] * assumptions["alpha_func"], size = S_tot * S_tot)).reshape(S_tot, S_tot)
     
     ## Remove diagonals in the interation matrix
     np.fill_diagonal(function_interaction, 0)

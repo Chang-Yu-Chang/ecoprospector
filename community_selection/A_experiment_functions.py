@@ -85,7 +85,7 @@ def migrate_from_pool(plate,migration_factor,params_simulation, power_law = True
     """
     from community_selection.usertools import sample_from_pool
     if n is None:
-        n = params_simulation['n_migration']
+        n = params_simulation['n_inoc']
     if power_law:
         if np.sum(migration_factor) != 0:
             temp_params_simulation = params_simulation.copy() 
@@ -324,9 +324,9 @@ def perturb(plate,params_simulation, keep):
 		migration_factor = np.ones(params_simulation['n_wells'])
 		migration_factor[keep] = 0
 		if np.isfinite(params_simulation['s_migration']):
-			plate.N = migrate_from_pool(plate,migration_factor,params_simulation,power_law=False,n=params_simulation['n_migration_ds'])
+			plate.N = migrate_from_pool(plate,migration_factor,params_simulation,power_law=False,n=params_simulation['n_migration'])
 		else:
-			plate.N = migrate_from_pool(plate,migration_factor,params_simulation,power_law = True,n=params_simulation['n_migration_ds'])
+			plate.N = migrate_from_pool(plate,migration_factor,params_simulation,power_law = True,n=params_simulation['n_migration'])
 	#Migrate taxa into the best performing community. By default migrations are done using power law model but can tune the diversity of migration using s_migration
 	if params_simulation['coalescence']:
 		plate.Propagate(params_simulation["n_propagation"])
