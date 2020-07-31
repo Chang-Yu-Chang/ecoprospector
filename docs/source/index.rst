@@ -1,12 +1,12 @@
 Ecoprospector's Tutorial
 =========================================
 
-This site covers Ecoprospector 
-
 What is Ecoprospector?
 ======================
 
-Ecoprospector is a Python package designed to simulate protocols of artificial selection on microbial communities, using a single ::code::`mapping_file.csv` as input (with specified parameters) and specified experiment (the first row in this case)::
+Ecoprospector is a Python package designed to simulate protocols of artificial selection on microbial communities, using a single :code:`mapping_file.csv` as input (with specified parameters) and specified experiment (the first row in this case)
+
+.. code-block:: bash
 
     $ Ecoprospector mapping_file.csv 0
 
@@ -17,7 +17,7 @@ Main features
 
 It aims to flexibly adapt major componenets of an experiemntal protocol, including features like batch culture, multi-well plate, selection strategy, and allows an user to design arbitrarily protocols with own needs.
  
-* **Single input file**: Ecoprospector takes a ::code::`.csv` file where each row of the csv file specifies the parameters for one experiment.
+* **Single input file**: Ecoprospector takes a :code:`.csv` file where each row of the csv file specifies the parameters for one experiment.
 * **Consumer-resource dynamics**: virtual microbial species with idiosyncratic metabolic properties interact with others in a community through secretion and uptakes. 
 * **Batch-culture**: the community generation is divided by serial batch culture.
 * **Community function**: various community functions can be applied, inclduing additive, intereative function.
@@ -35,12 +35,11 @@ Our package is designed with three types of user in mind.
 Key contributors
 ================
 
-Jean Vila and Chang-Yu Chang (both at Yale working with `Alvaro Sanchez <http://www.sanchezlaboratory.com/>`_) started to build Ecoprospector in collaboration with students from Physical Biology of Cells Course at Marine Biology Laboratoy in Woods Hole, who provided feedback on the modular design of Ecoprospector.
+Jean Vila and Chang-Yu Chang (both at Yale working with `Alvaro Sanchez <http://www.sanchezlaboratory.com/>`_) started to build Ecoprospector in collaboration with students from Physical Biology of Cells Course at Marine Biology Laboratoy in Woods Hole (Molly Bassette, Julia Borden, Stefan Golfier, Paul G. Sanchez, Rachel Waymack, Xinwen Zhu), who provided feedback on the modular design of Ecoprospector.
 
-|
 
-Documentation
-=====================
+
+
 .. toctree::
    :maxdepth: 2
    :caption: Getting Started

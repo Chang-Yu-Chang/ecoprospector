@@ -4,7 +4,7 @@
 
 This package is designed for executing community-level selection protocols to engineer microbial communities toward desired functions. The simulation is based on batch culture and the microbes in a community interact via   consumer-resource dynamics.
 
-See our [preprint](https://www.biorxiv.org/content/10.1101/2020.07.24.214775v2) that uses Ecoprospector to study a range of selection strategies of directed evolution of microbial communities.
+See our [preprint](https://www.biorxiv.org/content/10.1101/2020.07.24.214775v2) that uses Ecoprospector to study a range of selection strategies that direct the evolution of microbial communities.
 
 ![](outline.png)
 
