@@ -406,16 +406,12 @@ def simulate_community(params, params_simulation, params_algorithm, plate):
         else:
             plate.Passage(transfer_matrix * params_simulation["dilution"])
         
-        # Migration
-        # m = globals()[migration_algorithm](community_function) 
-        # plate.N = migrate_from_pool(plate, migration_factor = m, params_simulation = params_simulation) # By default, n_migration is the same as n_inoc
-        
         # Perturbation
-        if selection_algorithm == 'select_top' and params_simulation['directed_selection']:
-        #if (i+1) % params_simulation['n_transfer_selection'] == 0 and params_simulation['directed_selection'] and params_simulation['n_transfer'] != (i+1):
-            #keep = 0 # Always keep the first communtiy, by the design of selection transfer matrix, this is always the top of selected communities
-            #plate = perturb(plate, params_simulation, keep = keep)
-            plate  = perturb(plate,params_simulation,keep =  np.where(community_function >= np.max(community_function))[0][0])
+        if params_simulation['directed_selection']:
+            if selection_algorithm == 'select_top':
+                plate  = perturb(plate,params_simulation,keep =  np.where(community_function >= np.max(community_function))[0][0])
+            if selection_algorithm != 'select_top' & != 'simple_screening':
+                plate  = perturb(plate,params_simulation,keep =  NA)
 
     if params_simulation['save_composition']:
         pd.concat(plate_data_list).to_csv(composition_filename ,index=False)
