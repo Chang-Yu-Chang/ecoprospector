@@ -91,7 +91,7 @@ def make_algorithms(params_simulation):
     Chang2020b_control = make_protocol(params_simulation, protocol_name = "Chang2020b_control", selection_algorithm = "select_top25percent_control", repeated_selection = True)
     Jochum2019 = make_protocol(params_simulation, protocol_name = "Jochum2019", selection_algorithm = "pool_top10percent", repeated_selection = True)
     Mueller2019 = make_protocol(params_simulation, protocol_name = "Mueller2019", selection_algorithm = "pool_top25percent", repeated_selection = True)
-    Panke_Buisse2015 = make_protocol(params_simulation, protocol_name = "Panke_Buisse2015", selection_algorithm = "pool_top28_percent", repeated_selection = True)
+    Panke_Buisse2015 = make_protocol(params_simulation, protocol_name = "Panke_Buisse2015", selection_algorithm = "pool_top28percent", repeated_selection = True)
     Swenson2000a = make_protocol(params_simulation, protocol_name = "Swenson2000a", selection_algorithm = "pool_top20percent", repeated_selection = True)
     Swenson2000a_control = make_protocol(params_simulation, protocol_name = "Swenson2000a_control", selection_algorithm = "pool_top20percent_control", repeated_selection = True)
     Swenson2000b = make_protocol(params_simulation, protocol_name = "Swenson2000b", selection_algorithm = "select_top25percent", repeated_selection = True)

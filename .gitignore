@@ -5,6 +5,7 @@ __pycache__/
 
 # Folders
 deprecated/*
+tests/*
 *.ipynb
 
 # R documents
