@@ -1,7 +1,7 @@
 Input Mapping File
 ==================
 
-The input mapping ``.csv`` lists 65 essential parameters in columns and (indepdendent) selection experiments in rows.
+The input mapping ``.csv`` lists 69 essential parameters in columns and (indepdendent) selection experiments in rows.
 
 An example is here [Attach a example csv file]. 
 
@@ -11,12 +11,12 @@ An example is here [Attach a example csv file].
 File operation
 ---------------
 
-.. confval:: selected_trait
+.. confval:: selected_function
 
     :type: string
     :default: ``f1_additive``
 
-    Function under selection.
+    Function under selection. Available options are ``f1_additive`` and ``f2_interaction``, ``f2a_interaction``, ``f3_additive_binary``, ``f4_interaction_binary``, ``f5_invader_growth``, and ``resource_distance_community_function``.
 
 
 .. confval:: protocol
@@ -24,7 +24,7 @@ File operation
     :type: string
     :default: ``simple_screening``
 
-    Protocol to implement.
+    Protocol to implement. Only the protocols listed in ``E_protocols.py`` can be used.
     
 
 .. confval:: seed
@@ -40,7 +40,7 @@ File operation
     :type: string
     :default: ``f1_additive-simple_screening-1``
 
-    Experiment-specific ID, which will also determine the output filenames
+    Experiment-specific ID, which will also determine the naming convention of output files. For example, the community function is saved in ``f1_additive-simple_screening-1_function.txt`` if ``save_function=True``, whereas community compostition is saved in ``f1_additive-simple_screening-1_compostition.txt`` if ``save_composition=True``.
 
 
 .. confval:: overwrite_plate
@@ -48,7 +48,7 @@ File operation
     :type: string
     :default: ``NA``
 
-    To replace the initial plate composition with an arbitrary plate. It must be a text file that specifies the community composition for initial community, containin four columns: Type, ID, Well, and Abundance.
+    To replace the initial plate composition with an arbitrary plate, specify a text file of the community composition that containes four columns: Type, ID, Well, and Abundance. If an output text file (e.g., ``f1_additive-simple_screening-1_compostition.txt``) is specified and it contains composition for more than two transfers, by default only the metacommunity compostition of the latter tranfer is read.
 
 
 .. confval:: passage_overwrite_plate
@@ -64,7 +64,7 @@ File operation
     :type: string
     :default: ``data/``
     
-    Output directory. 
+    Directory where the output files will be stored. 
 
 
 .. confval:: save_function
@@ -80,7 +80,7 @@ File operation
     :type: boolean
     :default: ``True``
     
-    Set True to save composition data.
+    Set ``True`` to save composition data.
 
 
 .. confval:: save_plate
@@ -88,7 +88,7 @@ File operation
     :type: boolean
     :default: ``False``
     
-    Set True to save initial plate in a ``pickle`` file.
+    Set ``True`` to save initial Metacommunity in a ``pickle`` file.
 
 
 .. confval:: function_lograte
@@ -96,27 +96,19 @@ File operation
     :type: integer
     :default: ``1``
     
-    How often you save the function in transfers.
+    How often you save the function in transfers. Default is saving functional data from every transfer.
 
 .. confval:: composition_lograte
 
     :type: integer
     :default: ``20``
     
-    How often do you save the composition in transfers.
+    How often do you save the composition in transfers. 
     
 | 
 
 Protocol-specific parameters
 ----------------------------
-
-.. confval:: a
-
-    :type: float
-    :default: ``0.01``
-    
-    Exponent parameter in power-law distribution that determines the species abundance in regional pool.
-
 
 .. confval:: scale
 
@@ -139,7 +131,7 @@ Protocol-specific parameters
     :type: boolean
     :default: ``True``
     
-    Whether to generate a rich medium sampled from a a random distribution or a minimal media with only a single resource. Set True to allow rich medium.
+    Set ``True`` to generate a rich medium sampled from an uniform distribution. Set ``False`` to generate a minimal medium with only the first resource is supplied. 
 
 
 .. confval:: monoculture
@@ -147,10 +139,10 @@ Protocol-specific parameters
     :type: boolean
     :default: ``False``
     
-    Whether to run simple screening with all monocultures from pool. Set True to run monocultures with the number of wells equal to the number of species in the regional pool.
+    Set ``True`` to run simple screening with all monocultures from the regional species pool. The number of wells is equal to the number of species in the regional pool.
 
 
-.. confval:: d
+.. confval:: dilution
 
     :type: float
     :default: ``0.001``
@@ -158,28 +150,28 @@ Protocol-specific parameters
     Dilution factor in the batch culture.
 
 
-.. confval:: t_incubation
-
-    :type: float
-    :default: ``1``
-    
-    Incubation time in a generation/transfer.
-
-
 .. confval:: n_wells
 
     :type: integer
     :default: ``96``
     
-    Number of wells (communities).
+    Number of wells (communities) in a plate (metacommunity).
+
+
+.. confval:: n_propagation
+
+    :type: float
+    :default: ``1``
+    
+    Incubation time of a transfer. 
     
 
-.. confval:: n_transfer_total
+.. confval:: n_transfer
 
     :type: integer
     :default: ``40``
     
-    Number of total transfers (generations).
+    Number of total transfers (generations) to be run in the protocol.
 
 
 .. confval:: n_transfer_selection
@@ -187,7 +179,7 @@ Protocol-specific parameters
     :type: interger
     :default: ``20``
     
-    Number of selection transfers (generations).
+    Number of transfers (generations) that consecutively executes selection matrices from the start of an experiment. The number of stabilizaiton transfer equals to the difference between ``n_transfer_total`` and ``n_transfer_selection``.
 
 |
 
@@ -199,7 +191,7 @@ Species contribution to function
     :type: float
     :default: ``1``
     
-    Standard deviation for drawing specifc speices/interaction function.
+    Standard deviation for drawing speices-specific per-capita contribution to community function.
 
 
 .. confval:: alpha_func
@@ -207,7 +199,7 @@ Species contribution to function
     :type: float
     :default: ``1``
     
-    Relative functional contribution of species interaction to the additive case.
+    Contribution of species interaction to community function relative to the additive case.
 
 
 .. confval:: binary_threshold
@@ -239,7 +231,7 @@ Species contribution to function
     :type: float
     :default: ``0``
     
-    Standard deviation of fraction of cost feeded into a gamma distribution. cost_sd = 0 if cost_mean = 0, cost_sd= 0.01 if cost_mean > 0.
+    Standard deviation of fraction of cost feeded into a gamma distribution. ``cost_sd = 0`` if ``cost_mean = 0``, ``cost_sd = 0.01`` if ``cost_mean > 0``.
 
 
 |
@@ -252,7 +244,7 @@ Directed evolution
     :type: boolean
     :default: ``False``
     
-    If set True, run directed selection. One of the other flag in directed evolution selection has to be set True.
+    Set ``True`` to run directed selection, one of flags below in directed evolution has to be also set ``True``.
 
 
 .. confval:: knock_out
@@ -260,7 +252,7 @@ Directed evolution
     :type: boolean
     :default: ``False``
     
-    If True performs knock out pertubation.
+    Set ``True`` to perform knock out pertubation.
 
 
 .. confval:: knock_in
@@ -268,7 +260,7 @@ Directed evolution
     :type: boolean
     :default: ``F``
     
-    If True performs knock in pertubation. 
+    Set ``True`` performs knock in pertubation. 
 
 
 .. confval:: knock_in_threshold
@@ -276,7 +268,7 @@ Directed evolution
     :type: float 
     :default: ``0.95``
     
-    The percentile determining the high-performing species in the species pool used to knock in. Default means top 5% species in the pool is prepared to be knocked in a community, whereas the rest 95% of are not used.
+    If ``knock_in = True``, use the default ``knock_in_threshold=0.95``, which means that top 5% species in the pool is prepared to be knocked in a community, whereas the rest 95% of are not used.
 
 
 .. confval:: bottleneck
@@ -284,15 +276,15 @@ Directed evolution
     :type: boolean
     :default: ``False``
     
-    If True perform bottleneck pertubations.
+    Set ``True`` to perform bottleneck pertubations.
 
 
-.. confval:: d_bottleneck
+.. confval:: bottleneck_size
 
     :type: float
     :default: ``0.00001``
     
-    Bottleneck size.
+    If ``bottleneck=T``, perform an bottleneck shock to the specified communities by a dilution factor default to ``bottleneck_size=0.00001``. This bottleneck dilutoon is in addition to the regular dilution factor in the batch culture ``dilution=0.001``.
 
 
 .. confval:: migration
@@ -300,7 +292,7 @@ Directed evolution
     :type: boolean
     :default: ``False``
     
-    If True perform migration pertubations.
+    Set ``True`` to perform migration pertubations.
 
 
 .. confval:: n_migration
@@ -316,7 +308,7 @@ Directed evolution
     :type: integer
     :default: ``NA``
     
-    Number of species in the migrant community. If NA, the migrant community is sample from a regional pool where the species abundance follows power-law distribution. If set into an integer, ``n_migration`` cells will be equally allocated to ``s_migrations`` species.
+    Number of species in the migrant community. If ``NA`` (as default), the migrant community is sampled from a regional pool where the species abundance follows power-law distribution. If set into an integer, ``n_migration`` cells will be equally allocated to ``s_migrations`` species from the pool to build the migrant community.
 
 
 .. confval:: coalescence
@@ -324,7 +316,7 @@ Directed evolution
     :type: boolean
     :default: ``False``
     
-    If True perform coalescence pertubation.
+    Set ``True`` to perform coalescence pertubation.
 
 
 .. confval:: f_coalescence
@@ -332,7 +324,7 @@ Directed evolution
     :type: float
     :default: ``0.5``
     
-    Mixing ratio of coalescence; The fraction of immigrant community relative to that of a perturbed community. copy.
+    Between 0 and 1. Fraction of migrant community during coalescence. The fraction of a perturbed community is ``1-f_coalescence``. 
 
 
 .. confval:: resource_shift
@@ -340,23 +332,23 @@ Directed evolution
     :type: boolean
     :default: ``False``
     
-    If True performs resource pertubations.
+    Set ``True`` performs resource pertubations.
 
 
-.. confval:: type_resource
+.. confval:: r_type
 
     :type: string
     :default: ``add``
     
-    Type of resource pertubation. rescale_add, rescale_remove, add, remove, old. If NA defaults to resource swap, 
+    Type of resource pertubation. Available options are ``rescale_add``, ``rescale_remove``, ``add``, ``remove``, ``old``. A fraction ``r_percent`` of resource A is removed, and that amount of resource is added to another resource B.
 
 
-.. confval:: p_resource
+.. confval:: r_percent
 
     :type: float
     :default: ``1``
     
-    Tunes the magnitude of resource perturbation. The fraction from depleting a resource and move the same amount to another", 1,
+    Fraction of specified resource that is removed. ``r_percent=1`` means all resource A is removed. 
 
 |
 
@@ -370,7 +362,7 @@ The parameters in this section are inherited and some with differnt values from 
     :type: string
     :default: ``Binary_Gamma``
     
-    Specify choice of sampling algorithm to generate the consumer uptake rate vector. Options are 'Gaussian','Binary','Gamma', 'Binary_Gamma'.
+    Specify choice of sampling algorithm to generate the consumer uptake rate vector. Options are ``Gaussian``,``Binary``,``Gamma``, ``Binary_Gamma``.
 
 
 .. confval:: sn
@@ -378,7 +370,7 @@ The parameters in this section are inherited and some with differnt values from 
     :type: integer
     :default: ``2100``
     
-    Number of microbial species in global pool.
+    Number of microbial species in the global pool.
 
 
 .. confval:: sf
@@ -394,7 +386,7 @@ The parameters in this section are inherited and some with differnt values from 
     :type: integer
     :default: ``0``
     
-    Number of generalists.
+    Number/Richness of generalist taxa.
 
 
 .. confval:: rn
@@ -402,7 +394,7 @@ The parameters in this section are inherited and some with differnt values from 
     :type: integer 
     :default: ``90``
     
-    Number of resources.
+    Number of resource types. 
 
 
 .. confval:: rf     
@@ -419,6 +411,22 @@ The parameters in this section are inherited and some with differnt values from 
     :default: ``1000``
     
     Total resource abundance.
+    
+    
+.. confval:: food
+
+    :type: float
+    :default: ``1000``
+    
+    Index of food source being supplied in the minimal medium. Only works when ``rich_medium=False``.
+
+
+.. confval:: supply
+
+    :type: string
+    :default: ``off``
+    
+    Choice of intrinsic resoruce dynamics. Set ``off`` for batch culture where resource is not renewing within a transfer. 
     
 
 .. confval:: muc
@@ -461,20 +469,12 @@ The parameters in this section are inherited and some with differnt values from 
     Fraction of consumption capacity allocated to preferred resource class.
 
 
-.. confval:: s
+.. confval:: sparsity
     
     :type: float
     :default: ``0.2``
     
     Sparsity of metabolic matrix.
-
-
-.. confval:: fw
-
-    :type: float
-    :default: ``0.45``
-    
-    Fraction of secreted byproducts allocated to waste resource class.
 
 
 .. confval:: fs
@@ -485,7 +485,15 @@ The parameters in this section are inherited and some with differnt values from 
     Fraction of secreted byproducts allocated to the same resource class.
 
 
-.. confval:: gi
+.. confval:: fw
+
+    :type: float
+    :default: ``0.45``
+    
+    Fraction of secreted byproducts allocated to waste resource class.
+
+
+.. confval:: g
     
     :type: float
     :default: ``1``
@@ -509,12 +517,12 @@ The parameters in this section are inherited and some with differnt values from 
     Leakage fraction.
 
 
-.. confval:: mi
+.. confval:: m
 
     :type: float
     :default: ``0``
     
-    Minimal energy uptake for maintenance of species i (energy/time).
+    Minimal energy uptake for maintenance of species i (energy/time). Mortality.
 
 
 .. confval:: n
@@ -525,20 +533,12 @@ The parameters in this section are inherited and some with differnt values from 
     Hill coefficient for functional response (unitless).
 
 
-.. confval:: m
-    
-    :type: float
-    :default: ``0``
-    
-    Mortality rate.
-
-
 .. confval:: response
     
     :type: string
     :default: ``type III``
     
-    Functional response.
+    Functional response of uptaking rates.
 
 
 .. confval:: sigma_max
@@ -546,4 +546,42 @@ The parameters in this section are inherited and some with differnt values from 
     :type: float 
     :default: ``1``
     
-    Maximum input flux (mass/time)
+    Maximum input flux (mass/time) for type III functional response.
+
+
+.. confval:: regulation
+    
+    :type: string
+    :default: ``independent``
+    
+    Metabolic regulation.
+
+
+.. confval:: nreg
+    
+    :type: integer
+    :default: ``10``
+    
+    Hill coefficient that tunes steepness of metabolic regulation.
+
+
+.. confval:: tau
+    
+    :type: float
+    :default: ``1``
+    
+    External resource supply rate when ``supply="external"`` for chemostat setting.
+
+
+.. confval:: r
+    
+    :type: string
+    :default: ``independent``
+    
+    Renewal rate for self renewing resources when ``supply="self-renewing"`` for chemostat setting.
+
+
+    
+    
+    
+    
