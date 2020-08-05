@@ -410,7 +410,7 @@ def simulate_community(params, params_simulation, params_algorithm, plate):
         if params_simulation['directed_selection']:
             if selection_algorithm == 'select_top':
                 plate  = perturb(plate,params_simulation,keep =  np.where(community_function >= np.max(community_function))[0][0])
-            if selection_algorithm != 'select_top' & != 'simple_screening':
+            if selection_algorithm != 'select_top' & protocol != 'simple_screening':
                 plate  = perturb(plate,params_simulation,keep =  NA)
 
     if params_simulation['save_composition']:
