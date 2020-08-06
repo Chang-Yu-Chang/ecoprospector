@@ -1,6 +1,6 @@
 # ecoprospector
 
-> Design protocol for artificially selecting microbial communities
+> Simulating protocols for the artificial selection of microbial communities
 
 This package is designed for executing community-level selection protocols to engineer microbial communities toward desired functions. The simulation is based on batch culture and the microbes in a community interact via consumer-resource dynamics.
 
