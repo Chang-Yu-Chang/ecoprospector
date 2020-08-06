@@ -20,7 +20,7 @@ Ecoprospector aims to flexibly adapt major componets of commonly used experiemnt
 * **Consumer-resource dynamics**: virtual microbial species with idiosyncratic metabolic properties interact with others in a community through secretion and uptakes. Microbial community dynamics can be adjusted using a wide range of paramaters
 * **Batch-culture**: the community generation is divided into serial batch culture with a tunable incubation time and number of generations.
 * **Community function**: any arbitrarily designed community functions can be under selection. 
-* **Selection matrix**: the selection regimes (i.e., which parental communitues to select and how to seed the offspring communities) are standardized by selection matrix at each time point.
+* **Selection matrix**: the selection regimes (i.e., which parental communitues to select and how to seed the offspring communities) are standardized by selection matrix at the end of each generation.
 * **Pertubations**: at end of any generation the top performing community can be replicated and copies can be be perturbed simulating possibe manipulations (i.e single-species invasions, resource-shifts, bottle-necking etc).
 * **Modular protocol design**: the feature mentioned above can be assembled in any combination to form a user designed experimental protocol. 
 
@@ -35,7 +35,7 @@ Our package is designed with three types of user in mind.
 Key contributors
 ================
 
-Jean Vila and Chang-Yu Chang (both at Yale working with `Alvaro Sanchez <http://www.sanchezlaboratory.com/>`_) started to build ecoprospector in collaboration with students from Physical Biology of Cells Course at Marine Biology Laboratoy in Woods Hole (Molly Bassette, Julia Borden, Stefan Golfier, Paul G. Sanchez, Rachel Waymack, Xinwen Zhu), who provided assistance in the early part of this project.
+Jean Vila and Chang-Yu Chang (both at Yale working with `Alvaro Sanchez <http://www.sanchezlaboratory.com/>`_) started to build ecoprospector in collaboration with students from Physical Biology of Cells Course at Marine Biology Laboratoy in Woods Hole (Molly Bassette, Julia Borden, Stefan Golfier, Paul G. Sanchez, Rachel Waymack, Xinwen Zhu), who provided assistance during early development.
 
 
 
