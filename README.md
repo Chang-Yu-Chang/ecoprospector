@@ -55,6 +55,7 @@ Ecoprospector's documentation lives at [ecoprospector.readthedocs.io](https://ec
 ## Meta
 
 Chang-Yu Chang – [@changyu_chang](https://twitter.com/changyu_chang) – chang-yu.chang@yale.edu
+
 Jean Vila – [@jccvila](https://twitter.com/jccvila) – jean.vila@yale.edu
 
 Distributed under the MIT license. See ``LICENSE`` for more information.
