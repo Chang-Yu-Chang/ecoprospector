@@ -4,25 +4,25 @@ Ecoprospector's Tutorial
 What is ecoprospector?
 ======================
 
-Ecoprospector is a Python package designed to simulate protocols of artificial selection on microbial communities, using a single :code:`mapping_file.csv` as input (with specified parameters) and specified experiment (the first row in this case)
+Ecoprospector is a Python package designed to simulate protocols of artificial selection on microbial metacommunities. Experiments are run by using a  :code:`mapping_file.csv` as an input. Each row in this csv file corresponds to a single experiment and each column specifies the paramaters for that experiment. Running a single experiment specified in row :code:`i` simply involves the bash command
 
 .. code-block:: bash
 
-    $ ecoprospector mapping_file.csv 0
+    $ ecoprospector mapping_file.csv i
 
 | 
 
 Main features
 =============
 
-It aims to flexibly adapt major componenets of an experiemntal protocol, including features like batch culture, multi-well plate, selection strategy, and allows an user to design arbitrarily protocols with own needs.
+Ecoprospector aims to flexibly adapt major componets of commonly used experiemntal protocols so that they can be tested on in-silico microbial meta-communitities.  The main features of our simulations include:
  
-* **Single input file**: ecoprospector takes a :code:`.csv` file where each row of the csv file specifies the parameters for one experiment.
-* **Consumer-resource dynamics**: virtual microbial species with idiosyncratic metabolic properties interact with others in a community through secretion and uptakes. 
-* **Batch-culture**: the community generation is divided by serial batch culture.
-* **Community function**: various community functions can be applied, inclduing additive, intereative function.
-* **Selection matrix**: the selection regimes (i.e., which parental communitues to select and how to seed the offspring communities) are standardized by selection matrix.
-* **Modular protocol design**: the feature mentioned above can be assembled into a user-manual designed protocol. 
+* **Consumer-resource dynamics**: virtual microbial species with idiosyncratic metabolic properties interact with others in a community through secretion and uptakes. Microbial community dynamics can be adjusted using a wide range of paramaters
+* **Batch-culture**: the community generation is divided into serial batch culture with a tunable incubation time and number of generations.
+* **Community function**: any arbitrarily designed community functions can be under selection. 
+* **Selection matrix**: the selection regimes (i.e., which parental communitues to select and how to seed the offspring communities) are standardized by selection matrix at each time point.
+* **Pertubations**: at end of any generation the top performing community can be replicated and copies can be be perturbed simulating possibe manipulations (i.e single-species invasions, resource-shifts, bottle-necking etc).
+* **Modular protocol design**: the feature mentioned above can be assembled in any combination to form a user designed experimental protocol. 
 
 Our package is designed with three types of user in mind. 
 
@@ -35,7 +35,7 @@ Our package is designed with three types of user in mind.
 Key contributors
 ================
 
-Jean Vila and Chang-Yu Chang (both at Yale working with `Alvaro Sanchez <http://www.sanchezlaboratory.com/>`_) started to build ecoprospector in collaboration with students from Physical Biology of Cells Course at Marine Biology Laboratoy in Woods Hole (Molly Bassette, Julia Borden, Stefan Golfier, Paul G. Sanchez, Rachel Waymack, Xinwen Zhu), who provided feedback on the modular design of ecoprospector.
+Jean Vila and Chang-Yu Chang (both at Yale working with `Alvaro Sanchez <http://www.sanchezlaboratory.com/>`_) started to build ecoprospector in collaboration with students from Physical Biology of Cells Course at Marine Biology Laboratoy in Woods Hole (Molly Bassette, Julia Borden, Stefan Golfier, Paul G. Sanchez, Rachel Waymack, Xinwen Zhu), who provided assistance in the early part of this project.
 
 
 
