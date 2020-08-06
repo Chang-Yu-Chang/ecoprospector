@@ -14,5 +14,5 @@ setup(name='ecoprospector',
       scripts = ['commandline_tool/ecoprospector'],
       include_package_data = True,
       package_data = {"": ["*.csv"]},
+      install_requires=['community-simulator'],
       zip_safe=False)
-

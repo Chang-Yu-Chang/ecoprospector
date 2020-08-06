@@ -2,7 +2,7 @@
 
 > Design protocol for artificially selecting microbial communities
 
-This package is designed for executing community-level selection protocols to engineer microbial communities toward desired functions. The simulation is based on batch culture and the microbes in a community interact via   consumer-resource dynamics.
+This package is designed for executing community-level selection protocols to engineer microbial communities toward desired functions. The simulation is based on batch culture and the microbes in a community interact via consumer-resource dynamics.
 
 See our [preprint](https://www.biorxiv.org/content/10.1101/2020.07.24.214775v2) that uses ecoprospector to study a range of selection strategies that direct the evolution of microbial communities.
 
@@ -10,16 +10,21 @@ See our [preprint](https://www.biorxiv.org/content/10.1101/2020.07.24.214775v2) 
 
 ## Installation
 
+A python development setup by [Anaconda](https://docs.anaconda.com/anaconda/install/) will be sufficient to implement community-simulator and ecoprospector.
+
 ### Mac and Linux
 
-Download the code or clone this github repository to a local directory 
+Download the code or clone the github repository of community simulator to a local directory and browse to the community-simulator directory and install package
+
+```sh
+$ git clone https://github.com/Emergent-Behaviors-in-Biology/community-simulator .
+$ pip install -e .
+```
+
+Download the code or clone this github repository to a local directory and browse to the ecoprospector directory and install package 
 
 ```sh
 $ git clone https://github.com/Chang-Yu-Chang/ecoprospector .
-```
-
-Browse to the ecoprospector directory and install package 
-```sh
 $ pip install -e .
 ```
 
@@ -36,9 +41,6 @@ $ ecoprospector mapping_file.csv 0
 
 For more examples and usage, please refer to the [documentation](https://ecoprospector.readthedocs.io/en/latest/).
 
-## Development setup
-
-A python development setup by [Anaconda](https://docs.anaconda.com/anaconda/install/) will be sufficient to implement ecoprospector.
 
 ## Release History
 
