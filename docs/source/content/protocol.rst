@@ -23,26 +23,8 @@ A series of positive integers from 1 to the number of total generations, which i
 
 |
 
-Selected function
-------------------
 
-The community funtion that is under selection at each generation. Inputs in this column should map to python functions in B_community_phenotype.py. 
 
-[show list of options]
-
-f1_additive
-f2_interaction
-distance from an arbitrary resource target (similar to Williams et al 2007)
-resistance to a fast growing invader (similar to Wilson 1992)
-
-An advanced user should be able to add functions that depend on any model and code it into the package as a function in B_community_phenotype.py
-
-|
-
-Selection matrix
-----------------
-
-Each cell has a string name that refers to a Python function that computes the selection matrix. A library of possible selection matrix options is saved in C_selection_matrix.py. The selection matrix represents what selection regime (i.e. which and what fraction of communities are selected, how much of a parent community is transferred into an offspring community) is used at the end of each generation. See the selection matrix section for how to make the selection matrix.
 
 
 

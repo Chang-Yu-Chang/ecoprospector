@@ -4,7 +4,7 @@ Ecoprospector's Tutorial
 What is ecoprospector?
 ======================
 
-Ecoprospector is a Python package designed to simulate protocols of artificial selection on microbial communities, using a single :code:`mapping_file.csv` as input (with specified parameters) and specified experiment (the first row in this case)
+Ecoprospector is a Python package designed to simulate protocols of artificial selection on microbial communities, using a single ``mapping_file.csv`` as input (with specified parameters) and specified experiment (the first row in this case)
 
 .. code-block:: bash
 
@@ -53,7 +53,12 @@ Jean Vila and Chang-Yu Chang (both at Yale working with `Alvaro Sanchez <http://
    
    content/usertools
    content/mapping_file
+   content/micrm
    content/protocol
+   content/community_function
+   content/selection_matrix
+   content/perturbation
+   
    
    
 
