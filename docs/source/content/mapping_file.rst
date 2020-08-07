@@ -1,14 +1,17 @@
 Input Mapping File
 ==================
 
-The input mapping ``.csv`` lists 69 essential parameters in columns and (indepdendent) selection experiments in rows. Here is an example of two independent experiments.
+The input mapping ``.csv`` lists 69 essential parameters in columns and (indepdendent) selection experiments in rows. Here is an example of mapping file with two independent experiments.
 
 .. csv-table:: 
    :file: ../data/input_test.csv
 
 
 
-.. contents:: The mapping file has five categories of parameters
+The mapping file has five categories of parameters:
+
+.. contents:: 
+    :local:
 
 File operation
 ---------------

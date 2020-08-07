@@ -53,6 +53,7 @@ Jean Vila and Chang-Yu Chang (both at Yale working with `Alvaro Sanchez <http://
    content/usertools
    content/mapping_file
    content/micrm
+   content/metacommunity
    content/protocol
    content/community_function
    content/selection_matrix
