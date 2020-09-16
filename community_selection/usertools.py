@@ -49,6 +49,28 @@ def sample_from_pool(plate_N, assumptions,n=None):
 
     return N0
 
+def sample_from_pool2(plate_N, assumptions, init_richness = 2, n=None):
+    """
+    Make synthetic communities with fiven initial richness    
+    """
+    S_tot = plate_N.shape[0] 
+    N0 = np.zeros((plate_N.shape))
+    consumer_index = plate_N.index
+    well_names = plate_N.columns
+    
+    if n is None:
+        n = assumptions['n_inoc']
+        
+    for k in range(plate_N.shape[1]):
+        consumer_list = np.random.choice(S_tot, size = init_richness, replace = False) 
+        
+        for v in range(init_richness):
+                N0[consumer_list[v], k] = n / init_richness
+
+    N0 = pd.DataFrame(N0, index = consumer_index, columns = well_names)
+
+    return N0
+
 # Plot community function
 def plot_community_function(function_df):
     function_df.plot.scatter(x = "Transfer", y = "CommunityPhenotype")
@@ -237,7 +259,10 @@ def make_plate(assumptions,params):
     plate.R0 = make_medium(plate.R0, assumptions)  
 	   
 	# Add cells to plate (overrides community simulator)
-    plate.N = sample_from_pool(plate.N, assumptions)
+    if assumptions["synthetic_community"]:
+        plate.N = sample_from_pool2(plate.N, assumptions, init_richness = assumptions["init_richness"])
+    else:
+        plate.N = sample_from_pool(plate.N, assumptions)
     
     return plate
 	
