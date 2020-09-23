@@ -162,7 +162,7 @@ def make_assumptions(input_file,row):
 			assumptions['r_percent'] = float(assumptions['r_percent'])
 			
 	# Overwrite plate
-	if assumptions["overwrite_plate"] != None: 
+	if isinstance(assumptions["overwrite_plate"], str) and assumptions["overwrite_plate"] != "NA": 
 	    df = pd.read_csv(assumptions["overwrite_plate"])
 	    assumptions["n_wells"] = len(set(df["Well"]))
 	
@@ -442,6 +442,7 @@ def prepare_experiment(assumptions):
 	"""
 	print("\nGenerate species paramaters")
 	np.random.seed(assumptions['seed']) 
+	print(assumptions["overwrite_plate"])
 	params = MakeParams(assumptions) 
 	
 	print("\nDraw per-capita function and cost")
