@@ -162,9 +162,9 @@ def make_assumptions(input_file,row):
 			assumptions['r_percent'] = float(assumptions['r_percent'])
 			
 	# Overwrite plate
-	if assumptions["overwrite_plate"]: 
+	if assumptions["overwrite_plate"] != None: 
 	    df = pd.read_csv(assumptions["overwrite_plate"])
-	    assumptions["n_wells"] = len(df)
+	    assumptions["n_wells"] = len(set(df["Well"]))
 	
 	# If running the synthetic community
 	# if assumptions["synthetic_community"]:
@@ -277,7 +277,7 @@ def make_plate(assumptions,params):
 	# if assumptions["synthetic_community"]:
 	# 	plate.N = sample_from_pool2(plate.N, assumptions, synthetic_community_size = assumptions["synthetic_community_size"])
 	# else:
-	if assumptions["overwrite_plate"].notna() == False:
+	if assumptions["overwrite_plate"] == None:
 	    print("\nskip the sampling")
 	    plate.N = sample_from_pool(plate.N, assumptions)
 	
