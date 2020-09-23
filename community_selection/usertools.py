@@ -49,7 +49,7 @@ def sample_from_pool(plate_N, assumptions,n=None):
 
 	return N0
 
-def sample_from_pool2(plate_N, assumptions, init_richness = 2, n=None):
+def sample_from_pool2(plate_N, assumptions, synthetic_community_size = 2, n=None):
 	"""
 	Make synthetic communities with fiven initial richness    
 	"""
@@ -62,10 +62,10 @@ def sample_from_pool2(plate_N, assumptions, init_richness = 2, n=None):
 		n = assumptions['n_inoc']
 		
 	for k in range(plate_N.shape[1]):
-		consumer_list = np.random.choice(S_tot, size = init_richness, replace = False) 
+		consumer_list = np.random.choice(S_tot, size = synthetic_community_size, replace = False) 
 		
-		for v in range(init_richness):
-				N0[consumer_list[v], k] = n / init_richness / assumptions["scale"]
+		for v in range(synthetic_community_size):
+				N0[consumer_list[v], k] = n / synthetic_community_size / assumptions["scale"]
 
 	N0 = pd.DataFrame(N0, index = consumer_index, columns = well_names)
 
@@ -108,7 +108,7 @@ def make_assumptions(input_file,row):
 				assumptions.update({k :row_dat[k]})
 			else:
 				assumptions.update({k :np.nan})
-				
+	
 	#These two assumptions are generated from combinations of other paramaters
 	assumptions.update({'SA' :row_dat['sn']*np.ones(row_dat['sf'])  }) #Number of consumers in each Specialist family
 	assumptions.update({'MA' :row_dat['rn']*np.ones(row_dat['rf'])  }) #Number of resources in each class
@@ -160,14 +160,20 @@ def make_assumptions(input_file,row):
 			assumptions['r_percent'] =0.1
 		else:
 			assumptions['r_percent'] = float(assumptions['r_percent'])
+			
+	# Overwrite plate
+	if assumptions["overwrite_plate"]: 
+	    df = pd.read_csv(assumptions["overwrite_plate"])
+	    assumptions["n_wells"] = len(df)
+	
 	# If running the synthetic community
-	if assumptions["synthetic_community"]:
-		sn = int(assumptions["sn"])
-		sf = int(assumptions["sf"])
-		rn = int(assumptions["rn"])
-		rf = int(assumptions["rf"])
-		assumptions["SA"]: sn*np.ones(sf)
-		assumptions["MA"]: np.concatenate((2*np.ones(1), rn*np.ones(rf-1)))
+	# if assumptions["synthetic_community"]:
+	# 	sn = int(assumptions["sn"])
+	# 	sf = int(assumptions["sf"])
+	# 	rn = int(assumptions["rn"])
+	# 	rf = int(assumptions["rf"])
+	# 	assumptions["SA"]: sn*np.ones(sf)
+	# 	assumptions["MA"]: np.concatenate((2*np.ones(1), rn*np.ones(rf-1)))
 	
 	return assumptions
 	
@@ -268,10 +274,12 @@ def make_plate(assumptions,params):
 	plate.R0 = make_medium(plate.R0, assumptions)  
 	   
 	# Add cells to plate (overrides community simulator)
-	if assumptions["synthetic_community"]:
-		plate.N = sample_from_pool2(plate.N, assumptions, init_richness = assumptions["init_richness"])
-	else:
-		plate.N = sample_from_pool(plate.N, assumptions)
+	# if assumptions["synthetic_community"]:
+	# 	plate.N = sample_from_pool2(plate.N, assumptions, synthetic_community_size = assumptions["synthetic_community_size"])
+	# else:
+	if assumptions["overwrite_plate"].notna() == False:
+	    print("\nskip the sampling")
+	    plate.N = sample_from_pool(plate.N, assumptions)
 	
 	return plate
 	
