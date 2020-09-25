@@ -45,8 +45,7 @@ def sample_from_pool(plate_N, assumptions,n=None):
 	elif assumptions['monoculture'] == True:
 		N0 = np.eye(plate_N.shape[0]) *assumptions['n_inoc']/assumptions['scale']
 		N0 = pd.DataFrame(N0, index = consumer_index, columns = ["W" + str(i) for i in range(plate_N.shape[0])])
-
-
+	
 	return N0
 
 def sample_from_pool2(plate_N, assumptions, synthetic_community_size = 2, n=None):
@@ -163,17 +162,9 @@ def make_assumptions(input_file,row):
 			
 	# Overwrite plate
 	if isinstance(assumptions["overwrite_plate"], str) and assumptions["overwrite_plate"] != "NA": 
+	    print("\n\nOverwriting the plate")
 	    df = pd.read_csv(assumptions["overwrite_plate"])
 	    assumptions["n_wells"] = len(set(df["Well"]))
-	
-	# If running the synthetic community
-	# if assumptions["synthetic_community"]:
-	# 	sn = int(assumptions["sn"])
-	# 	sf = int(assumptions["sf"])
-	# 	rn = int(assumptions["rn"])
-	# 	rf = int(assumptions["rf"])
-	# 	assumptions["SA"]: sn*np.ones(sf)
-	# 	assumptions["MA"]: np.concatenate((2*np.ones(1), rn*np.ones(rf-1)))
 	
 	return assumptions
 	
@@ -272,13 +263,9 @@ def make_plate(assumptions,params):
 	# Add media to plate (overrides community simulator)
 	plate.R = make_medium(plate.R, assumptions)
 	plate.R0 = make_medium(plate.R0, assumptions)  
-	   
-	# Add cells to plate (overrides community simulator)
-	# if assumptions["synthetic_community"]:
-	# 	plate.N = sample_from_pool2(plate.N, assumptions, synthetic_community_size = assumptions["synthetic_community_size"])
-	# else:
-	if assumptions["overwrite_plate"] == None:
-	    print("\nskip the sampling")
+	  
+	# If plate is to be replaced by overwritting plate, skip the sampling
+	if pd.isnull(assumptions["overwrite_plate"]):
 	    plate.N = sample_from_pool(plate.N, assumptions)
 	
 	return plate
@@ -442,7 +429,6 @@ def prepare_experiment(assumptions):
 	"""
 	print("\nGenerate species paramaters")
 	np.random.seed(assumptions['seed']) 
-	print(assumptions["overwrite_plate"])
 	params = MakeParams(assumptions) 
 	
 	print("\nDraw per-capita function and cost")
