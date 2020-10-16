@@ -394,6 +394,7 @@ def overwrite_plate(plate, assumptions):
 		for i in range(temp_comm.shape[0]):
 			temp[int(temp_comm.iloc[i]["ID"])] = temp_comm.iloc[i]["Abundance"]
 			N["W" + str(w)] = temp
+
 	# R
 	for w in range(assumptions["n_wells"]):
 		temp_res = df[(df["Well"] == ("W" + str(w))) & (df["Type"] == "resource")][["ID", "Abundance"]]
@@ -429,6 +430,7 @@ def prepare_experiment(assumptions):
 	"""
 	print("\nGenerate species paramaters")
 	np.random.seed(assumptions['seed']) 
+	#print(assumptions)
 	params = MakeParams(assumptions) 
 	
 	print("\nDraw per-capita function and cost")

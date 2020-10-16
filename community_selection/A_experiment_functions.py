@@ -374,7 +374,6 @@ def simulate_community(params, params_simulation, params_algorithm, plate):
         # Algorithms used in this transfer
         phenotype_algorithm = params_algorithm["community_phenotype"][i]
         selection_algorithm = params_algorithm["selection_algorithm"][i]
-#        migration_algorithm = params_algorithm["migration_algorithm"][i]
         print("Transfer " + str(i+1))
 
         # Propagation
