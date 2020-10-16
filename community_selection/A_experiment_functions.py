@@ -5,10 +5,11 @@ Created on Nov 26 2019
 @author: changyuchang
 """
 import numpy as np
-import scipy as sp
-import pandas as pd
-import random
+from community_simulator import *
+from community_simulator.usertools import *
+from community_selection.__init__ import *
 
+# Species features
 
 def MakeMatrices(assumptions):
     """
@@ -194,67 +195,185 @@ def MakeMatrices(assumptions):
         
     return c, DT.T
 
+def draw_species_function(assumptions):
+	"""
+	Draw species-specific functions
+	
+	assumptions = dictionary of metaparameters from community-simulator
+	
+	Return:
+	function_species, function_interaction
+	"""
+	# Total number of species in the pool
+	S_tot = int(np.sum(assumptions['SA']) + assumptions['Sgen']) 
+	
+	# Species-specific function, 1-D array
+	f1_species_smooth = np.random.normal(0, assumptions["sigma_func"], size = S_tot)
+	f1_species_rugged = np.random.normal(0, assumptions["sigma_func"], size = S_tot) * np.random.binomial(1, 0.2, size = S_tot)
+	
+	# Interaction-specific function, 2-D n by n array
+	f2_species_smooth = np.random.normal(0, assumptions["sigma_func"] * assumptions["alpha_func"], size = S_tot * S_tot).reshape(S_tot, S_tot)
+	f2_species_rugged = np.random.binomial(1, 0.2, S_tot**2).reshape(S_tot, S_tot) * np.array(np.random.normal(0, assumptions["sigma_func"] * assumptions["alpha_func"], size = S_tot * S_tot)).reshape(S_tot, S_tot)
+	
+	# Remove diagonals in the interation matrix
+	np.fill_diagonal(f2_species_smooth, 0)
+	np.fill_diagonal(f2_species_rugged, 0)
 
-def reshape_plate_data(plate, params_simulation,transfer_loop_index):
-    """
-    Reshape the plate resource and consumer matrices (wider form) into a melted data.frame (longer form)
-    """
-    # Temporary function for adding variables to and melting df
-    def melt_df(plate_df, data_type = "consumer"):
-        # Consumers
-        temp_df = pd.DataFrame(plate_df)
-        total_number = temp_df.shape[0]
-        
-        ## Add variables
-        temp_df["Type"] = np.repeat(data_type, total_number)
-        temp_df["ID"] = range(total_number)
-        temp_df["Transfer"] = np.repeat(str(transfer_loop_index), total_number)
-        temp_df["exp_id"] = np.repeat(params_simulation['exp_id'] , total_number)
+	return f1_species_smooth, f1_species_rugged, f2_species_smooth, f2_species_rugged
 
-        ## Melt the df
-        temp_df = pd.melt(temp_df, id_vars = ["exp_id","Transfer", "Type", "ID"], var_name = "Well", value_name = "Abundance")
-        temp_df = temp_df[temp_df.Abundance != 0] # Remove zero abundances
-        return temp_df
-        
-    # Melt the df
-    temp_plate = plate.copy() # Copy the original plate 
-    df_N = melt_df(temp_plate.N, data_type = "consumer")
-    df_R = melt_df(temp_plate.R, data_type = "resource")
-    df_R0 = melt_df(temp_plate.R0,data_type = "R0")
-    
-    # Concatenate dataframes
-    merged_df = pd.concat([df_N, df_R,df_R0]) 
-    merged_df["Index"] = list(range(0, merged_df.shape[0]))
-    merged_df.set_index("Index", inplace = True)
+def draw_species_cost(per_capita_function, assumptions):
+	"""
+	Draw species-specific function cost
+	k_i is a conversion factor that specifies cost per function 
+	"""
+	
+	if assumptions["cost_mean"] !=0:
+		cost_var = assumptions["cost_sd"]**2
+		cost_k = assumptions["cost_mean"]**2/cost_var
+		cost_theta = cost_var/assumptions["cost_mean"]
+		cost = np.random.gamma(shape = cost_k, scale = cost_theta, size = len(per_capita_function))
+		g0 = assumptions["g0"]
+		gi = g0/(1-per_capita_function*cost)
+	else: 
+		gi = np.repeat(assumptions["g0"], len(per_capita_function))
+	
+	return gi
 
-    return merged_df # Return concatenated dataframe
+def add_community_function(plate, assumptions, params):
+	"""
+	Add the function attribute to the community
+	
+	For f1 and f3, add species_function 
+	For f2 and f4, add interaction_function
+	For f5, add invasion_plate_t0 and invasion_plate_t1
+	For f6, f7, and f8, add resident_plate_t0_N, resident_plate_t1_N, resident_plate_t0_R, and resident_plate_t1_R
+	
+	if isolates calculate function for every isolate in monoculture.
+	"""
+	
+	#Generate per capita species function
+	np.random.seed(assumptions['seed']) 
+	f1_species_smooth, f1_species_rugged, f2_species_smooth, f2_species_rugged = draw_species_function(assumptions)
+	
+	# Species function for f1 additive community function
+	setattr(plate, "f1_species_smooth", f1_species_smooth)
+	setattr(plate, "f1_species_rugged", f1_species_rugged)
+
+	# Species interaction function for f2 Interactive function
+	setattr(plate, "f2_species_smooth", f2_species_smooth)
+	setattr(plate, "f2_species_rugged", f2_species_rugged)
 
 
-def reshape_function_data(params_simulation,community_function, richness, biomass, transfer_loop_index):
-    """
-    Reshape the community function, richness, biomass into a melted data.frame
-    """
-    temp_vector1 = community_function.copy()
-    temp_vector2 = richness.copy()
-    temp_vector3 = biomass.copy()
-    
-    # Number of wells
-    number_well = len(richness)
+	# Invasion function f5 or knock_in with a threshold requires us to grow isolates in monoculture to obtain their abundance.
+	if (assumptions["selected_function"] == 'f5_invader_growth') | (assumptions['knock_in']):
+		print("\nStabilizing monoculture plate")
+		# Keep the initial plate R0 for function f7 
+		setattr(plate, "R0_initial", plate.R0)
+		
+		assumptions_invasion = assumptions.copy()
+		params_invasion = params.copy()
+		
+		#Update assumptions
+		assumptions_invasion.update({"n_wells": np.sum(assumptions["SA"])  + assumptions["Sgen"]})
+		assumptions_invasion.update({"monoculture":True})
 
-    # Make data.frame
-    temp_df = pd.DataFrame({
-        "exp_id": np.repeat(params_simulation['exp_id'], number_well),
-        "Well": ["W" + str(i) for i in range(number_well)], 
-        "Transfer": np.repeat(str(transfer_loop_index), number_well), 
-        "CommunityPhenotype": temp_vector1,
-        "Richness": temp_vector2,
-        "Biomass": temp_vector3})
-    
-    # Turn the transfer columns as numeric
-    temp_df[["Transfer"]] = temp_df[["Transfer"]].apply(pd.to_numeric)
-    
-    return temp_df 
-    
+		# Make plates
+		plate_invasion = make_plate(assumptions_invasion,params_invasion)
+		
+		# Species function, f1 and f3 (to calculate function at end)
+		setattr(plate_invasion, "species_function", function_species) # Species function for additive community function
+
+		# Interactive functions, f2 , f2b and f4
+		setattr(plate_invasion, "interaction_function",function_interaction) # Interactive function for interactive community function
+		setattr(plate_invasion, "interaction_function_p25", function_interaction_p25)   
+		
+		
+		# Grow the invader plate  to equilibrium
+		for i in range(assumptions_invasion["n_transfer"] - assumptions_invasion["n_transfer_selection"]):
+			plate_invasion.Propagate(assumptions_invasion["n_propagation"])
+			plate_invasion = passage_monoculture(plate_invasion, assumptions_invasion["dilution"])
+		
+		#  1 final growth cycle before storing data
+		plate_invasion.Propagate(assumptions_invasion["n_propagation"])
+		
+		# find well with highest biomass
+		dominant_index = np.where(np.sum(plate_invasion.N, axis = 0) == np.max(np.sum(plate_invasion.N, axis = 0)))[0][0] # Find the well with the highest biomass
+
+		# Duplicate the chosen community  to the entire plate and save this in a data.frame to be add to as an attribute of the plate
+		invader_N = pd.DataFrame()
+		invader_R = pd.DataFrame()
+		invader_R0 = pd.DataFrame()
+
+		for i in range(assumptions["n_wells"]):
+			invader_N["W" + str(i)] = plate_invasion.N["W" + str(dominant_index)]
+			invader_R["W" + str(i)] = plate_invasion.R["W" + str(dominant_index)]
+			invader_R0["W" + str(i)] = plate_invasion.R0["W" + str(dominant_index)]
+
+		#Add the invasion plate to the attr of community
+		setattr(plate, "invader_N", invader_N)
+		setattr(plate, "invader_R", invader_R)
+		setattr(plate, "invader_R0", invader_R0)
+		setattr(plate, "isolate_abundance", np.sum(plate_invasion.N,axis=1)) 
+		setattr(plate, "isolate_function", globals()[assumptions["selected_function"]](plate_invasion, params_simulation = assumptions))     
+	
+		print("\nFinished Stabilizing monoculture plate")
+	return plate
+
+# Plate
+
+def sample_from_pool(plate_N, assumptions, n = None):
+	"""
+	Sample communities from regional species pool.
+
+	plate_N = consumer data.frame
+	"""
+	S_tot = plate_N.shape[0] # Total number of species in the pool
+	N0 = np.zeros((plate_N.shape)) # Make empty plate
+	consumer_index = plate_N.index
+	well_names = plate_N.columns
+	if n is None:
+		n = assumptions['n_inoc'] #if not specified n is n_inoc
+	# Draw community
+	if assumptions['monoculture'] == False:
+		# Sample initial community for each well
+		for k in range(plate_N.shape[1]):
+			pool = np.random.power(0.01, size = S_tot) # Power-law distribution
+			pool = pool/np.sum(pool) # Normalize the pool
+			consumer_list = np.random.choice(S_tot, size = n , replace = True, p = pool) # Draw from the pool
+			my_tab = pd.crosstab(index = consumer_list, columns = "count") # Calculate the cell count
+			N0[my_tab.index.values,k] = np.ravel(my_tab.values / assumptions['scale']) # Scale to biomass
+
+		# Make data.frame
+		N0 = pd.DataFrame(N0, index = consumer_index, columns = well_names)
+
+	# Monoculture plate
+	elif assumptions['monoculture'] == True:
+		N0 = np.eye(plate_N.shape[0]) *assumptions['n_inoc']/assumptions['scale']
+		N0 = pd.DataFrame(N0, index = consumer_index, columns = ["W" + str(i) for i in range(plate_N.shape[0])])
+	
+	return N0
+
+def sample_from_pool2(plate_N, assumptions, synthetic_community_size = 2, n = None):
+	"""
+	Make synthetic communities with given initial richness
+	"""
+	S_tot = plate_N.shape[0] 
+	N0 = np.zeros((plate_N.shape))
+	consumer_index = plate_N.index
+	well_names = plate_N.columns
+	
+	if n is None:
+		n = assumptions['n_inoc']
+		
+	for k in range(plate_N.shape[1]):
+		consumer_list = np.random.choice(S_tot, size = synthetic_community_size, replace = False) 
+		
+		for v in range(synthetic_community_size):
+				N0[consumer_list[v], k] = n / synthetic_community_size / assumptions["scale"]
+
+	N0 = pd.DataFrame(N0, index = consumer_index, columns = well_names)
+
+	return N0
 
 def migrate_from_pool(plate,migration_factor,params_simulation, power_law = True, n = None):
     """
@@ -286,8 +405,7 @@ def migrate_from_pool(plate,migration_factor,params_simulation, power_law = True
             plate_migrated = plate.N
     return plate_migrated
 
-
-def passage_monoculture(plate_mono, f, scale = None, refresh_resource=True):
+def passage_monoculture(plate_mono, f, scale = None, refresh_resource = True):
     """
     Reduced version of Passage(), for passaging a large set of wells without multinomial sampling
     Most code adapted from community-simulator
@@ -325,147 +443,182 @@ def passage_monoculture(plate_mono, f, scale = None, refresh_resource=True):
 
     return self
 
-
-def simulate_community(params, params_simulation, params_algorithm, plate):
-    """
-    Simulate community dynamics by given experimental regimes
-    
-    params = parameter passed from community-simulator
-    params_simulation = dictionary of parameters for running experiment
-    params_algorithm = dictionary of algorithms that determine the selection regime, migration regime, and community pheotypes
-    plate = Plate object specified by community-simulator
-    
-    Return:
-    community_composition = concatenated, melted panda dataframe of community and resource composition in each transfer
-    community_function = melted panda dataframe of community function
-    """
-
-    # Test the community function
-    try:
-        community_function = globals()[params_algorithm["community_phenotype"][0]](plate, params_simulation = params_simulation) # Community phenotype
-    except:
-        print('\n Community phenotype test failed')
-        raise SystemExit
-
-    # Save the inocula composition
-    if params_simulation['save_composition']:
-        plate_data_list = list() # Plate composition
-        plate_data = reshape_plate_data(plate, params_simulation,transfer_loop_index=0)  # Initial state
-        plate_data_list.append(plate_data)
-        composition_filename = params_simulation['output_dir'] + params_simulation['exp_id'] + '_composition.txt'   
-        
-    # Save the initial community function + richness + biomass
-    if params_simulation['save_function']:
-        community_function_list = list() # Plate composition
-        richness = np.sum(plate.N >= 1/params_simulation["scale"], axis = 0) # Richness
-        biomass = list(np.sum(plate.N, axis = 0)) # Biomass
-        function_data = reshape_function_data(params_simulation,community_function, richness, biomass, transfer_loop_index =0)
-        community_function_list.append(function_data)
-        function_filename = params_simulation['output_dir'] + params_simulation['exp_id'] + '_function.txt'   
-
-
-    print("\nStart propogation")
-    # Run simulation
-    for i in range(0, params_simulation["n_transfer"]):
-        # Algorithms used in this transfer
-        phenotype_algorithm = params_algorithm["community_phenotype"][i]
-        selection_algorithm = params_algorithm["selection_algorithm"][i]
-        print("Transfer " + str(i+1))
-
-        # Propagation
-        plate.Propagate(params_simulation["n_propagation"])
-    
-        # Measure Community phenotype
-        community_function = globals()[params_algorithm["community_phenotype"][0]](plate, params_simulation = params_simulation) # Community phenotype
-        
-        # Append the composition to a list
-        if params_simulation['save_composition'] and ((i+1) % params_simulation['composition_lograte'] == 0):
-            plate_data = reshape_plate_data(plate, params_simulation,transfer_loop_index=i+1)  # Initial state
-            plate_data_list.append(plate_data)
-
-        if params_simulation['save_function'] and ((i+1) % params_simulation['function_lograte'] == 0):
-            richness = np.sum(plate.N >= 1/params_simulation["scale"], axis = 0) # Richness
-            biomass = list(np.sum(plate.N, axis = 0)) # Biomass
-            function_data = reshape_function_data(params_simulation,community_function, richness, biomass, transfer_loop_index =i+1)
-            community_function_list.append(function_data)
-
-		#Store prior state before passaging (For coalescence)
-        setattr(plate, "prior_N", plate.N)
-        setattr(plate, "prior_R", plate.R)
-        setattr(plate, "prior_R0", plate.R0)
-
-        # Passage and tranfer matrix
-        transfer_matrix = globals()[selection_algorithm](community_function)
-        if params_simulation['monoculture']:
-            plate = passage_monoculture(plate, params_simulation["dilution"])
-        else:
-            plate.Passage(transfer_matrix * params_simulation["dilution"])
-        
-        # Perturbation
-        if params_simulation['directed_selection']:
-            if selection_algorithm == 'select_top':
-                plate  = perturb(plate,params_simulation,keep =  np.where(community_function >= np.max(community_function))[0][0])
-            if selection_algorithm != 'select_top' & protocol != 'simple_screening':
-                plate  = perturb(plate,params_simulation,keep =  NA)
-
-    if params_simulation['save_composition']:
-        pd.concat(plate_data_list).to_csv(composition_filename ,index=False)
-    if params_simulation['save_function']:
-        pd.concat(community_function_list).to_csv(function_filename ,index=False)
-    print("\n"+ params_simulation["exp_id"]+ " finished")
-
-
-def sample_from_pool(plate_N, assumptions,n=None):
+def make_medium(plate_R, assumptions):
 	"""
-	Sample communities from regional species pool.
-
-	plate_N = consumer data.frame
+	Design medium for the plate
+	if assumptions['rich_medium'] == True, make rich medium
 	"""
-	S_tot = plate_N.shape[0] # Total number of species in the pool
-	N0 = np.zeros((plate_N.shape)) # Make empty plate
-	consumer_index = plate_N.index
-	well_names = plate_N.columns
-	if n is None:
-		n = assumptions['n_inoc'] #if not specified n is n_inoc
-	# Draw community
-	if assumptions['monoculture'] == False:
-		# Sample initial community for each well
-		for k in range(plate_N.shape[1]):
-			pool = np.random.power(0.01, size = S_tot) # Power-law distribution
-			pool = pool/np.sum(pool) # Normalize the pool
-			consumer_list = np.random.choice(S_tot, size = n , replace = True, p = pool) # Draw from the pool
-			my_tab = pd.crosstab(index = consumer_list, columns = "count") # Calculate the cell count
-			N0[my_tab.index.values,k] = np.ravel(my_tab.values / assumptions['scale']) # Scale to biomass
-
-		# Make data.frame
-		N0 = pd.DataFrame(N0, index = consumer_index, columns = well_names)
-
-	# Monoculture plate
-	elif assumptions['monoculture'] == True:
-		N0 = np.eye(plate_N.shape[0]) *assumptions['n_inoc']/assumptions['scale']
-		N0 = pd.DataFrame(N0, index = consumer_index, columns = ["W" + str(i) for i in range(plate_N.shape[0])])
+	if assumptions['rich_medium'] == True:
+		np.random.seed(1)
 	
-	return N0
-
-
-def sample_from_pool2(plate_N, assumptions, synthetic_community_size = 2, n = None):
-	"""
-	Make synthetic communities with given initial richness
-	"""
-	S_tot = plate_N.shape[0] 
-	N0 = np.zeros((plate_N.shape))
-	consumer_index = plate_N.index
-	well_names = plate_N.columns
+		# Total number of resource in this universe
+		R_tot = plate_R.shape[0] 
 	
-	if n is None:
-		n = assumptions['n_inoc']
-		
-	for k in range(plate_N.shape[1]):
-		consumer_list = np.random.choice(S_tot, size = synthetic_community_size, replace = False) 
-		
-		for v in range(synthetic_community_size):
-				N0[consumer_list[v], k] = n / synthetic_community_size / assumptions["scale"]
+		# Make empty plate
+		R0 = np.zeros((plate_R.shape)) # Make empty plate
+	
+		# Resource index
+		resource_index = plate_R.index 
+	
+		# Well index
+		well_names = plate_R.columns
+	
+		resource_pool = np.random.uniform(0, 1, size = R_tot) # Uniform distribution
+		resource_pool = resource_pool/np.sum(resource_pool)
+		resource_list = np.random.choice(R_tot, size = assumptions["R0_food"], replace = True, p = resource_pool) # Draw from the pool
+		my_tab = pd.crosstab(index = resource_list, columns = "count")
+		food_compostion = np.ravel(my_tab.values)
+		for i in range(plate_R.shape[1]):
+			R0[my_tab.index.values,i] = food_compostion
+		R0 = pd.DataFrame(R0, index = resource_index, columns = well_names)
+	else:
+		R0 = plate_R
+	return R0
 
-	N0 = pd.DataFrame(N0, index = consumer_index, columns = well_names)
+def make_plate(assumptions, params):
+	"""
+	prepares the plate
+	"""
+	
+	# Make dynamical equations
+	def dNdt(N,R,params):
+		return MakeConsumerDynamics(assumptions)(N,R,params)
+	def dRdt(N,R,params):
+		return MakeResourceDynamics(assumptions)(N,R,params)
+	dynamics = [dNdt,dRdt]
+	
+	# Make initial state
+	init_state = MakeInitialState(assumptions)
+	
+	plate = Metacommunity(init_state, dynamics, params, scale = assumptions["scale"], parallel = False) 
+	
+	# Add media to plate (overrides community simulator)
+	plate.R = make_medium(plate.R, assumptions)
+	plate.R0 = make_medium(plate.R0, assumptions)  
+	  
+	# If plate is to be replaced by overwritting plate, skip the sampling
+	if pd.isnull(assumptions["overwrite_plate"]):
+		plate.N = sample_from_pool(plate.N, assumptions)
+	
+	return plate
 
-	return N0
+# Data operation
+
+def reshape_plate_data(plate, params_simulation,transfer_loop_index):
+    """
+    Reshape the plate resource and consumer matrices (wider form) into a melted data.frame (longer form)
+    """
+    # Temporary function for adding variables to and melting df
+    def melt_df(plate_df, data_type = "consumer"):
+        # Consumers
+        temp_df = pd.DataFrame(plate_df)
+        total_number = temp_df.shape[0]
+        
+        ## Add variables
+        temp_df["Type"] = np.repeat(data_type, total_number)
+        temp_df["ID"] = range(total_number)
+        temp_df["Transfer"] = np.repeat(str(transfer_loop_index), total_number)
+        temp_df["exp_id"] = np.repeat(params_simulation['exp_id'] , total_number)
+
+        ## Melt the df
+        temp_df = pd.melt(temp_df, id_vars = ["exp_id","Transfer", "Type", "ID"], var_name = "Well", value_name = "Abundance")
+        temp_df = temp_df[temp_df.Abundance != 0] # Remove zero abundances
+        return temp_df
+        
+    # Melt the df
+    temp_plate = plate.copy() # Copy the original plate 
+    df_N = melt_df(temp_plate.N, data_type = "consumer")
+    df_R = melt_df(temp_plate.R, data_type = "resource")
+    df_R0 = melt_df(temp_plate.R0,data_type = "R0")
+    
+    # Concatenate dataframes
+    merged_df = pd.concat([df_N, df_R,df_R0]) 
+    merged_df["Index"] = list(range(0, merged_df.shape[0]))
+    merged_df.set_index("Index", inplace = True)
+
+    return merged_df # Return concatenated dataframe
+
+def reshape_function_data(params_simulation,community_function, richness, biomass, transfer_loop_index):
+    """
+    Reshape the community function, richness, biomass into a melted data.frame
+    """
+    temp_vector1 = community_function.copy()
+    temp_vector2 = richness.copy()
+    temp_vector3 = biomass.copy()
+    
+    # Number of wells
+    number_well = len(richness)
+
+    # Make data.frame
+    temp_df = pd.DataFrame({
+        "exp_id": np.repeat(params_simulation['exp_id'], number_well),
+        "Well": ["W" + str(i) for i in range(number_well)], 
+        "Transfer": np.repeat(str(transfer_loop_index), number_well), 
+        "CommunityPhenotype": temp_vector1,
+        "Richness": temp_vector2,
+        "Biomass": temp_vector3})
+    
+    # Turn the transfer columns as numeric
+    temp_df[["Transfer"]] = temp_df[["Transfer"]].apply(pd.to_numeric)
+    
+    return temp_df 
+
+def overwrite_plate(plate, assumptions):
+	""" 
+	Overwrite the plate N, R, and R0 dataframe by the input composition file
+	"""
+	import os
+	assert(os.path.isfile(assumptions['overwrite_plate'])), "The overwrite_plate does not exist"
+	# Read the input data file
+	df = pd.read_csv(assumptions["overwrite_plate"])
+	
+	# By default, use the latest transfer to avoid well name conflict
+	df = df[df.Transfer == np.max(df.Transfer)]
+	
+	# If only one community, repeat filling this community into n_wells wells
+	if len(df["Well"].unique()) == 1:
+		temp_df = df.copy()
+		for i in range(assumptions["n_wells"]):
+			temp_df["Well"] = "W" + str(i)
+			temp_df.assign(Well = "W" + str(i))
+			df = pd.concat([df, temp_df])
+	# If the input overwrite file has multiple communities, check if it has the same number as n_wells
+	assert len(df["Well"].unique()) == assumptions["n_wells"], "overwrite_plate does not have the same number of wells as n_wells"
+	# Check if the input file type has consumer, resurce and R0
+	assert all(pd.Series(df["Type"].unique()).isin(["consumer", "resource", "R0"])), "overwrite_plate must have three types of rows: consumer, resource, R0"
+	# Make empty dataframes
+	N = plate.N.copy()
+	R = plate.R.copy()
+	R0 = plate.R.copy()
+	# N0
+	for w in range(assumptions["n_wells"]):
+		temp_comm = df[(df["Well"] == ("W" + str(w))) & (df["Type"] == "consumer")][["ID", "Abundance"]]
+		temp = np.zeros(N.shape[0])
+		for i in range(temp_comm.shape[0]):
+			temp[int(temp_comm.iloc[i]["ID"])] = temp_comm.iloc[i]["Abundance"]
+			N["W" + str(w)] = temp
+
+	# R
+	for w in range(assumptions["n_wells"]):
+		temp_res = df[(df["Well"] == ("W" + str(w))) & (df["Type"] == "resource")][["ID", "Abundance"]]
+		temp = np.zeros(R.shape[0])
+		for i in range(temp_res.shape[0]):
+			temp[int(temp_res.iloc[i]["ID"])] = temp_res.iloc[i]["Abundance"]
+			R["W" + str(w)] = temp
+	# R0
+	for w in range(assumptions["n_wells"]):
+		temp_R0 = df[(df["Well"] == ("W" + str(w))) & (df["Type"] == "R0")][["ID", "Abundance"]]
+		temp = np.zeros(R0.shape[0])
+		for i in range(temp_R0.shape[0]):
+			temp[int(temp_R0.iloc[i]["ID"])] = temp_R0.iloc[i]["Abundance"]
+			R0["W" + str(w)] = temp
+	plate.N = N
+	plate.N0 = N
+	plate.R = R
+	plate.R0 = R0
+	
+	# Passaage the overwrite plate
+	if assumptions["passage_overwrite_plate"]:
+		plate.Passage(np.eye(assumptions["n_wells"]) * assumptions["dilution"])
+	
+	return(plate)

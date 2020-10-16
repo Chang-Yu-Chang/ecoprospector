@@ -4,9 +4,6 @@
 Created on Nov 27 2019
 @author: changyuchang
 """
-import numpy as np
-import scipy as sp
-
 
 def resource_perturb(plate, params_simulation, keep):
 	"""
@@ -54,7 +51,7 @@ def resource_perturb(plate, params_simulation, keep):
 	return plate
 				
 
-def perturb(plate,params_simulation, keep):
+def perturb(plate, params_simulation, keep):
 	"""
 	Perturbs all communities except for the one specified by the argument keep. Default is the first well so keep = 0
 	Only runs if directed selection is true

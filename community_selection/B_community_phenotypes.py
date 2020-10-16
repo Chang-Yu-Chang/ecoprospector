@@ -5,8 +5,6 @@ Created on Nov 26 2019
 @author: changyuchang
 """
 import numpy as np
-import scipy as sp
-
 
 def f1_additive(plate, params_simulation):
     """
@@ -16,21 +14,18 @@ def f1_additive(plate, params_simulation):
     k = an 1-D array of saturation factors. set k = np.zeros(n) for binary function (species presence or absense)
     """
     
-    community_function = np.sum(plate.N.values * plate.species_function[:,None], axis = 0)
+    community_function = np.sum(plate.N.values * plate.f1_species_smooth[:,None], axis = 0)
     
     return community_function
 
-
-def f1a_additive_rugged(plate, params_simulation):
+def f1a_additive(plate, params_simulation):
     """
     Additive community function (F1) with ruggedness
     """
     
-    community_function = np.sum(plate.N.values * plate.species_function_rugged[:,None], axis = 0)
+    community_function = np.sum(plate.N.values * plate.f1_species_rugged[:,None], axis = 0)
     
     return community_function
-
-
 
 def f2_interaction(plate, params_simulation):
     """
@@ -44,19 +39,18 @@ def f2_interaction(plate, params_simulation):
     S_tot = plate.N.shape[0]
     
     # Additive term
-    additive_term = np.sum(plate.N.values * plate.species_function[:,None], axis = 0)
+    #additive_term = np.sum(plate.N.values * plate.f1_species_smooth[:,None], axis = 0)
     
     # Interaction term
     interaction_term = np.zeros(plate.N.shape[1])
     for i in range(plate.N.shape[1]): # For each community
         community_composition = np.array(plate.N.iloc[:,i]).reshape(S_tot, 1)
         community_composition_square = np.multiply(community_composition, community_composition.reshape(1, S_tot))
-        interaction_term[i] = np.sum(community_composition_square * plate.interaction_function)
+        interaction_term[i] = np.sum(community_composition_square * plate.f2_species_smooth)
 
-    return additive_term + interaction_term
+    return interaction_term
 
-
-def f2a_interaction_rugged(plate, params_simulation):
+def f2a_interaction(plate, params_simulation):
     """
     Additive community function with interaction (F2) and ruggedness
     
@@ -68,17 +62,16 @@ def f2a_interaction_rugged(plate, params_simulation):
     S_tot = plate.N.shape[0]
     
     # Additive term
-    additive_term = np.sum(plate.N.values * plate.species_function[:,None], axis = 0)
+    #additive_term = np.sum(plate.N.values * plate.f1_species_smooth[:,None], axis = 0)
     
     # Interaction term
     interaction_term = np.zeros(plate.N.shape[1])
     for i in range(plate.N.shape[1]): # For each community
         community_composition = np.array(plate.N.iloc[:,i]).reshape(S_tot, 1)
         community_composition_square = np.multiply(community_composition, community_composition.reshape(1, S_tot))
-        interaction_term[i] = np.sum(community_composition_square * plate.interaction_function_rugged)
+        interaction_term[i] = np.sum(community_composition_square * plate.f2_species_rugged)
 
-    return additive_term + interaction_term
-
+    return interaction_term
 
 def f3_additive_binary(plate, params_simulation):
     """
@@ -95,7 +88,6 @@ def f3_additive_binary(plate, params_simulation):
     community_function = np.sum(plate_temp.N.values * plate_temp.species_function[:,None], axis = 0)
 
     return community_function
-
 
 def f4_interaction_binary(plate, params_simulation):
     """
@@ -126,7 +118,6 @@ def f4_interaction_binary(plate, params_simulation):
         interaction_term[i] = np.sum(community_composition_square * plate_temp.interaction_function)
     
     return additive_term + interaction_term
-
 
 def f5_invader_growth(plate, params_simulation):
     """
@@ -164,7 +155,7 @@ def f5_invader_growth(plate, params_simulation):
 
 # Compute the distances from the target resource 
 # This function is from Jean
-def resource_distance_community_function(plate,R_target,sigma = 0.01): # Sigma is the measurement error
+def resource_distance_community_function(plate, R_target, sigma = 0.01): # Sigma is the measurement error
     R_tot = plate.R.shape[0]
     well_tot = plate.R.shape[1]
     relative_resource = np.array(plate.R) #Load plate resource data

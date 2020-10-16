@@ -5,9 +5,7 @@ Created on Nov 27 2019
 @author: changyuchang
 """
 import numpy as np
-import scipy as sp
 from functools import partial
-
 
 def no_selection(community_function):
     """
@@ -83,7 +81,7 @@ for i in [10, 15, 16, 20, 25, 28, 30, 33, 40, 50, 60]:
 
 
 # Sub-lineage algorithms
-def Arora2019(community_function, n_rep=3):
+def Arora2019(community_function, n_rep = 3):
     """
     Arora2019
     Sub-divide wells of plate into lines where each 'line' consists of n_rep communities' 
@@ -100,7 +98,7 @@ def Arora2019(community_function, n_rep=3):
     return transfer_matrix
     
     
-def Arora2019_control(community_function, n_rep=3):
+def Arora2019_control(community_function, n_rep = 3):
     """
   	Same as Arora2019 except the line member is selected at Random
     """
@@ -118,7 +116,7 @@ def Arora2019_control(community_function, n_rep=3):
     return transfer_matrix
     
     
-def Raynaud2019a(community_function, n_lines=3):
+def Raynaud2019a(community_function, n_lines = 3):
     """
     Raynaud2019a
     Sub-divide wells of plate into n_lines' 
@@ -135,7 +133,7 @@ def Raynaud2019a(community_function, n_lines=3):
     return transfer_matrix
 
 
-def Raynaud2019a_control(community_function, n_lines=3):
+def Raynaud2019a_control(community_function, n_lines = 3):
     """
 	Same as Raynaud2019a except the lineage member is selected at Random
     """
@@ -153,7 +151,7 @@ def Raynaud2019a_control(community_function, n_lines=3):
     return transfer_matrix
 
 
-def Raynaud2019b(community_function, n_lines=3):
+def Raynaud2019b(community_function, n_lines = 3):
     """
     same as Raynaud2019a except top from each lineage is pooled
     """
@@ -168,7 +166,7 @@ def Raynaud2019b(community_function, n_lines=3):
     return transfer_matrix
 
 
-def Raynaud2019b_control(community_function, n_lines=3):
+def Raynaud2019b_control(community_function, n_lines = 3):
     """
 	Same as Raynaud2019b except the lineage member is selected at Random
     """
@@ -229,27 +227,6 @@ def select_top_nth(community_function, n):
   
     return transfer_matrix
 
-
-def select_top(community_function):
-    """
-    Select the top community 
-    """
-    # Read number of wells 
-    n_wells = len(community_function)
-    
-    # Winner wells
-    winner_index = np.where(community_function >= np.max(community_function))[0][::-1] 
-    
-    # Transfer matrix
-    transfer_matrix = np.zeros((n_wells,n_wells))
-    t_new = range(n_wells) # New wells
-    t_old = list(winner_index) * n_wells # Old wells
-        
-    # Fill in the transfer matrix
-    for i in range(n_wells):
-        transfer_matrix[t_new[i], t_old[i]] = 1
-  
-    return transfer_matrix
 
 def select_top_dog(community_function):
   """
