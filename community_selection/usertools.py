@@ -11,71 +11,18 @@ from community_simulator import *
 from community_simulator.usertools import *
 from community_selection.__init__ import *
 from community_selection.A_experiment_functions import *
+from community_selection.B_community_phenotypes import *
+from community_selection.C_selection_algorithms import *
+from community_selection.D_perturbation_algorithms import *
 from community_selection.E_protocols import *
 
-def sample_from_pool(plate_N, assumptions,n=None):
-	"""
-	Sample communities from regional species pool.
-	In order to create variability in the pool, split the species pool into two pools, one for initial inocula and one migration.
-	For initial inocula, use the even number species, whereas for initla pool, use odds number species.
 
-	plate_N = consumer data.frame
-	pool = 1-D array that defines the species relative abundances in the pool
-	"""
-	S_tot = plate_N.shape[0] # Total number of species in the pool
-	N0 = np.zeros((plate_N.shape)) # Make empty plate
-	consumer_index = plate_N.index
-	well_names = plate_N.columns
-	if n is None:
-		n = assumptions['n_inoc'] #if not specified n is n_inoc
-	# Draw community
-	if assumptions['monoculture'] == False:
-		# Sample initial community for each well
-		for k in range(plate_N.shape[1]):
-			pool = np.random.power(0.01, size = S_tot) # Power-law distribution
-			pool = pool/np.sum(pool) # Normalize the pool
-			consumer_list = np.random.choice(S_tot, size = n , replace = True, p = pool) # Draw from the pool
-			my_tab = pd.crosstab(index = consumer_list, columns = "count") # Calculate the cell count
-			N0[my_tab.index.values,k] = np.ravel(my_tab.values / assumptions['scale']) # Scale to biomass
-
-		# Make data.frame
-		N0 = pd.DataFrame(N0, index = consumer_index, columns = well_names)
-
-	# Monoculture plate
-	elif assumptions['monoculture'] == True:
-		N0 = np.eye(plate_N.shape[0]) *assumptions['n_inoc']/assumptions['scale']
-		N0 = pd.DataFrame(N0, index = consumer_index, columns = ["W" + str(i) for i in range(plate_N.shape[0])])
-	
-	return N0
-
-def sample_from_pool2(plate_N, assumptions, synthetic_community_size = 2, n=None):
-	"""
-	Make synthetic communities with fiven initial richness    
-	"""
-	S_tot = plate_N.shape[0] 
-	N0 = np.zeros((plate_N.shape))
-	consumer_index = plate_N.index
-	well_names = plate_N.columns
-	
-	if n is None:
-		n = assumptions['n_inoc']
-		
-	for k in range(plate_N.shape[1]):
-		consumer_list = np.random.choice(S_tot, size = synthetic_community_size, replace = False) 
-		
-		for v in range(synthetic_community_size):
-				N0[consumer_list[v], k] = n / synthetic_community_size / assumptions["scale"]
-
-	N0 = pd.DataFrame(N0, index = consumer_index, columns = well_names)
-
-	return N0
-
-# Plot community function
 def plot_community_function(function_df):
+    """Plot community function"""
 	function_df.plot.scatter(x = "Transfer", y = "CommunityPhenotype")
 
-# Plot transfer matrix
 def plot_transfer_matrix(transfer_matrix):
+    """Plot transfer matrix"""
 	import seaborn as sns
 	fig,ax=plt.subplots()
 	sns.heatmap(transfer_matrix,ax=ax)
@@ -162,7 +109,7 @@ def make_assumptions(input_file,row):
 			
 	# Overwrite plate
 	if isinstance(assumptions["overwrite_plate"], str) and assumptions["overwrite_plate"] != "NA": 
-	    print("\n\nOverwriting the plate")
+	    print("\n\nOverwriting the initial plate composition with input plate")
 	    df = pd.read_csv(assumptions["overwrite_plate"])
 	    assumptions["n_wells"] = len(set(df["Well"]))
 	
@@ -286,12 +233,13 @@ def add_community_function(plate, assumptions, params):
 	np.random.seed(assumptions['seed']) 
 	function_species, function_interaction, function_interaction_p25 = draw_species_function(assumptions)
 	
-	# Species function, f1 and f3
-	setattr(plate, "species_function", function_species) # Species function for additive community function
+	# Species function for f1 additive community function
+	setattr(plate, "species_function", function_species)
+	setattr(plate, "species_function", function_species)
 
-	# Interactive functions, f2 , f2b and f4
+	# Interactive function for f2
 	setattr(plate, "interaction_function",function_interaction) # Interactive function for interactive community function
-	setattr(plate, "interaction_function_p25", function_interaction_p25)
+	setattr(plate, "interaction_function_rugged", interaction_function_rugged)
 
 
 	# Invasion function f5 or knock_in with a threshold requires us to grow isolates in monoculture to obtain their abundance.
@@ -349,7 +297,6 @@ def add_community_function(plate, assumptions, params):
 		print("\nFinished Stabilizing monoculture plate")
 	return plate
 
- 
 def save_plate(assumptions, plate):
 	""" 
 	Save the initial plate in a pickle file. Like saving a frozen stock at -80C
@@ -358,8 +305,7 @@ def save_plate(assumptions, plate):
 		import dill as pickle
 		with open(assumptions['output_dir'] + assumptions['exp_id'] + ".p", "wb") as f:
 			pickle.dump(plate, f)
-   
-   
+
 def overwrite_plate(plate, assumptions):
 	""" 
 	Overwrite the plate N, R, and R0 dataframe by the input composition file

@@ -21,6 +21,17 @@ def f1_additive(plate, params_simulation):
     return community_function
 
 
+def f1a_additive_rugged(plate, params_simulation):
+    """
+    Additive community function (F1) with ruggedness
+    """
+    
+    community_function = np.sum(plate.N.values * plate.species_function_rugged[:,None], axis = 0)
+    
+    return community_function
+
+
+
 def f2_interaction(plate, params_simulation):
     """
     Additive community function with interaction (F2)
@@ -45,9 +56,9 @@ def f2_interaction(plate, params_simulation):
     return additive_term + interaction_term
 
 
-def f2a_interaction(plate, params_simulation):
+def f2a_interaction_rugged(plate, params_simulation):
     """
-    Additive community function with interaction (F2)
+    Additive community function with interaction (F2) and ruggedness
     
     plate = plate object from package
     species_function = a n by n 2-D array; n is the size of species pool
@@ -64,7 +75,7 @@ def f2a_interaction(plate, params_simulation):
     for i in range(plate.N.shape[1]): # For each community
         community_composition = np.array(plate.N.iloc[:,i]).reshape(S_tot, 1)
         community_composition_square = np.multiply(community_composition, community_composition.reshape(1, S_tot))
-        interaction_term[i] = np.sum(community_composition_square * plate.interaction_function_p25)
+        interaction_term[i] = np.sum(community_composition_square * plate.interaction_function_rugged)
 
     return additive_term + interaction_term
 
