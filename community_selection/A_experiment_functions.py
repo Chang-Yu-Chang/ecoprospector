@@ -12,188 +12,188 @@ from community_selection.__init__ import *
 # Species features
 
 def MakeMatrices(assumptions):
-    """
-    Inherited function from community-simulator package
-    
-    Changes:
-    
-    - Add BINARY_GAMMA SAMPLING
-    """
-    #PREPARE VARIABLES
-    #Force number of species to be an array:
-    if isinstance(assumptions['MA'],numbers.Number):
-        assumptions['MA'] = [assumptions['MA']]
-    if isinstance(assumptions['SA'],numbers.Number):
-        assumptions['SA'] = [assumptions['SA']]
-    #Force numbers of species to be integers:
-    assumptions['MA'] = np.asarray(assumptions['MA'],dtype=int)
-    assumptions['SA'] = np.asarray(assumptions['SA'],dtype=int)
-    assumptions['Sgen'] = int(assumptions['Sgen'])
-    #Default waste type is last type in list:
-    if 'waste_type' not in assumptions.keys():
-        assumptions['waste_type']=len(assumptions['MA'])-1
+	"""
+	Inherited function from community-simulator package
+	
+	Changes:
+	
+	- Add BINARY_GAMMA SAMPLING
+	"""
+	#PREPARE VARIABLES
+	#Force number of species to be an array:
+	if isinstance(assumptions['MA'],numbers.Number):
+		assumptions['MA'] = [assumptions['MA']]
+	if isinstance(assumptions['SA'],numbers.Number):
+		assumptions['SA'] = [assumptions['SA']]
+	#Force numbers of species to be integers:
+	assumptions['MA'] = np.asarray(assumptions['MA'],dtype=int)
+	assumptions['SA'] = np.asarray(assumptions['SA'],dtype=int)
+	assumptions['Sgen'] = int(assumptions['Sgen'])
+	#Default waste type is last type in list:
+	if 'waste_type' not in assumptions.keys():
+		assumptions['waste_type']=len(assumptions['MA'])-1
 
-    #Extract total numbers of resources, consumers, resource types, and consumer families:
-    M = np.sum(assumptions['MA'])
-    T = len(assumptions['MA'])
-    S = np.sum(assumptions['SA'])+assumptions['Sgen']
-    F = len(assumptions['SA'])
-    M_waste = assumptions['MA'][assumptions['waste_type']]
-    #Construct lists of names of resources, consumers, resource types, and consumer families:
-    resource_names = ['R'+str(k) for k in range(M)]
-    type_names = ['T'+str(k) for k in range(T)]
-    family_names = ['F'+str(k) for k in range(F)]
-    consumer_names = ['S'+str(k) for k in range(S)]
-    waste_name = type_names[assumptions['waste_type']]
-    resource_index = [[type_names[m] for m in range(T) for k in range(assumptions['MA'][m])],
-                      resource_names]
-    consumer_index = [[family_names[m] for m in range(F) for k in range(assumptions['SA'][m])]
-                      +['GEN' for k in range(assumptions['Sgen'])],consumer_names]
-    
-    #PERFORM GAUSSIAN SAMPLING
-    if assumptions['sampling'] == 'Gaussian':
-        #Initialize dataframe:
-        c = pd.DataFrame(np.zeros((S,M)),columns=resource_index,index=consumer_index)
-        #Add Gaussian-sampled values, biasing consumption of each family towards its preferred resource:
-        for k in range(F):
-            for j in range(T):
-                if k==j:
-                    c_mean = (assumptions['muc']/M)*(1+assumptions['q']*(M-assumptions['MA'][j])/assumptions['MA'][j])
-                    c_var = (assumptions['sigc']**2/M)*(1+assumptions['q']*(M-assumptions['MA'][j])/assumptions['MA'][j])
-                else:
-                    c_mean = (assumptions['muc']/M)*(1-assumptions['q'])
-                    c_var = (assumptions['sigc']**2/M)*(1-assumptions['q'])
-                c.loc['F'+str(k)]['T'+str(j)] = c_mean + np.random.randn(assumptions['SA'][k],assumptions['MA'][j])*np.sqrt(c_var)
-        if 'GEN' in c.index:
-            c_mean = assumptions['muc']/M
-            c_var = assumptions['sigc']**2/M
-            c.loc['GEN'] = c_mean + np.random.randn(assumptions['Sgen'],M)*np.sqrt(c_var)
-                    
-    #PERFORM BINARY SAMPLING
-    elif assumptions['sampling'] == 'Binary':
-        assert assumptions['muc'] < M*assumptions['c1'], 'muc not attainable with given M and c1.'
-        #Construct uniform matrix at total background consumption rate c0:
-        c = pd.DataFrame(np.ones((S,M))*assumptions['c0']/M,columns=resource_index,index=consumer_index)
-        #Sample binary random matrix blocks for each pair of family/resource type:
-        for k in range(F):
-            for j in range(T):
-                if k==j:
-                    p = (assumptions['muc']/(M*assumptions['c1']))*(1+assumptions['q']*(M-assumptions['MA'][j])/assumptions['MA'][j])
-                else:
-                    p = (assumptions['muc']/(M*assumptions['c1']))*(1-assumptions['q'])
-                    
-                c.loc['F'+str(k)]['T'+str(j)] = (c.loc['F'+str(k)]['T'+str(j)].values 
-                                                + assumptions['c1']*BinaryRandomMatrix(assumptions['SA'][k],assumptions['MA'][j],p))
-        #Sample uniform binary random matrix for generalists:
-        if 'GEN' in c.index:
-            p = assumptions['muc']/(M*assumptions['c1'])
-            c.loc['GEN'] = c.loc['GEN'].values + assumptions['c1']*BinaryRandomMatrix(assumptions['Sgen'],M,p)
+	#Extract total numbers of resources, consumers, resource types, and consumer families:
+	M = np.sum(assumptions['MA'])
+	T = len(assumptions['MA'])
+	S = np.sum(assumptions['SA'])+assumptions['Sgen']
+	F = len(assumptions['SA'])
+	M_waste = assumptions['MA'][assumptions['waste_type']]
+	#Construct lists of names of resources, consumers, resource types, and consumer families:
+	resource_names = ['R'+str(k) for k in range(M)]
+	type_names = ['T'+str(k) for k in range(T)]
+	family_names = ['F'+str(k) for k in range(F)]
+	consumer_names = ['S'+str(k) for k in range(S)]
+	waste_name = type_names[assumptions['waste_type']]
+	resource_index = [[type_names[m] for m in range(T) for k in range(assumptions['MA'][m])],
+					  resource_names]
+	consumer_index = [[family_names[m] for m in range(F) for k in range(assumptions['SA'][m])]
+					  +['GEN' for k in range(assumptions['Sgen'])],consumer_names]
+	
+	#PERFORM GAUSSIAN SAMPLING
+	if assumptions['sampling'] == 'Gaussian':
+		#Initialize dataframe:
+		c = pd.DataFrame(np.zeros((S,M)),columns=resource_index,index=consumer_index)
+		#Add Gaussian-sampled values, biasing consumption of each family towards its preferred resource:
+		for k in range(F):
+			for j in range(T):
+				if k==j:
+					c_mean = (assumptions['muc']/M)*(1+assumptions['q']*(M-assumptions['MA'][j])/assumptions['MA'][j])
+					c_var = (assumptions['sigc']**2/M)*(1+assumptions['q']*(M-assumptions['MA'][j])/assumptions['MA'][j])
+				else:
+					c_mean = (assumptions['muc']/M)*(1-assumptions['q'])
+					c_var = (assumptions['sigc']**2/M)*(1-assumptions['q'])
+				c.loc['F'+str(k)]['T'+str(j)] = c_mean + np.random.randn(assumptions['SA'][k],assumptions['MA'][j])*np.sqrt(c_var)
+		if 'GEN' in c.index:
+			c_mean = assumptions['muc']/M
+			c_var = assumptions['sigc']**2/M
+			c.loc['GEN'] = c_mean + np.random.randn(assumptions['Sgen'],M)*np.sqrt(c_var)
+					
+	#PERFORM BINARY SAMPLING
+	elif assumptions['sampling'] == 'Binary':
+		assert assumptions['muc'] < M*assumptions['c1'], 'muc not attainable with given M and c1.'
+		#Construct uniform matrix at total background consumption rate c0:
+		c = pd.DataFrame(np.ones((S,M))*assumptions['c0']/M,columns=resource_index,index=consumer_index)
+		#Sample binary random matrix blocks for each pair of family/resource type:
+		for k in range(F):
+			for j in range(T):
+				if k==j:
+					p = (assumptions['muc']/(M*assumptions['c1']))*(1+assumptions['q']*(M-assumptions['MA'][j])/assumptions['MA'][j])
+				else:
+					p = (assumptions['muc']/(M*assumptions['c1']))*(1-assumptions['q'])
+					
+				c.loc['F'+str(k)]['T'+str(j)] = (c.loc['F'+str(k)]['T'+str(j)].values 
+												+ assumptions['c1']*BinaryRandomMatrix(assumptions['SA'][k],assumptions['MA'][j],p))
+		#Sample uniform binary random matrix for generalists:
+		if 'GEN' in c.index:
+			p = assumptions['muc']/(M*assumptions['c1'])
+			c.loc['GEN'] = c.loc['GEN'].values + assumptions['c1']*BinaryRandomMatrix(assumptions['Sgen'],M,p)
 
-    elif assumptions['sampling'] == 'Gamma':
-        #Initialize dataframe
-        c = pd.DataFrame(np.zeros((S,M)),columns=resource_index,index=consumer_index)
-        #Add Gamma-sampled values, biasing consumption of each family towards its preferred resource
-        for k in range(F):
-            for j in range(T):
-                if k==j:
-                    c_mean = (assumptions['muc']/M)*(1+assumptions['q']*(M-assumptions['MA'][j])/assumptions['MA'][j])
-                    c_var = (assumptions['sigc']**2/M)*(1+assumptions['q']*(M-assumptions['MA'][j])/assumptions['MA'][j])
-                    thetac = c_var/c_mean
-                    kc = c_mean**2/c_var
-                    c.loc['F'+str(k)]['T'+str(j)] = np.random.gamma(kc,scale=thetac,size=(assumptions['SA'][k],assumptions['MA'][j]))
-                else:
-                    c_mean = (assumptions['muc']/M)*(1-assumptions['q'])
-                    c_var = (assumptions['sigc']**2/M)*(1-assumptions['q'])
-                    thetac = c_var/c_mean
-                    kc = c_mean**2/c_var
-                    c.loc['F'+str(k)]['T'+str(j)] = np.random.gamma(kc,scale=thetac,size=(assumptions['SA'][k],assumptions['MA'][j]))
-        if 'GEN' in c.index:
-            c_mean = assumptions['muc']/M
-            c_var = assumptions['sigc']**2/M
-            thetac = c_var/c_mean
-            kc = c_mean**2/c_var
-            c.loc['GEN'] = np.random.gamma(kc,scale=thetac,size=(assumptions['Sgen'],M))
-    
-    #PERFORM UNIFORM SAMPLING
-    elif assumptions['sampling'] == 'Uniform':
-        #Initialize dataframe:
-        c = pd.DataFrame(np.zeros((S,M)),columns=resource_index,index=consumer_index)
-        #Add uniformly sampled values, biasing consumption of each family towards its preferred resource:
-        for k in range(F):
-            for j in range(T):
-                if k==j:
-                    c_mean = (assumptions['muc']/M)*(1+assumptions['q']*(M-assumptions['MA'][j])/assumptions['MA'][j])
-                else:
-                    c_mean = (assumptions['muc']/M)*(1-assumptions['q'])
-                c.loc['F'+str(k)]['T'+str(j)] = c_mean + (np.random.rand(assumptions['SA'][k],assumptions['MA'][j])-0.5)*assumptions['b']
-        if 'GEN' in c.index:
-            c_mean = assumptions['muc']/M
-            c.loc['GEN'] = c_mean + (np.random.rand(assumptions['Sgen'],M)-0.5)*assumptions['b']
-    
-    #PERFORM BINARY_GAMMA SAMPLING
-    elif assumptions['sampling'] == 'Binary_Gamma':
-        assert assumptions['muc'] < M*assumptions['c1'], 'muc not attainable with given M and c1.'
-        #Construct uniform matrix at total background consumption rate c0:
-        c = pd.DataFrame(np.ones((S,M))*assumptions['c0']/M,columns=resource_index,index=consumer_index)
-        #Sample binary random matrix blocks for each pair of family/resource type:
-        for k in range(F):
-            for j in range(T):
-                if k==j:
-                    p = (assumptions['muc']/(M*assumptions['c1']))*(1+assumptions['q']*(M-assumptions['MA'][j])/assumptions['MA'][j])
-                    c_mean = (assumptions['muc']/M)*(1+assumptions['q']*(M-assumptions['MA'][j])/assumptions['MA'][j])
-                    c_var = (assumptions['sigc']**2/M)*(1+assumptions['q']*(M-assumptions['MA'][j])/assumptions['MA'][j])
-                else:
-                    p = (assumptions['muc']/(M*assumptions['c1']))*(1-assumptions['q'])
-                    c_mean = (assumptions['muc']/M)*(1-assumptions['q'])
-                    c_var = (assumptions['sigc']**2/M)*(1-assumptions['q'])
-                c_mean_binary = assumptions['c0']+ assumptions['c1']*p
-                c_var_binary = assumptions['c1']**2 *p*(1-p)
-                c_mean_gamma = c_mean/c_mean_binary
-                c_var_gamma = (c_var - c_var_binary*(c_mean_gamma**2))/(c_var_binary + c_mean_binary**2)
-                thetac = c_var_gamma/c_mean_gamma
-                kc = c_mean_gamma**2/c_var_gamma
-                c.loc['F'+str(k)]['T'+str(j)] = (c.loc['F'+str(k)]['T'+str(j)].values + assumptions['c1']*BinaryRandomMatrix(assumptions['SA'][k],assumptions['MA'][j],p))*np.random.gamma(kc,scale=thetac,size=(assumptions['SA'][k],assumptions['MA'][j]))
-        #Sample uniform binary random matrix for generalists:
-        if 'GEN' in c.index:
-            p = assumptions['muc']/(M*assumptions['c1'])
-            c_mean = assumptions['muc']/M
-            c_var = assumptions['sigc']**2/M
-            c_mean_binary = assumptions['c0']+ assumptions['c1']*p
-            c_var_binary = assumptions['c1']**2 *p*(1-p)
-            c_mean_gamma = c_mean/c_mean_binary
-            c_var_gamma = (c_var - c_var_binary*(c_mean_gamma**2))/(c_var_binary + c_mean_binary**2)
-            thetac = c_var_gamma/c_mean_gamma
-            kc = c_mean_gamma**2/c_var_gamma
-            c.loc['GEN'] = (c.loc['GEN'].values + assumptions['c1']*BinaryRandomMatrix(assumptions['Sgen'],M,p))*np.random.gamma(kc,scale=thetac,size=(assumptions['Sgen'],M))
-    else:
-        print('Invalid distribution choice. Valid choices are kind=Gaussian and kind=Binary.')
-        return 'Error'
+	elif assumptions['sampling'] == 'Gamma':
+		#Initialize dataframe
+		c = pd.DataFrame(np.zeros((S,M)),columns=resource_index,index=consumer_index)
+		#Add Gamma-sampled values, biasing consumption of each family towards its preferred resource
+		for k in range(F):
+			for j in range(T):
+				if k==j:
+					c_mean = (assumptions['muc']/M)*(1+assumptions['q']*(M-assumptions['MA'][j])/assumptions['MA'][j])
+					c_var = (assumptions['sigc']**2/M)*(1+assumptions['q']*(M-assumptions['MA'][j])/assumptions['MA'][j])
+					thetac = c_var/c_mean
+					kc = c_mean**2/c_var
+					c.loc['F'+str(k)]['T'+str(j)] = np.random.gamma(kc,scale=thetac,size=(assumptions['SA'][k],assumptions['MA'][j]))
+				else:
+					c_mean = (assumptions['muc']/M)*(1-assumptions['q'])
+					c_var = (assumptions['sigc']**2/M)*(1-assumptions['q'])
+					thetac = c_var/c_mean
+					kc = c_mean**2/c_var
+					c.loc['F'+str(k)]['T'+str(j)] = np.random.gamma(kc,scale=thetac,size=(assumptions['SA'][k],assumptions['MA'][j]))
+		if 'GEN' in c.index:
+			c_mean = assumptions['muc']/M
+			c_var = assumptions['sigc']**2/M
+			thetac = c_var/c_mean
+			kc = c_mean**2/c_var
+			c.loc['GEN'] = np.random.gamma(kc,scale=thetac,size=(assumptions['Sgen'],M))
+	
+	#PERFORM UNIFORM SAMPLING
+	elif assumptions['sampling'] == 'Uniform':
+		#Initialize dataframe:
+		c = pd.DataFrame(np.zeros((S,M)),columns=resource_index,index=consumer_index)
+		#Add uniformly sampled values, biasing consumption of each family towards its preferred resource:
+		for k in range(F):
+			for j in range(T):
+				if k==j:
+					c_mean = (assumptions['muc']/M)*(1+assumptions['q']*(M-assumptions['MA'][j])/assumptions['MA'][j])
+				else:
+					c_mean = (assumptions['muc']/M)*(1-assumptions['q'])
+				c.loc['F'+str(k)]['T'+str(j)] = c_mean + (np.random.rand(assumptions['SA'][k],assumptions['MA'][j])-0.5)*assumptions['b']
+		if 'GEN' in c.index:
+			c_mean = assumptions['muc']/M
+			c.loc['GEN'] = c_mean + (np.random.rand(assumptions['Sgen'],M)-0.5)*assumptions['b']
+	
+	#PERFORM BINARY_GAMMA SAMPLING
+	elif assumptions['sampling'] == 'Binary_Gamma':
+		assert assumptions['muc'] < M*assumptions['c1'], 'muc not attainable with given M and c1.'
+		#Construct uniform matrix at total background consumption rate c0:
+		c = pd.DataFrame(np.ones((S,M))*assumptions['c0']/M,columns=resource_index,index=consumer_index)
+		#Sample binary random matrix blocks for each pair of family/resource type:
+		for k in range(F):
+			for j in range(T):
+				if k==j:
+					p = (assumptions['muc']/(M*assumptions['c1']))*(1+assumptions['q']*(M-assumptions['MA'][j])/assumptions['MA'][j])
+					c_mean = (assumptions['muc']/M)*(1+assumptions['q']*(M-assumptions['MA'][j])/assumptions['MA'][j])
+					c_var = (assumptions['sigc']**2/M)*(1+assumptions['q']*(M-assumptions['MA'][j])/assumptions['MA'][j])
+				else:
+					p = (assumptions['muc']/(M*assumptions['c1']))*(1-assumptions['q'])
+					c_mean = (assumptions['muc']/M)*(1-assumptions['q'])
+					c_var = (assumptions['sigc']**2/M)*(1-assumptions['q'])
+				c_mean_binary = assumptions['c0']+ assumptions['c1']*p
+				c_var_binary = assumptions['c1']**2 *p*(1-p)
+				c_mean_gamma = c_mean/c_mean_binary
+				c_var_gamma = (c_var - c_var_binary*(c_mean_gamma**2))/(c_var_binary + c_mean_binary**2)
+				thetac = c_var_gamma/c_mean_gamma
+				kc = c_mean_gamma**2/c_var_gamma
+				c.loc['F'+str(k)]['T'+str(j)] = (c.loc['F'+str(k)]['T'+str(j)].values + assumptions['c1']*BinaryRandomMatrix(assumptions['SA'][k],assumptions['MA'][j],p))*np.random.gamma(kc,scale=thetac,size=(assumptions['SA'][k],assumptions['MA'][j]))
+		#Sample uniform binary random matrix for generalists:
+		if 'GEN' in c.index:
+			p = assumptions['muc']/(M*assumptions['c1'])
+			c_mean = assumptions['muc']/M
+			c_var = assumptions['sigc']**2/M
+			c_mean_binary = assumptions['c0']+ assumptions['c1']*p
+			c_var_binary = assumptions['c1']**2 *p*(1-p)
+			c_mean_gamma = c_mean/c_mean_binary
+			c_var_gamma = (c_var - c_var_binary*(c_mean_gamma**2))/(c_var_binary + c_mean_binary**2)
+			thetac = c_var_gamma/c_mean_gamma
+			kc = c_mean_gamma**2/c_var_gamma
+			c.loc['GEN'] = (c.loc['GEN'].values + assumptions['c1']*BinaryRandomMatrix(assumptions['Sgen'],M,p))*np.random.gamma(kc,scale=thetac,size=(assumptions['Sgen'],M))
+	else:
+		print('Invalid distribution choice. Valid choices are kind=Gaussian and kind=Binary.')
+		return 'Error'
 
-    #SAMPLE METABOLIC MATRIX FROM DIRICHLET DISTRIBUTION
-    DT = pd.DataFrame(np.zeros((M,M)),index=c.keys(),columns=c.keys())
-    for type_name in type_names:
-        MA = len(DT.loc[type_name])
-        if type_name is not waste_name:
-            #Set background secretion levels
-            p = pd.Series(np.ones(M)*(1-assumptions['fs']-assumptions['fw'])/(M-MA-M_waste),index = DT.keys())
-            #Set self-secretion level
-            p.loc[type_name] = assumptions['fs']/MA
-            #Set waste secretion level
-            p.loc[waste_name] = assumptions['fw']/M_waste
-            #Sample from dirichlet
-            DT.loc[type_name] = dirichlet(p/assumptions['sparsity'],size=MA)
-        else:
-            if M > MA:
-                #Set background secretion levels
-                p = pd.Series(np.ones(M)*(1-assumptions['fw']-assumptions['fs'])/(M-MA),index = DT.keys())
-                #Set self-secretion level
-                p.loc[type_name] = (assumptions['fw']+assumptions['fs'])/MA
-            else:
-                p = pd.Series(np.ones(M)/M,index = DT.keys())
-            #Sample from dirichlet
-            DT.loc[type_name] = dirichlet(p/assumptions['sparsity'],size=MA)
-        
-    return c, DT.T
+	#SAMPLE METABOLIC MATRIX FROM DIRICHLET DISTRIBUTION
+	DT = pd.DataFrame(np.zeros((M,M)),index=c.keys(),columns=c.keys())
+	for type_name in type_names:
+		MA = len(DT.loc[type_name])
+		if type_name is not waste_name:
+			#Set background secretion levels
+			p = pd.Series(np.ones(M)*(1-assumptions['fs']-assumptions['fw'])/(M-MA-M_waste),index = DT.keys())
+			#Set self-secretion level
+			p.loc[type_name] = assumptions['fs']/MA
+			#Set waste secretion level
+			p.loc[waste_name] = assumptions['fw']/M_waste
+			#Sample from dirichlet
+			DT.loc[type_name] = dirichlet(p/assumptions['sparsity'],size=MA)
+		else:
+			if M > MA:
+				#Set background secretion levels
+				p = pd.Series(np.ones(M)*(1-assumptions['fw']-assumptions['fs'])/(M-MA),index = DT.keys())
+				#Set self-secretion level
+				p.loc[type_name] = (assumptions['fw']+assumptions['fs'])/MA
+			else:
+				p = pd.Series(np.ones(M)/M,index = DT.keys())
+			#Sample from dirichlet
+			DT.loc[type_name] = dirichlet(p/assumptions['sparsity'],size=MA)
+		
+	return c, DT.T
 
 def draw_species_function(assumptions):
 	"""
@@ -280,13 +280,13 @@ def add_community_function(plate, assumptions, params):
 		# Make plates
 		plate_invasion = make_plate(assumptions_invasion,params_invasion)
 		
-		# Species function, f1 and f3 (to calculate function at end)
-		setattr(plate_invasion, "species_function", function_species) # Species function for additive community function
-
-		# Interactive functions, f2 , f2b and f4
-		setattr(plate_invasion, "interaction_function",function_interaction) # Interactive function for interactive community function
-		setattr(plate_invasion, "interaction_function_p25", function_interaction_p25)   
-		
+		# Species function for f1 additive community function
+		setattr(plate_invasion, "f1_species_smooth", f1_species_smooth)
+		setattr(plate_invasion, "f1_species_rugged", f1_species_rugged)
+	
+		# Species interaction function for f2 Interactive function
+		setattr(plate_invasion, "f2_species_smooth", f2_species_smooth)
+		setattr(plate_invasion, "f2_species_rugged", f2_species_rugged)
 		
 		# Grow the invader plate  to equilibrium
 		for i in range(assumptions_invasion["n_transfer"] - assumptions_invasion["n_transfer_selection"]):
@@ -313,7 +313,7 @@ def add_community_function(plate, assumptions, params):
 		setattr(plate, "invader_N", invader_N)
 		setattr(plate, "invader_R", invader_R)
 		setattr(plate, "invader_R0", invader_R0)
-		setattr(plate, "isolate_abundance", np.sum(plate_invasion.N,axis=1)) 
+		setattr(plate, "isolate_abundance", np.sum(plate_invasion.N, axis=1)) 
 		setattr(plate, "isolate_function", globals()[assumptions["selected_function"]](plate_invasion, params_simulation = assumptions))     
 	
 		print("\nFinished Stabilizing monoculture plate")
@@ -376,72 +376,72 @@ def sample_from_pool2(plate_N, assumptions, synthetic_community_size = 2, n = No
 	return N0
 
 def migrate_from_pool(plate,migration_factor,params_simulation, power_law = True, n = None):
-    """
-    Migrate from species pool to the plate mainly for directed selection)
-    If power_law pool is true than sample n cells from species pool following power law distribution (default is same as inoculum)
-    If power_law is false sample s_migration species from isolates with each total number of cells equivalent to n
-    """
-    from community_selection.usertools import sample_from_pool
-    if n is None:
-        n = params_simulation['n_inoc']
-    if power_law:
-        if np.sum(migration_factor) != 0:
-            temp_params_simulation = params_simulation.copy() 
-            migration_plate = sample_from_pool(plate.N, params_simulation,n=n) * migration_factor # Migration factor is a list determined by migration algorithms and community function
-            plate_migrated = plate.N + migration_plate 
-        else:
-            plate_migrated = plate.N
-    else: 
-        if np.sum(migration_factor) != 0:
-            migration_plate = plate.N.copy()
-            migration_plate[:]  = 0
-            for k in plate.N.columns:
-                if migration_factor[np.where(plate.N.columns == k)[0]]>0: 
-                    for j in range(0,params_simulation['s_migration']):
-                        s_id = np.random.choice(np.where(plate.N[k]==0)[0])
-                        migration_plate[k][s_id]= n * 1/params_simulation["scale"] * 1/params_simulation['s_migration']
-            plate_migrated = plate.N + migration_plate
-        else:
-            plate_migrated = plate.N
-    return plate_migrated
+	"""
+	Migrate from species pool to the plate mainly for directed selection)
+	If power_law pool is true than sample n cells from species pool following power law distribution (default is same as inoculum)
+	If power_law is false sample s_migration species from isolates with each total number of cells equivalent to n
+	"""
+	from community_selection.usertools import sample_from_pool
+	if n is None:
+		n = params_simulation['n_inoc']
+	if power_law:
+		if np.sum(migration_factor) != 0:
+			temp_params_simulation = params_simulation.copy() 
+			migration_plate = sample_from_pool(plate.N, params_simulation,n=n) * migration_factor # Migration factor is a list determined by migration algorithms and community function
+			plate_migrated = plate.N + migration_plate 
+		else:
+			plate_migrated = plate.N
+	else: 
+		if np.sum(migration_factor) != 0:
+			migration_plate = plate.N.copy()
+			migration_plate[:]  = 0
+			for k in plate.N.columns:
+				if migration_factor[np.where(plate.N.columns == k)[0]]>0: 
+					for j in range(0,params_simulation['s_migration']):
+						s_id = np.random.choice(np.where(plate.N[k]==0)[0])
+						migration_plate[k][s_id]= n * 1/params_simulation["scale"] * 1/params_simulation['s_migration']
+			plate_migrated = plate.N + migration_plate
+		else:
+			plate_migrated = plate.N
+	return plate_migrated
 
 def passage_monoculture(plate_mono, f, scale = None, refresh_resource = True):
-    """
-    Reduced version of Passage(), for passaging a large set of wells without multinomial sampling
-    Most code adapted from community-simulator
-    """
-    self = plate_mono.copy()
-    #HOUSEKEEPING
-    if scale == None:
-        scale = self.scale #Use scale from initialization by default
-    self.N[self.N<0] = 0 #Remove any negative values that may have crept in
-    self.R[self.R<0] = 0
-    
-    #DEFINE NEW VARIABLES
-    N_tot = np.sum(self.N)
-    R_tot = np.sum(self.R)
-    N = np.zeros(np.shape(self.N))
-    
-    #Poisson sample cells
-    self.N = self.N * f *scale
-    self.N.applymap(np.random.poisson)   
-    self.N = self.N/scale
+	"""
+	Reduced version of Passage(), for passaging a large set of wells without multinomial sampling
+	Most code adapted from community-simulator
+	"""
+	self = plate_mono.copy()
+	#HOUSEKEEPING
+	if scale == None:
+		scale = self.scale #Use scale from initialization by default
+	self.N[self.N<0] = 0 #Remove any negative values that may have crept in
+	self.R[self.R<0] = 0
+	
+	#DEFINE NEW VARIABLES
+	N_tot = np.sum(self.N)
+	R_tot = np.sum(self.R)
+	N = np.zeros(np.shape(self.N))
+	
+	#Poisson sample cells
+	self.N = self.N * f *scale
+	self.N.applymap(np.random.poisson)   
+	self.N = self.N/scale
 
-    if refresh_resource:
-        self.R = self.R * f
-        self.R = self.R+self.R0
-        
-    #In continuous culture, it is useful to eliminate the resources that are
-    #going extinct, to avoid numerical instability
-    else:
-        R_tot = np.sum(self.R)
-        R = np.zeros(np.shape(self.R))
-        for k in range(self.n_wells):
-            if f[k,k] > 0 and R_tot[k] > 0:
-                R[:,k] += np.random.multinomial(int(scale*R_tot[k]*f[k,k]),(self.R/R_tot).values[:,k])*1./scale
-        self.R = pd.DataFrame(R, index = self.R.index, columns = self.R.keys())
+	if refresh_resource:
+		self.R = self.R * f
+		self.R = self.R+self.R0
+		
+	#In continuous culture, it is useful to eliminate the resources that are
+	#going extinct, to avoid numerical instability
+	else:
+		R_tot = np.sum(self.R)
+		R = np.zeros(np.shape(self.R))
+		for k in range(self.n_wells):
+			if f[k,k] > 0 and R_tot[k] > 0:
+				R[:,k] += np.random.multinomial(int(scale*R_tot[k]*f[k,k]),(self.R/R_tot).values[:,k])*1./scale
+		self.R = pd.DataFrame(R, index = self.R.index, columns = self.R.keys())
 
-    return self
+	return self
 
 def make_medium(plate_R, assumptions):
 	"""
@@ -505,63 +505,63 @@ def make_plate(assumptions, params):
 # Data operation
 
 def reshape_plate_data(plate, params_simulation,transfer_loop_index):
-    """
-    Reshape the plate resource and consumer matrices (wider form) into a melted data.frame (longer form)
-    """
-    # Temporary function for adding variables to and melting df
-    def melt_df(plate_df, data_type = "consumer"):
-        # Consumers
-        temp_df = pd.DataFrame(plate_df)
-        total_number = temp_df.shape[0]
-        
-        ## Add variables
-        temp_df["Type"] = np.repeat(data_type, total_number)
-        temp_df["ID"] = range(total_number)
-        temp_df["Transfer"] = np.repeat(str(transfer_loop_index), total_number)
-        temp_df["exp_id"] = np.repeat(params_simulation['exp_id'] , total_number)
+	"""
+	Reshape the plate resource and consumer matrices (wider form) into a melted data.frame (longer form)
+	"""
+	# Temporary function for adding variables to and melting df
+	def melt_df(plate_df, data_type = "consumer"):
+		# Consumers
+		temp_df = pd.DataFrame(plate_df)
+		total_number = temp_df.shape[0]
+		
+		## Add variables
+		temp_df["Type"] = np.repeat(data_type, total_number)
+		temp_df["ID"] = range(total_number)
+		temp_df["Transfer"] = np.repeat(str(transfer_loop_index), total_number)
+		temp_df["exp_id"] = np.repeat(params_simulation['exp_id'] , total_number)
 
-        ## Melt the df
-        temp_df = pd.melt(temp_df, id_vars = ["exp_id","Transfer", "Type", "ID"], var_name = "Well", value_name = "Abundance")
-        temp_df = temp_df[temp_df.Abundance != 0] # Remove zero abundances
-        return temp_df
-        
-    # Melt the df
-    temp_plate = plate.copy() # Copy the original plate 
-    df_N = melt_df(temp_plate.N, data_type = "consumer")
-    df_R = melt_df(temp_plate.R, data_type = "resource")
-    df_R0 = melt_df(temp_plate.R0,data_type = "R0")
-    
-    # Concatenate dataframes
-    merged_df = pd.concat([df_N, df_R,df_R0]) 
-    merged_df["Index"] = list(range(0, merged_df.shape[0]))
-    merged_df.set_index("Index", inplace = True)
+		## Melt the df
+		temp_df = pd.melt(temp_df, id_vars = ["exp_id","Transfer", "Type", "ID"], var_name = "Well", value_name = "Abundance")
+		temp_df = temp_df[temp_df.Abundance != 0] # Remove zero abundances
+		return temp_df
+		
+	# Melt the df
+	temp_plate = plate.copy() # Copy the original plate 
+	df_N = melt_df(temp_plate.N, data_type = "consumer")
+	df_R = melt_df(temp_plate.R, data_type = "resource")
+	df_R0 = melt_df(temp_plate.R0,data_type = "R0")
+	
+	# Concatenate dataframes
+	merged_df = pd.concat([df_N, df_R,df_R0]) 
+	merged_df["Index"] = list(range(0, merged_df.shape[0]))
+	merged_df.set_index("Index", inplace = True)
 
-    return merged_df # Return concatenated dataframe
+	return merged_df # Return concatenated dataframe
 
 def reshape_function_data(params_simulation,community_function, richness, biomass, transfer_loop_index):
-    """
-    Reshape the community function, richness, biomass into a melted data.frame
-    """
-    temp_vector1 = community_function.copy()
-    temp_vector2 = richness.copy()
-    temp_vector3 = biomass.copy()
-    
-    # Number of wells
-    number_well = len(richness)
+	"""
+	Reshape the community function, richness, biomass into a melted data.frame
+	"""
+	temp_vector1 = community_function.copy()
+	temp_vector2 = richness.copy()
+	temp_vector3 = biomass.copy()
+	
+	# Number of wells
+	number_well = len(richness)
 
-    # Make data.frame
-    temp_df = pd.DataFrame({
-        "exp_id": np.repeat(params_simulation['exp_id'], number_well),
-        "Well": ["W" + str(i) for i in range(number_well)], 
-        "Transfer": np.repeat(str(transfer_loop_index), number_well), 
-        "CommunityPhenotype": temp_vector1,
-        "Richness": temp_vector2,
-        "Biomass": temp_vector3})
-    
-    # Turn the transfer columns as numeric
-    temp_df[["Transfer"]] = temp_df[["Transfer"]].apply(pd.to_numeric)
-    
-    return temp_df 
+	# Make data.frame
+	temp_df = pd.DataFrame({
+		"exp_id": np.repeat(params_simulation['exp_id'], number_well),
+		"Well": ["W" + str(i) for i in range(number_well)], 
+		"Transfer": np.repeat(str(transfer_loop_index), number_well), 
+		"CommunityPhenotype": temp_vector1,
+		"Richness": temp_vector2,
+		"Biomass": temp_vector3})
+	
+	# Turn the transfer columns as numeric
+	temp_df[["Transfer"]] = temp_df[["Transfer"]].apply(pd.to_numeric)
+	
+	return temp_df 
 
 def overwrite_plate(plate, assumptions):
 	""" 

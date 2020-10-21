@@ -152,94 +152,98 @@ def prepare_experiment(assumptions):
 	return params, params_simulation , params_algorithm, plate
 
 def simulate_community(params, params_simulation, params_algorithm, plate):
-    """
-    Simulate community dynamics by given experimental regimes
-    
-    params = parameter passed from community-simulator
-    params_simulation = dictionary of parameters for running experiment
-    params_algorithm = dictionary of algorithms that determine the selection regime, migration regime, and community pheotypes
-    plate = Plate object specified by community-simulator
-    
-    Return:
-    community_composition = concatenated, melted panda dataframe of community and resource composition in each transfer
-    community_function = melted panda dataframe of community function
-    """
-    print("\nStarting " + params_simulation["exp_id"])
-    
-    # Test the community function
-    globals()[params_algorithm["community_phenotype"][0]](plate, params_simulation = params_simulation)
-    try:
-        community_function = globals()[params_algorithm["community_phenotype"][0]](plate, params_simulation = params_simulation) # Community phenotype
-    except:
-        print('\nCommunity phenotype test failed')
-        raise SystemExit
+	"""
+	Simulate community dynamics by given experimental regimes
+	
+	params = parameter passed from community-simulator
+	params_simulation = dictionary of parameters for running experiment
+	params_algorithm = dictionary of algorithms that determine the selection regime, migration regime, and community pheotypes
+	plate = Plate object specified by community-simulator
+	
+	Return:
+	community_composition = concatenated, melted panda dataframe of community and resource composition in each transfer
+	community_function = melted panda dataframe of community function
+	"""
+	print("\nStarting " + params_simulation["exp_id"])
+	print(params_algorithm)
+	
+	# Test the community function
+	globals()[params_algorithm["community_phenotype"][0]](plate, params_simulation = params_simulation)
+	try:
+		community_function = globals()[params_algorithm["community_phenotype"][0]](plate, params_simulation = params_simulation) # Community phenotype
+	except:
+		print('\nCommunity phenotype test failed')
+		raise SystemExit
 
-    # Save the inocula composition
-    if params_simulation['save_composition']:
-        plate_data_list = list() # Plate composition
-        plate_data = reshape_plate_data(plate, params_simulation,transfer_loop_index=0)  # Initial state
-        plate_data_list.append(plate_data)
-        composition_filename = params_simulation['output_dir'] + params_simulation['exp_id'] + '_composition.txt'   
-        
-    # Save the initial community function + richness + biomass
-    if params_simulation['save_function']:
-        community_function_list = list() # Plate composition
-        richness = np.sum(plate.N >= 1/params_simulation["scale"], axis = 0) # Richness
-        biomass = list(np.sum(plate.N, axis = 0)) # Biomass
-        function_data = reshape_function_data(params_simulation,community_function, richness, biomass, transfer_loop_index =0)
-        community_function_list.append(function_data)
-        function_filename = params_simulation['output_dir'] + params_simulation['exp_id'] + '_function.txt'   
+	# Save the inocula composition
+	if params_simulation['save_composition']:
+		plate_data_list = list() # Plate composition
+		plate_data = reshape_plate_data(plate, params_simulation,transfer_loop_index=0)  # Initial state
+		plate_data_list.append(plate_data)
+		composition_filename = params_simulation['output_dir'] + params_simulation['exp_id'] + '_composition.txt'   
+		
+	# Save the initial community function + richness + biomass
+	if params_simulation['save_function']:
+		community_function_list = list() # Plate composition
+		richness = np.sum(plate.N >= 1/params_simulation["scale"], axis = 0) # Richness
+		biomass = list(np.sum(plate.N, axis = 0)) # Biomass
+		function_data = reshape_function_data(params_simulation,community_function, richness, biomass, transfer_loop_index =0)
+		community_function_list.append(function_data)
+		function_filename = params_simulation['output_dir'] + params_simulation['exp_id'] + '_function.txt'   
 
 
-    print("\nStart propogation")
-    # Run simulation
-    for i in range(0, params_simulation["n_transfer"]):
-        # Algorithms used in this transfer
-        phenotype_algorithm = params_algorithm["community_phenotype"][i]
-        selection_algorithm = params_algorithm["selection_algorithm"][i]
-        print("Transfer " + str(i+1))
+	print("\nStart propogation")
+	# Run simulation
+	for i in range(0, params_simulation["n_transfer"]):
+		# Algorithms used in this transfer
+		phenotype_algorithm = params_algorithm["community_phenotype"][i]
+		selection_algorithm = params_algorithm["selection_algorithm"][i]
+		print("Transfer " + str(i+1))
 
-        # Propagation
-        plate.Propagate(params_simulation["n_propagation"])
-    
-        # Measure Community phenotype
-        community_function = globals()[params_algorithm["community_phenotype"][0]](plate, params_simulation = params_simulation) # Community phenotype
-        
-        # Append the composition to a list
-        if params_simulation['save_composition'] and ((i+1) % params_simulation['composition_lograte'] == 0):
-            plate_data = reshape_plate_data(plate, params_simulation,transfer_loop_index=i+1)  # Initial state
-            plate_data_list.append(plate_data)
+		# Propagation
+		plate.Propagate(params_simulation["n_propagation"])
+	
+		# Measure Community phenotype
+		community_function = globals()[params_algorithm["community_phenotype"][0]](plate, params_simulation = params_simulation) # Community phenotype
+		
+		# Append the composition to a list
+		if params_simulation['save_composition'] and ((i+1) % params_simulation['composition_lograte'] == 0):
+			plate_data = reshape_plate_data(plate, params_simulation, transfer_loop_index=i+1)  # Initial state
+			plate_data_list.append(plate_data)
 
-        if params_simulation['save_function'] and ((i+1) % params_simulation['function_lograte'] == 0):
-            richness = np.sum(plate.N >= 1/params_simulation["scale"], axis = 0) # Richness
-            biomass = list(np.sum(plate.N, axis = 0)) # Biomass
-            function_data = reshape_function_data(params_simulation,community_function, richness, biomass, transfer_loop_index =i+1)
-            community_function_list.append(function_data)
+		if params_simulation['save_function'] and ((i+1) % params_simulation['function_lograte'] == 0):
+			richness = np.sum(plate.N >= 1/params_simulation["scale"], axis = 0) # Richness
+			biomass = list(np.sum(plate.N, axis = 0)) # Biomass
+			function_data = reshape_function_data(params_simulation, community_function, richness, biomass, transfer_loop_index =i+1)
+			community_function_list.append(function_data)
 
 		#Store prior state before passaging (For coalescence)
-        setattr(plate, "prior_N", plate.N)
-        setattr(plate, "prior_R", plate.R)
-        setattr(plate, "prior_R0", plate.R0)
+		setattr(plate, "prior_N", plate.N)
+		setattr(plate, "prior_R", plate.R)
+		setattr(plate, "prior_R0", plate.R0)
 
-        # Passage and tranfer matrix
-        transfer_matrix = globals()[selection_algorithm](community_function)
-        if params_simulation['monoculture']:
-            plate = passage_monoculture(plate, params_simulation["dilution"])
-        else:
-            plate.Passage(transfer_matrix * params_simulation["dilution"])
-        
-        # Perturbation
-        if params_simulation['directed_selection']:
-            if selection_algorithm == 'select_top':
-                plate = perturb(plate, params_simulation, keep = np.where(community_function >= np.max(community_function))[0][0])
-            if selection_algorithm != 'select_top' and (params_algorithm.iloc[i]["algorithm_name"] != 'simple_screening'):
-                plate = perturb(plate, params_simulation, keep = None)
+		# Passage and transfer matrix
+		transfer_matrix = globals()[selection_algorithm](community_function)
+		if params_simulation['monoculture']:
+			plate = passage_monoculture(plate, params_simulation["dilution"])
+		else:
+			plate.Passage(transfer_matrix * params_simulation["dilution"])
+		
+		# Perturbation
+		if params_simulation['directed_selection']:
+			if selection_algorithm == 'select_top': # In principle it can take select_top_x% but leave it as select_top for now
+				plate = perturb(plate, params_simulation, keep = np.where(community_function >= np.max(community_function))[0][0])
+			# if selection_algorithm != 'select_top' and (params_algorithm.iloc[i]["algorithm_name"] != 'simple_screening'):
+			# 	plate = perturb(plate, params_simulation, keep = None)
+			elif selection_algorithm == "no_selection": 
+			    pass
+			    
 
-    if params_simulation['save_composition']:
-        pd.concat(plate_data_list).to_csv(composition_filename, index = False)
-    if params_simulation['save_function']:
-        pd.concat(community_function_list).to_csv(function_filename, index = False)
-    print("\n" + params_simulation["exp_id"] + " finished")
+	if params_simulation['save_composition']:
+		pd.concat(plate_data_list).to_csv(composition_filename, index = False)
+	if params_simulation['save_function']:
+		pd.concat(community_function_list).to_csv(function_filename, index = False)
+	print("\n" + params_simulation["exp_id"] + " finished")
 
 def save_plate(assumptions, plate):
 	""" 

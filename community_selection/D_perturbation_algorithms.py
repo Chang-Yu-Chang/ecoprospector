@@ -5,6 +5,8 @@ Created on Nov 27 2019
 @author: changyuchang
 """
 import numpy as np
+import random
+from community_selection.A_experiment_functions import *
 
 def resource_perturb(plate, params_simulation, keep):
 	"""
@@ -99,7 +101,7 @@ def perturb(plate, params_simulation, keep):
 		plate.Passage(np.eye(params_simulation['n_wells'])*params_simulation['dilution'] )
 	#Shift_R0
 	if params_simulation['resource_shift']:
-		plate = resource_perturb(plate,params_simulation,keep)
+		plate = resource_perturb(plate, params_simulation, keep)
 	return plate
 
 
