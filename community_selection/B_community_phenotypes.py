@@ -152,10 +152,8 @@ def f5_invader_growth(plate, params_simulation):
 
     return function_invader_suppressed_growth
 
-
-# Compute the distances from the target resource 
-# This function is from Jean
 def resource_distance_community_function(plate, R_target, sigma = 0.01): # Sigma is the measurement error
+    """# Compute the distances from the target resource """
     R_tot = plate.R.shape[0]
     well_tot = plate.R.shape[1]
     relative_resource = np.array(plate.R) #Load plate resource data

@@ -164,7 +164,8 @@ def simulate_community(params, params_simulation, params_algorithm, plate):
     community_composition = concatenated, melted panda dataframe of community and resource composition in each transfer
     community_function = melted panda dataframe of community function
     """
-
+    print("\nStarting " + params_simulation["exp_id"])
+    
     # Test the community function
     globals()[params_algorithm["community_phenotype"][0]](plate, params_simulation = params_simulation)
     try:
@@ -230,15 +231,15 @@ def simulate_community(params, params_simulation, params_algorithm, plate):
         # Perturbation
         if params_simulation['directed_selection']:
             if selection_algorithm == 'select_top':
-                plate  = perturb(plate,params_simulation,keep =  np.where(community_function >= np.max(community_function))[0][0])
-            if selection_algorithm != 'select_top' & protocol != 'simple_screening':
-                plate  = perturb(plate,params_simulation,keep =  NA)
+                plate = perturb(plate, params_simulation, keep = np.where(community_function >= np.max(community_function))[0][0])
+            if selection_algorithm != 'select_top' and (params_algorithm.iloc[i]["algorithm_name"] != 'simple_screening'):
+                plate = perturb(plate, params_simulation, keep = None)
 
     if params_simulation['save_composition']:
-        pd.concat(plate_data_list).to_csv(composition_filename ,index=False)
+        pd.concat(plate_data_list).to_csv(composition_filename, index = False)
     if params_simulation['save_function']:
-        pd.concat(community_function_list).to_csv(function_filename ,index=False)
-    print("\n"+ params_simulation["exp_id"]+ " finished")
+        pd.concat(community_function_list).to_csv(function_filename, index = False)
+    print("\n" + params_simulation["exp_id"] + " finished")
 
 def save_plate(assumptions, plate):
 	""" 

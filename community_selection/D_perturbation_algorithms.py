@@ -4,6 +4,7 @@
 Created on Nov 27 2019
 @author: changyuchang
 """
+import numpy as np
 
 def resource_perturb(plate, params_simulation, keep):
 	"""
