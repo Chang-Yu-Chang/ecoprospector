@@ -152,6 +152,19 @@ def f5_invader_growth(plate, params_simulation):
 
     return function_invader_suppressed_growth
 
+def f6_target_resource(plate, params_simulation):
+    """
+    Function as maximized non-supplied resource production
+    The target resource by default is the resouce in the last index
+    If rich medium is provided, the target resource amount in the initial plate is set to 0
+    """
+    target_resource_index = plate.target_resource
+    community_function = plate.R.iloc[target_resource_index,:].tolist()
+    
+    return community_function
+    
+    
+
 def resource_distance_community_function(plate, R_target, sigma = 0.01): # Sigma is the measurement error
     """# Compute the distances from the target resource """
     R_tot = plate.R.shape[0]
@@ -161,5 +174,4 @@ def resource_distance_community_function(plate, R_target, sigma = 0.01): # Sigma
     relative_resource = relative_resource/relative_resource.sum(0)  #Look at relative abundance of remaining resource
     R_dist = np.sqrt(np.sum(np.array((np.tile(R_target,(well_tot,1)) - relative_resource.T)**2)[:,1:],axis=1))
     return (np.array(R_dist.T)* -1) * (1+ np.random.normal(0,sigma,well_tot))#(so we select for positive community function)
-
 

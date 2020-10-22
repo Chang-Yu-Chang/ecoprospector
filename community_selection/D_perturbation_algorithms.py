@@ -9,100 +9,100 @@ import random
 from community_selection.A_experiment_functions import *
 
 def resource_perturb(plate, params_simulation, keep):
-	"""
-	Perturb the communities by shifting the medium composition
-	"""
-	#Remove new fresh media
-	plate.R = plate.R - plate.R0
-	old_R0 = plate.R0[plate.N.columns[keep]]
-	#First construct olist of possible metabolite perturbations (depends on r_type, either list of tuples of index opr simple list of index)
-	if params_simulation['r_type'] == 'add': #Remove from top and add to random
-		metabolite_choice = [(x,y) for x in old_R0.index for y in old_R0.index if x !=y and x ==  old_R0.idxmax()]
-	if params_simulation['r_type']  == 'remove': #Remove from random and add to bottom
-		metabolite_choice = [(x,y) for x in old_R0.index for y in old_R0.index if x !=y and y == old_R0.idxmin() and old_R0[x]>0]
-	if params_simulation['r_type'] == 'rescale_add' or params_simulation['r_type'] == 'old':  # add to random
-		metabolite_choice = [x for x in old_R0.index]
-	if params_simulation['r_type'] == 'rescale_remove':  #remove from random    
-		metabolite_choice = [x for x in old_R0.index if old_R0[x] >0]
-	else: #default_resource_swap
-		metabolite_choice = [(x,y) for x in old_R0.index for y in old_R0.index if x !=y]
-	#next randomly pick element in list and apply pertubation 
-	for k in plate.R0.columns:
-		if k != plate.R0.columns[keep]:
-			#So first default to kept media
-			plate.R0[k] = old_R0
-			if len(metabolite_choice) ==0: #If all possible pertubations have been carried out skip
-				continue
-			#Pick random pertubation
-			r_id = random.choice(metabolite_choice)
-			#perform pertubations
-			if params_simulation['r_type']  == 'rescale_add': 
-				plate.R0[k][r_id] = plate.R0[k][r_id]*(1+params_simulation['r_percent'])
-			elif params_simulation['r_type'] == 'rescale_remove':
-				plate.R0[k][r_id] = plate.R0[k][r_id]*(1-params_simulation['r_percent']) 
-			elif params_simulation['r_type'] == 'old':
-				plate.R0[k] = plate.R0[k] * (1-params_simulation['R_percent']) #Dilute old resource
-				plate.R0[k][r_id] = plate.R0[k][r_id] + (params_simulation['R0_food']*params_simulation['R_percent']) #Add fixed percent
-			else:
-				plate.R0[k][r_id[0]] = plate.R0[k][r_id[0]] + (plate.R0[k][r_id[1]]*params_simulation['r_percent']) #add new resources
-				plate.R0[k][r_id[1]] = plate.R0[k][r_id[1]]*(1-params_simulation['r_percent']) #remove new resources
-			# Remove chosen pertubation as option for subsequent loop
-			metabolite_choice = [x for x in metabolite_choice if x != r_id]
-	plate.R0 = plate.R0/np.sum(plate.R0)*params_simulation['R0_food'] #Keep this to avoid floating point error and rescale when neeeded.
-	#add new fresh environment (so that this round uses R0
-	plate.R = plate.R + plate.R0
-	return plate
-				
+    """
+    Perturb the communities by shifting the medium composition
+    """
+    #Remove new fresh media
+    plate.R = plate.R - plate.R0
+    old_R0 = plate.R0[plate.N.columns[keep]]
+    #First construct olist of possible metabolite perturbations (depends on r_type, either list of tuples of index opr simple list of index)
+    if params_simulation['r_type'] == 'add': #Remove from top and add to random
+        metabolite_choice = [(x,y) for x in old_R0.index for y in old_R0.index if x !=y and x ==  old_R0.idxmax()]
+    if params_simulation['r_type']  == 'remove': #Remove from random and add to bottom
+        metabolite_choice = [(x,y) for x in old_R0.index for y in old_R0.index if x !=y and y == old_R0.idxmin() and old_R0[x]>0]
+    if params_simulation['r_type'] == 'rescale_add' or params_simulation['r_type'] == 'old':  # add to random
+        metabolite_choice = [x for x in old_R0.index]
+    if params_simulation['r_type'] == 'rescale_remove':  #remove from random    
+        metabolite_choice = [x for x in old_R0.index if old_R0[x] >0]
+    else: #default_resource_swap
+        metabolite_choice = [(x,y) for x in old_R0.index for y in old_R0.index if x !=y]
+    #next randomly pick element in list and apply pertubation 
+    for k in plate.R0.columns:
+        if k != plate.R0.columns[keep]:
+            #So first default to kept media
+            plate.R0[k] = old_R0
+            if len(metabolite_choice) ==0: #If all possible pertubations have been carried out skip
+                continue
+            #Pick random pertubation
+            r_id = random.choice(metabolite_choice)
+            #perform pertubations
+            if params_simulation['r_type']  == 'rescale_add': 
+                plate.R0[k][r_id] = plate.R0[k][r_id]*(1+params_simulation['r_percent'])
+            elif params_simulation['r_type'] == 'rescale_remove':
+                plate.R0[k][r_id] = plate.R0[k][r_id]*(1-params_simulation['r_percent']) 
+            elif params_simulation['r_type'] == 'old':
+                plate.R0[k] = plate.R0[k] * (1-params_simulation['R_percent']) #Dilute old resource
+                plate.R0[k][r_id] = plate.R0[k][r_id] + (params_simulation['R0_food']*params_simulation['R_percent']) #Add fixed percent
+            else:
+                plate.R0[k][r_id[0]] = plate.R0[k][r_id[0]] + (plate.R0[k][r_id[1]]*params_simulation['r_percent']) #add new resources
+                plate.R0[k][r_id[1]] = plate.R0[k][r_id[1]]*(1-params_simulation['r_percent']) #remove new resources
+            # Remove chosen pertubation as option for subsequent loop
+            metabolite_choice = [x for x in metabolite_choice if x != r_id]
+    plate.R0 = plate.R0/np.sum(plate.R0)*params_simulation['R0_food'] #Keep this to avoid floating point error and rescale when neeeded.
+    #add new fresh environment (so that this round uses R0
+    plate.R = plate.R + plate.R0
+    return plate
+                
 
 def perturb(plate, params_simulation, keep):
-	"""
-	Perturbs all communities except for the one specified by the argument keep. Default is the first well so keep = 0
-	Only runs if directed selection is true
-	"""
-	#Bottleneck
-	if params_simulation['bottleneck']:
-		dilution_matrix = np.eye(params_simulation['n_wells'])*params_simulation['bottleneck_size'] 
-		dilution_matrix[keep,keep] = 1
-		old_R = plate.R.copy()
-		plate.Passage(dilution_matrix)
-		plate.R = old_R.copy()  #knock_in isolates absent from all communities
-	if params_simulation['knock_in']:
-		knock_in_list = np.where(np.logical_and(np.array(np.sum(plate.N,axis=1) ==0.0) , plate.isolate_function >= np.percentile(plate.isolate_function, q = 100*params_simulation['knock_in_threshold'])))[0]
-		for k in plate.N.columns:
-			if k == plate.N.columns[keep] or len(knock_in_list) ==0.0:
-				continue
-			else:
-				s_id = np.random.choice(knock_in_list) 
-				plate.N[k][s_id]= 1/params_simulation["dilution"] * 1/params_simulation["scale"] #Knock in enough to survive 1 dilution even with no growth
-				knock_in_list = knock_in_list[knock_in_list != s_id] 
-	#knock_out isolates present in all communities
-	if params_simulation['knock_out']:
-		knock_out_list = np.where(np.sum(plate.N>0.0,axis=1) == params_simulation['n_wells'])[0]
-		for k in plate.N.columns:
-			if k == plate.N.columns[keep] or len(knock_out_list) ==0.0:
-				continue
-			else:
-				s_id = np.random.choice(knock_out_list) 
-				plate.N[k][s_id]= 0
-				knock_out_list = knock_out_list[knock_out_list != s_id] 
-	#Migrate taxa into the best performing community. By default migrations are done using power law model but can tune the diversity of migration using s_migration
-	if params_simulation['migration']:
-		migration_factor = np.ones(params_simulation['n_wells'])
-		migration_factor[keep] = 0
-		if np.isfinite(params_simulation['s_migration']):
-			plate.N = migrate_from_pool(plate,migration_factor,params_simulation,power_law=False,n=params_simulation['n_migration'])
-		else:
-			plate.N = migrate_from_pool(plate,migration_factor,params_simulation,power_law = True,n=params_simulation['n_migration'])
-	#Migrate taxa into the best performing community. By default migrations are done using power law model but can tune the diversity of migration using s_migration
-	if params_simulation['coalescence']:
-		plate.Propagate(params_simulation["n_propagation"])
-		plate.N = plate.N*(1-params_simulation['frac_coalescence']) + plate.prior_N*params_simulation['frac_coalescence']
-		plate.R = plate.R*(1-params_simulation['frac_coalescence']) + plate.prior_R*params_simulation['frac_coalescence']
-		plate.Passage(np.eye(params_simulation['n_wells'])*params_simulation['dilution'] )
-	#Shift_R0
-	if params_simulation['resource_shift']:
-		plate = resource_perturb(plate, params_simulation, keep)
-	return plate
+    """
+    Perturbs all communities except for the one specified by the argument keep. Default is the first well so keep = 0
+    Only runs if directed selection is true
+    """
+    #Bottleneck
+    if params_simulation['bottleneck']:
+        dilution_matrix = np.eye(params_simulation['n_wells'])*params_simulation['bottleneck_size'] 
+        dilution_matrix[keep,keep] = 1
+        old_R = plate.R.copy()
+        plate.Passage(dilution_matrix)
+        plate.R = old_R.copy()  #knock_in isolates absent from all communities
+    if params_simulation['knock_in']:
+        knock_in_list = np.where(np.logical_and(np.array(np.sum(plate.N,axis=1) ==0.0) , plate.isolate_function >= np.percentile(plate.isolate_function, q = 100*params_simulation['knock_in_threshold'])))[0]
+        for k in plate.N.columns:
+            if k == plate.N.columns[keep] or len(knock_in_list) ==0.0:
+                continue
+            else:
+                s_id = np.random.choice(knock_in_list) 
+                plate.N[k][s_id]= 1/params_simulation["dilution"] * 1/params_simulation["scale"] #Knock in enough to survive 1 dilution even with no growth
+                knock_in_list = knock_in_list[knock_in_list != s_id] 
+    #knock_out isolates present in all communities
+    if params_simulation['knock_out']:
+        knock_out_list = np.where(np.sum(plate.N>0.0,axis=1) == params_simulation['n_wells'])[0]
+        for k in plate.N.columns:
+            if k == plate.N.columns[keep] or len(knock_out_list) ==0.0:
+                continue
+            else:
+                s_id = np.random.choice(knock_out_list) 
+                plate.N[k][s_id]= 0
+                knock_out_list = knock_out_list[knock_out_list != s_id] 
+    #Migrate taxa into the best performing community. By default migrations are done using power law model but can tune the diversity of migration using s_migration
+    if params_simulation['migration']:
+        migration_factor = np.ones(params_simulation['n_wells'])
+        migration_factor[keep] = 0
+        if np.isfinite(params_simulation['s_migration']):
+            plate.N = migrate_from_pool(plate,migration_factor,params_simulation,power_law=False,n=params_simulation['n_migration'])
+        else:
+            plate.N = migrate_from_pool(plate,migration_factor,params_simulation,power_law = True,n=params_simulation['n_migration'])
+    #Migrate taxa into the best performing community. By default migrations are done using power law model but can tune the diversity of migration using s_migration
+    if params_simulation['coalescence']:
+        plate.Propagate(params_simulation["n_propagation"])
+        plate.N = plate.N*(1-params_simulation['frac_coalescence']) + plate.prior_N*params_simulation['frac_coalescence']
+        plate.R = plate.R*(1-params_simulation['frac_coalescence']) + plate.prior_R*params_simulation['frac_coalescence']
+        plate.Passage(np.eye(params_simulation['n_wells'])*params_simulation['dilution'] )
+    #Shift_R0
+    if params_simulation['resource_shift']:
+        plate = resource_perturb(plate, params_simulation, keep)
+    return plate
 
 
 
