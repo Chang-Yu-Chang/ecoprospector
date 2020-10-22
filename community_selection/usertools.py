@@ -129,7 +129,6 @@ def prepare_experiment(assumptions):
     """
     print("\nGenerate species paramaters")
     np.random.seed(assumptions['seed']) 
-    #print(assumptions)
     params = MakeParams(assumptions) 
     
     print("\nDraw per-capita function and cost")
@@ -261,3 +260,36 @@ def save_plate(assumptions, plate):
         import dill as pickle
         with open(assumptions['output_dir'] + assumptions['exp_id'] + ".p", "wb") as f:
             pickle.dump(plate, f)
+
+def extract_species_function(assumptions):
+    """
+    Extract the per-capita species function from the community data
+    """
+    np.random.seed(assumptions['seed']) 
+    params = MakeParams(assumptions) 
+    f1_species_smooth, f1_species_rugged, f2_species_smooth, f2_species_rugged = draw_species_function(assumptions)
+    S_tot = int(assumptions["sn"]) * int(assumptions["sf"]) + int(assumptions["Sgen"])
+    
+    if "additive" in assumptions["selected_function"]:
+        if assumptions["selected_function"] == "f1_additive":
+            per_capita_function = f1_species_smooth
+        elif assumptions["selected_function"] == "f1a_additive":
+            per_capita_function = f1_species_rugged
+            
+        species_function = pd.DataFrame({"SelectedFunction": assumptions["selected_function"], "Seed": np.repeat(assumptions['seed'], S_tot), "ID": range(1, S_tot+1), "PerCapitaFunction": per_capita_function})
+    
+    if "interaction" in assumptions["selected_function"]:
+        #print(f2_species_smooth)
+        if assumptions["selected_function"] == "f2_interaction":
+            per_interaction_function = f2_species_smooth
+        elif assumptions["selected_function"] == "f2a_interaction":
+            per_interaction_function = f2_species_rugged
+            
+        df_interaction_function = pd.DataFrame(per_interaction_function)
+        df_interaction_function.columns = range(1, S_tot+1)
+        df_interaction_function = df_interaction_function.assign(ID_row=range(1,S_tot+1)).melt(id_vars="ID_row", var_name = "ID_col", value_name = "PerCapitaFunction")
+        df_interaction_function = df_interaction_function.assign(SelectedFunction = assumptions["selected_function"], Seed = assumptions['seed'])
+        species_function = df_interaction_function[["SelectedFunction", "Seed", "ID_row", "ID_col", "PerCapitaFunction"]]
+    return(species_function)
+
+
