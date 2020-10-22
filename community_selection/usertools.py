@@ -107,7 +107,7 @@ def make_assumptions(input_file, row):
 	if isinstance(assumptions["overwrite_plate"], str) and assumptions["overwrite_plate"] != "NA": 
 		print("\n\nOverwriting the initial plate composition with input plate")
 		df = pd.read_csv(assumptions["overwrite_plate"])
-		assumptions["n_wells"] = len(set(df["Well"]))
+		#assumptions["n_wells"] = len(set(df["Well"]))
 	
 	return assumptions
 

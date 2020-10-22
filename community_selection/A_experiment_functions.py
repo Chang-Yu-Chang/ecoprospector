@@ -8,6 +8,7 @@ import numpy as np
 from community_simulator import *
 from community_simulator.usertools import *
 from community_selection.__init__ import *
+from community_selection.B_community_phenotypes import *
 
 # Species features
 
@@ -574,14 +575,13 @@ def overwrite_plate(plate, assumptions):
 	
 	# By default, use the latest transfer to avoid well name conflict
 	df = df[df.Transfer == np.max(df.Transfer)]
-	
+
 	# If only one community, repeat filling this community into n_wells wells
 	if len(df["Well"].unique()) == 1:
+		print("The overwrite plate has only one community (well). Replicate it to the number of wells in current plate")
 		temp_df = df.copy()
-		for i in range(assumptions["n_wells"]):
-			temp_df["Well"] = "W" + str(i)
-			temp_df.assign(Well = "W" + str(i))
-			df = pd.concat([df, temp_df])
+		df = pd.concat([temp_df.assign(Well = "W" + str(i)) for i in range(assumptions["n_wells"])])
+	
 	# If the input overwrite file has multiple communities, check if it has the same number as n_wells
 	assert len(df["Well"].unique()) == assumptions["n_wells"], "overwrite_plate does not have the same number of wells as n_wells"
 	# Check if the input file type has consumer, resurce and R0
