@@ -7,12 +7,13 @@ Created on Nov 26 2019
 import numpy as np
 from community_simulator import *
 from community_simulator.usertools import *
+import community_simulator.usertools
 from community_selection.__init__ import *
 from community_selection.B_community_phenotypes import *
 
 # Species features
 
-def MakeMatrices(assumptions):
+def new_MakeMatrices(assumptions):
     """
     Inherited function from community-simulator package
     
@@ -195,6 +196,7 @@ def MakeMatrices(assumptions):
             DT.loc[type_name] = dirichlet(p/assumptions['sparsity'],size=MA)
         
     return c, DT.T
+community_simulator.usertools.MakeMatrices = new_MakeMatrices
 
 def draw_species_function(assumptions):
     """
@@ -289,6 +291,10 @@ def add_community_function(plate, assumptions, params):
         setattr(plate_invasion, "f2_species_smooth", f2_species_smooth)
         setattr(plate_invasion, "f2_species_rugged", f2_species_rugged)
         
+        # f6_target resource
+        setattr(plate_invasion, "target_resource", assumptions["target_resource"])
+        
+        
         # Grow the invader plate  to equilibrium
         for i in range(assumptions_invasion["n_transfer"] - assumptions_invasion["n_transfer_selection"]):
             plate_invasion.Propagate(assumptions_invasion["n_propagation"])
@@ -315,7 +321,7 @@ def add_community_function(plate, assumptions, params):
         setattr(plate, "invader_R", invader_R)
         setattr(plate, "invader_R0", invader_R0)
         setattr(plate, "isolate_abundance", np.sum(plate_invasion.N, axis=1)) 
-        setattr(plate, "isolate_function", globals()[assumptions["selected_function"]](plate_invasion, params_simulation = assumptions))     
+        setattr(plate, "isolate_function", globals()[assumptions["selected_function"]](plate_invasion, params_simulation = assumptions))
     
         print("\nFinished Stabilizing monoculture plate")
     
