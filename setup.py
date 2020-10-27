@@ -14,5 +14,5 @@ setup(name='ecoprospector',
       scripts = ['commandline_tool/ecoprospector'],
       include_package_data = True,
       package_data = {"": ["*.csv"]},
-      install_requires=["community-simulator@ git+https://github.com/Emergent-Behaviors-in-Biology/community-simulator.git@master"]
+      install_requires=["community-simulator@ git+https://github.com/Emergent-Behaviors-in-Biology/community-simulator.git@master"],
       zip_safe=False)
