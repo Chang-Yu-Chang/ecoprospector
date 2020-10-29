@@ -10,4 +10,4 @@ community-simulator = {editable = true, git = "https://github.com/Emergent-Behav
 ecoprospector = {editable = true, path = "."}
 
 [requires]
-python_version = "3.8"
+python_version = "3.7"

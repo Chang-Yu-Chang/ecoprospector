@@ -119,37 +119,23 @@ def f4_interaction_binary(plate, params_simulation):
     
     return additive_term + interaction_term
 
-def f5_invader_growth(plate, params_simulation):
+def f5_invader_suppression(plate, params_simulation):
     """
     Community function in which an indentical alien community (single or multiple species) invades the selected resident communities.
     This community function is the ratio between the biomass when invader grows with the community and when invader grows alone.
     The biomass of invader growing alone (plate.invasion_plate_t1) should have been included in the plate object attribute.
     
     """
-    # Number of species and community
     S_tot = plate.N.shape[0]
     n_wells = plate.N.shape[1]
-    
-    # Dilute the tested communities
     plate_test = plate.copy()
-    
-    # Coalesce the tested community with invasion community (or single invader) 
-    plate_test.N = plate_test.N + plate.invader_N 
-    
-    plate_test.Passage(np.eye(n_wells) * params_simulation["dilution"])
-
-    # Grow the coalesced communities
+    plate_test.N = plate.N + plate.plate_invader_N 
+    plate_test.R = plate.R + plate.plate_invader_R 
     plate_test.Propagate(params_simulation["n_propagation"])
     
-    # Calculate the function by dividing the final x(t) with x(o) of pathogen 
-    temp = plate.invasion_plate_t1["W0"]
-    dominant_index = list(np.where(temp == np.max(temp))[0]) # Index of the most abundant speceis in the resident community
-    invader_growth_along = np.sum(plate.invasion_plate_t1.iloc[dominant_index], axis = 0)
-    invader_growth_together = np.sum(plate_test.N.iloc[dominant_index], axis = 0)
-    
-    #
-    function_invader_suppressed_growth = invader_growth_along / invader_growth_together
-
+    invader_growth_alone = plate.invader_growth_alone
+    invader_growth_together = plate_test.N.iloc[plate.invader_index]
+    function_invader_suppressed_growth = 1 - invader_growth_together / invader_growth_alone
     return function_invader_suppressed_growth
 
 def f6_target_resource(plate, params_simulation):

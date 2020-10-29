@@ -67,7 +67,9 @@ def perturb(plate, params_simulation, keep):
         plate.Passage(dilution_matrix)
         plate.R = old_R.copy()  #knock_in isolates absent from all communities
     if params_simulation['knock_in']:
-        knock_in_list = np.where(np.logical_and(np.array(np.sum(plate.N,axis=1) ==0.0) , plate.isolate_function >= np.percentile(plate.isolate_function, q = 100*params_simulation['knock_in_threshold'])))[0]
+        # if params_simulation["selected_function"]
+        #     isolate_per_capita_function = plate.f1_species_smooth
+        knock_in_list = np.where(np.logical_and(np.array(np.sum(plate.N,axis=1) ==0.0) , plate.f1_species_smooth >= np.percentile(plate.f1_species_smooth, q = 100*params_simulation['knock_in_threshold'])))[0]
         for k in plate.N.columns:
             if k == plate.N.columns[keep] or len(knock_in_list) ==0.0:
                 continue

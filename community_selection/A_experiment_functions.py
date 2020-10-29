@@ -254,7 +254,7 @@ def add_community_function(plate, assumptions, params):
     if isolates calculate function for every isolate in monoculture.
     """
     
-    #Generate per capita species function
+    # Generate per capita species function
     np.random.seed(assumptions['seed']) 
     f1_species_smooth, f1_species_rugged, f2_species_smooth, f2_species_rugged = draw_species_function(assumptions)
     
@@ -268,63 +268,46 @@ def add_community_function(plate, assumptions, params):
 
 
     # Invasion function f5 or knock_in with a threshold requires us to grow isolates in monoculture to obtain their abundance.
-    if (assumptions["selected_function"] == 'f5_invader_growth') | (assumptions['knock_in']):
+    if (assumptions["selected_function"] == 'f5_invader_suppression') | (assumptions['knock_in']):
         print("\nStabilizing monoculture plate")
-        # Keep the initial plate R0 for function f7 
-        setattr(plate, "R0_initial", plate.R0)
-        
+        # Update assumptions
         assumptions_monoculture = assumptions.copy()
         params_invasion = params.copy()
-        
-        #Update assumptions
         assumptions_monoculture.update({"n_wells": np.sum(assumptions["SA"])  + assumptions["Sgen"]})
         assumptions_monoculture.update({"monoculture":True})
 
         # Make plates
-        plate_monoculture = make_plate(assumptions_monoculture,params_invasion)
+        plate_monoculture = make_plate(assumptions_monoculture, params_invasion)
         
-        # Species function for f1 additive community function
+        # Species function
         setattr(plate_monoculture, "f1_species_smooth", f1_species_smooth)
         setattr(plate_monoculture, "f1_species_rugged", f1_species_rugged)
-    
-        # Species interaction function for f2 Interactive function
         setattr(plate_monoculture, "f2_species_smooth", f2_species_smooth)
         setattr(plate_monoculture, "f2_species_rugged", f2_species_rugged)
-        
-        # f6_target resource
         setattr(plate_monoculture, "target_resource", assumptions["target_resource"])
-        
         
         # Grow the invader plate to equilibrium
         for i in range(assumptions_monoculture["n_transfer"] - assumptions_monoculture["n_transfer_selection"]):
             plate_monoculture.Propagate(assumptions_monoculture["n_propagation"])
             plate_monoculture = passage_monoculture(plate_monoculture, assumptions_monoculture["dilution"])
+        plate_monoculture.Propagate(assumptions_monoculture["n_propagation"]) #  1 final growth cycle before storing data
         
-        #  1 final growth cycle before storing data
-        plate_monoculture.Propagate(assumptions_monoculture["n_propagation"])
-        
-        # find well with highest biomass
-        dominant_index = np.where(np.sum(plate_monoculture.N, axis = 0) == np.max(np.sum(plate_monoculture.N, axis = 0)))[0][0] # Find the well with the highest biomass
+        # Find well with highest biomass
+        invader_index = np.where(np.sum(plate_monoculture.N, axis = 0) == np.max(np.sum(plate_monoculture.N, axis = 0)))[0][0] # Find the well with the highest biomass
 
-        # Duplicate the chosen community  to the entire plate and save this in a data.frame to be add to as an attribute of the plate
+        # Duplicate the chosen monoculture to the entire plate and save this in a data.frame to be add to as an attribute of the plate
         plate_invader_N = pd.DataFrame()
         plate_invader_R = pd.DataFrame()
-        plate_invader_R0 = pd.DataFrame()
-
         for i in range(assumptions["n_wells"]):
-            plate_invader_N["W" + str(i)] = plate_monoculture.N["W" + str(dominant_index)]
-            plate_invader_R["W" + str(i)] = plate_monoculture.R["W" + str(dominant_index)]
-            plate_invader_R0["W" + str(i)] = plate_monoculture.R0["W" + str(dominant_index)]
+            plate_invader_N["W" + str(i)] = plate_monoculture.N["W" + str(invader_index)]
+            plate_invader_R["W" + str(i)] = plate_monoculture.R["W" + str(invader_index)]
 
-        #Add the invasion plate to the attr of community
+        # Add the invasion plate to the attr of community
         setattr(plate, "plate_invader_N", plate_invader_N)
         setattr(plate, "plate_invader_R", plate_invader_R)
-        setattr(plate, "plate_invader_R0", plate_invader_R0)
-        """Work on this"""
-        setattr(plate, "")
-        #setattr(plate, "isolate_abundance", np.sum(plate_monoculture.N, axis=1)) 
-        #setattr(plate, "isolate_function", globals()[assumptions["selected_function"]](plate_monoculture, params_simulation = assumptions))
-    
+        setattr(plate, "invader_index", invader_index)
+        setattr(plate, "invader_growth_alone", np.sum(plate_monoculture.N["W" + str(invader_index)]))
+        
         print("\nFinished Stabilizing monoculture plate")
     
     # f6_target_resource
