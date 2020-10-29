@@ -291,8 +291,9 @@ def add_community_function(plate, assumptions, params):
             plate_monoculture.Propagate(assumptions_monoculture["n_propagation"])
             plate_monoculture = passage_monoculture(plate_monoculture, assumptions_monoculture["dilution"])
         plate_monoculture.Propagate(assumptions_monoculture["n_propagation"]) #  1 final growth cycle before storing data
+        print("\nFinished stabilizing monoculture plate")
         
-        # Find well with highest biomass
+        print("\nMake invader plate")
         invader_index = np.where(np.sum(plate_monoculture.N, axis = 0) == np.max(np.sum(plate_monoculture.N, axis = 0)))[0][0] # Find the well with the highest biomass
 
         # Duplicate the chosen monoculture to the entire plate and save this in a data.frame to be add to as an attribute of the plate
@@ -308,7 +309,14 @@ def add_community_function(plate, assumptions, params):
         setattr(plate, "invader_index", invader_index)
         setattr(plate, "invader_growth_alone", np.sum(plate_monoculture.N["W" + str(invader_index)]))
         
-        print("\nFinished Stabilizing monoculture plate")
+        # For knock_in isolates
+        if assumptions['knock_in']:
+            print("\nMeasure monocultures f5_invader_suppression for preparing knock_in list")
+            setattr(plate_monoculture, "plate_invader_N", plate_invader_N)
+            setattr(plate_monoculture, "plate_invader_R", plate_invader_R)
+            setattr(plate_monoculture, "invader_index", invader_index)
+            setattr(plate_monoculture, "invader_growth_alone", np.sum(plate_monoculture.N["W" + str(invader_index)]))
+            setattr(plate, "knock_in_species_function", globals()[assumptions["selected_function"]](plate_monoculture, params_simulation = assumptions))
     
     # f6_target_resource
     if assumptions["selected_function"] == "f6_target_resource":
