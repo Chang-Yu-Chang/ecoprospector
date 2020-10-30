@@ -290,13 +290,14 @@ def add_community_function(plate, assumptions, params):
         for i in range(assumptions_monoculture["n_transfer"] - assumptions_monoculture["n_transfer_selection"]):
             plate_monoculture.Propagate(assumptions_monoculture["n_propagation"])
             plate_monoculture = passage_monoculture(plate_monoculture, assumptions_monoculture["dilution"])
+            print("Transfer " + str(i+1))
         plate_monoculture.Propagate(assumptions_monoculture["n_propagation"]) #  1 final growth cycle before storing data
         print("\nFinished stabilizing monoculture plate")
         
         print("\nMake invader plate")
         invader_index = np.where(np.sum(plate_monoculture.N, axis = 0) == np.max(np.sum(plate_monoculture.N, axis = 0)))[0][0] # Find the well with the highest biomass
 
-        # Duplicate the chosen monoculture to the entire plate and save this in a data.frame to be add to as an attribute of the plate
+        # Replicate the chosen monoculture well to the entire plate
         plate_invader_N = pd.DataFrame()
         plate_invader_R = pd.DataFrame()
         for i in range(assumptions["n_wells"]):
@@ -311,12 +312,13 @@ def add_community_function(plate, assumptions, params):
         
         # For knock_in isolates
         if assumptions['knock_in']:
-            print("\nMeasure monocultures f5_invader_suppression for preparing knock_in list")
+            print("\nMeasure monocultures for preparing knock_in list")
             setattr(plate_monoculture, "plate_invader_N", plate_invader_N)
             setattr(plate_monoculture, "plate_invader_R", plate_invader_R)
             setattr(plate_monoculture, "invader_index", invader_index)
             setattr(plate_monoculture, "invader_growth_alone", np.sum(plate_monoculture.N["W" + str(invader_index)]))
             setattr(plate, "knock_in_species_function", globals()[assumptions["selected_function"]](plate_monoculture, params_simulation = assumptions))
+            print("\nknock_in_species_function ", plate.knock_in_species_function)
     
     # f6_target_resource
     if assumptions["selected_function"] == "f6_target_resource":

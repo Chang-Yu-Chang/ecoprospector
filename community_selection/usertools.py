@@ -205,7 +205,6 @@ def simulate_community(params, params_simulation, params_algorithm, plate):
         # Algorithms used in this transfer
         phenotype_algorithm = params_algorithm["community_phenotype"][i]
         selection_algorithm = params_algorithm["selection_algorithm"][i]
-        print("Transfer " + str(i+1))
 
         # Propagation
         plate.Propagate(params_simulation["n_propagation"])
@@ -244,7 +243,8 @@ def simulate_community(params, params_simulation, params_algorithm, plate):
             #   plate = perturb(plate, params_simulation, keep = None)
             elif selection_algorithm == "no_selection": 
                 pass
-                
+        
+        print("Transfer " + str(i+1))
 
     if params_simulation['save_composition']:
         pd.concat(plate_data_list).to_csv(composition_filename, index = False)
