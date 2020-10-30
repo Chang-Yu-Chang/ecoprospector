@@ -236,7 +236,7 @@ def draw_species_cost(per_capita_function, assumptions):
         cost_theta = cost_var/assumptions["cost_mean"]
         cost = np.random.gamma(shape = cost_k, scale = cost_theta, size = len(per_capita_function))
         g0 = assumptions["g0"]
-        gi = g0/(1-per_capita_function*cost)
+        gi = g0/(1+per_capita_function*cost)
     else: 
         gi = np.repeat(assumptions["g0"], len(per_capita_function))
     

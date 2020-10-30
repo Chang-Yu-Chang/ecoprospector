@@ -4,14 +4,14 @@
 from setuptools import setup
 
 setup(name='ecoprospector',
-      version='0.0.1',
+      version='0.0.2',
       description='Simulate community selection protocols',
       url='https://github.com/Chang-Yu-Chang/ecoprospector',
       author=['Chang-Yu Chang', 'Jean Villa'], 
       author_email=['chang-yu.chang@yale.edu'],
       license='MIT',
       packages = ['community_selection'],
-      scripts = ['commandline_tool/ecoprospector'],
+      scripts = ['commandline_tool/ecoprospector', 'commandline_tool/extract_species_function'],
       include_package_data = True,
       package_data = {"": ["*.csv"]},
       install_requires=["community-simulator@ git+https://github.com/Emergent-Behaviors-in-Biology/community-simulator.git@master"],

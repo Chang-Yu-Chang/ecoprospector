@@ -127,7 +127,7 @@ def prepare_experiment(assumptions):
     
     Return: params, params_simulation, params_algorithm,plate
     """
-    print("\nGenerate species paramaters")
+    print("\nGenerate species parameters")
     np.random.seed(assumptions['seed']) 
     params = MakeParams(assumptions) 
     
@@ -135,6 +135,7 @@ def prepare_experiment(assumptions):
     f1_species_smooth, f1_species_rugged, f2_species_smooth, f2_species_rugged = draw_species_function(assumptions)
     params.update({"f1_species_smooth": f1_species_smooth, "f1_species_rugged": f1_species_rugged, "f2_species_smooth": f2_species_smooth, "f2_species_rugged": f2_species_rugged})
     gi = draw_species_cost(f1_species_smooth, assumptions)
+    print(gi)
     params.update({"g": gi})
     
     print("\nConstructing plate")
@@ -273,13 +274,17 @@ def extract_species_function(assumptions):
     if "additive" in assumptions["selected_function"]:
         if assumptions["selected_function"] == "f1_additive":
             per_capita_function = f1_species_smooth
+            species_function = pd.DataFrame({"SelectedFunction": assumptions["selected_function"], "Seed": np.repeat(assumptions['seed'], S_tot), "ID": range(1, S_tot+1), "PerCapitaFunction": per_capita_function})
+            if assumptions["cost_mean"] != 0:
+                gi = draw_species_cost(f1_species_smooth, assumptions)
+                params.update({"g": gi})
+                species_function = pd.DataFrame({"SelectedFunction": assumptions["selected_function"], "Seed": np.repeat(assumptions['seed'], S_tot), "ID": range(1, S_tot+1), "PerCapitaFunction": per_capita_function, "g": gi})
         elif assumptions["selected_function"] == "f1a_additive":
             per_capita_function = f1_species_rugged
-            
-        species_function = pd.DataFrame({"SelectedFunction": assumptions["selected_function"], "Seed": np.repeat(assumptions['seed'], S_tot), "ID": range(1, S_tot+1), "PerCapitaFunction": per_capita_function})
+            species_function = pd.DataFrame({"SelectedFunction": assumptions["selected_function"], "Seed": np.repeat(assumptions['seed'], S_tot), "ID": range(1, S_tot+1), "PerCapitaFunction": per_capita_function})
+
     
-    if "interaction" in assumptions["selected_function"]:
-        #print(f2_species_smooth)
+    elif "interaction" in assumptions["selected_function"]:
         if assumptions["selected_function"] == "f2_interaction":
             per_interaction_function = f2_species_smooth
         elif assumptions["selected_function"] == "f2a_interaction":
@@ -290,6 +295,7 @@ def extract_species_function(assumptions):
         df_interaction_function = df_interaction_function.assign(ID_row=range(1,S_tot+1)).melt(id_vars="ID_row", var_name = "ID_col", value_name = "PerCapitaFunction")
         df_interaction_function = df_interaction_function.assign(SelectedFunction = assumptions["selected_function"], Seed = assumptions['seed'])
         species_function = df_interaction_function[["SelectedFunction", "Seed", "ID_row", "ID_col", "PerCapitaFunction"]]
+    
     return(species_function)
 
 
