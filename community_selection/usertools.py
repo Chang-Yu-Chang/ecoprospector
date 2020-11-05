@@ -135,7 +135,6 @@ def prepare_experiment(assumptions):
     f1_species_smooth, f1_species_rugged, f2_species_smooth, f2_species_rugged = draw_species_function(assumptions)
     params.update({"f1_species_smooth": f1_species_smooth, "f1_species_rugged": f1_species_rugged, "f2_species_smooth": f2_species_smooth, "f2_species_rugged": f2_species_rugged})
     gi = draw_species_cost(f1_species_smooth, assumptions)
-    print(gi)
     params.update({"g": gi})
     
     print("\nConstructing plate")
