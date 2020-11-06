@@ -496,7 +496,6 @@ def make_plate(assumptions, params):
     
     # Make initial state
     init_state = MakeInitialState(assumptions)
-    
     plate = Metacommunity(init_state, dynamics, params, scale = assumptions["scale"], parallel = False) 
     
     # Add media to plate (overrides community simulator)
@@ -592,9 +591,11 @@ def overwrite_plate(plate, assumptions):
         print("The overwrite plate has only one community (well). Replicate it to the number of wells in current plate")
         temp_df = df.copy()
         df = pd.concat([temp_df.assign(Well = "W" + str(i)) for i in range(assumptions["n_wells"])])
-    
+    # Else if n_wells does not conform to the number of wells in the overwrite_plate, overwrite it
+    else:
+        assumptions["n_wells"] = len(df["Well"].unique())
     # If the input overwrite file has multiple communities, check if it has the same number as n_wells
-    assert len(df["Well"].unique()) == assumptions["n_wells"], "overwrite_plate does not have the same number of wells as n_wells"
+    #assert len(df["Well"].unique()) == assumptions["n_wells"], "overwrite_plate does not have the same number of wells as n_wells"
     # Check if the input file type has consumer, resurce and R0
     assert all(pd.Series(df["Type"].unique()).isin(["consumer", "resource", "R0"])), "overwrite_plate must have three types of rows: consumer, resource, R0"
     # Make empty dataframes

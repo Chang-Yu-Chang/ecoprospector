@@ -104,10 +104,13 @@ def make_assumptions(input_file, row):
             assumptions['r_percent'] = float(assumptions['r_percent'])
             
     # Overwrite plate
-    if isinstance(assumptions["overwrite_plate"], str) and assumptions["overwrite_plate"] != "NA": 
-        print("\n\nOverwriting the initial plate composition with input plate")
+    if pd.isnull(assumptions["overwrite_plate"]) == False:
+    #if isinstance(assumptions["overwrite_plate"], str) and assumptions["overwrite_plate"] != "NA": 
+        print("\nUpdating the n_wells with overwrite_plate")
         df = pd.read_csv(assumptions["overwrite_plate"])
-        #assumptions["n_wells"] = len(set(df["Well"]))
+        df = df[df.Transfer == np.max(df.Transfer)]
+        assumptions["n_wells"] = len(df["Well"].unique())
+    
     
     # f6_target_resource
     if assumptions["selected_function"] == "f6_target_resource":
