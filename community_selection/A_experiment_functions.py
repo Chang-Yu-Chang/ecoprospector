@@ -328,10 +328,41 @@ def add_community_function(plate, assumptions, params):
 
 # Plate
 
+# def sample_from_pool(plate_N, assumptions, n = None):
+#     """
+#     Sample communities from regional species pool.
+# 
+#     plate_N = consumer data.frame
+#     """
+#     S_tot = plate_N.shape[0] # Total number of species in the pool
+#     N0 = np.zeros((plate_N.shape)) # Make empty plate
+#     consumer_index = plate_N.index
+#     well_names = plate_N.columns
+#     if n is None:
+#         n = assumptions['n_inoc'] #if not specified n is n_inoc
+#     # Draw community
+#     if assumptions['monoculture'] == False:
+#         # Sample initial community for each well
+#         for k in range(plate_N.shape[1]):
+#             pool = np.random.power(0.01, size = S_tot) # Power-law distribution
+#             pool = pool/np.sum(pool) # Normalize the pool
+#             consumer_list = np.random.choice(S_tot, size = n , replace = True, p = pool) # Draw from the pool
+#             my_tab = pd.crosstab(index = consumer_list, columns = "count") # Calculate the cell count
+#             N0[my_tab.index.values,k] = np.ravel(my_tab.values / assumptions['scale']) # Scale to biomass
+# 
+#         # Make data.frame
+#         N0 = pd.DataFrame(N0, index = consumer_index, columns = well_names)
+# 
+#     # Monoculture plate
+#     elif assumptions['monoculture'] == True:
+#         N0 = np.eye(plate_N.shape[0]) *assumptions['n_inoc']/assumptions['scale']
+#         N0 = pd.DataFrame(N0, index = consumer_index, columns = ["W" + str(i) for i in range(plate_N.shape[0])])
+#     
+#     return N0
+
 def sample_from_pool(plate_N, assumptions, n = None):
     """
     Sample communities from regional species pool.
-
     plate_N = consumer data.frame
     """
     S_tot = plate_N.shape[0] # Total number of species in the pool
@@ -341,24 +372,37 @@ def sample_from_pool(plate_N, assumptions, n = None):
     if n is None:
         n = assumptions['n_inoc'] #if not specified n is n_inoc
     # Draw community
-    if assumptions['monoculture'] == False:
+    if assumptions['monoculture'] == False and assumptions['metacommunity_sampling'] == 'Power':
         # Sample initial community for each well
         for k in range(plate_N.shape[1]):
-            pool = np.random.power(0.01, size = S_tot) # Power-law distribution
+            pool = np.random.power(assumptions['power_alpha'], size = S_tot) # Power-law distribution
             pool = pool/np.sum(pool) # Normalize the pool
             consumer_list = np.random.choice(S_tot, size = n , replace = True, p = pool) # Draw from the pool
             my_tab = pd.crosstab(index = consumer_list, columns = "count") # Calculate the cell count
             N0[my_tab.index.values,k] = np.ravel(my_tab.values / assumptions['scale']) # Scale to biomass
-
         # Make data.frame
         N0 = pd.DataFrame(N0, index = consumer_index, columns = well_names)
-
+    if assumptions['monoculture'] == False and assumptions['metacommunity_sampling'] == 'Lognormal':
+        for k in range(plate_N.shape[1]):
+            pool = np.random.lognormal(assumptions['lognormal_mean'],assumptions['lognormal_sigma'], size = S_tot) # Power-law distribution
+            pool = pool/np.sum(pool) # Normalize the pool
+            consumer_list = np.random.choice(S_tot, size = n , replace = True, p = pool) # Draw from the pool
+            my_tab = pd.crosstab(index = consumer_list, columns = "count") # Calculate the cell count
+            N0[my_tab.index.values,k] = np.ravel(my_tab.values / assumptions['scale']) # Scale to biomass
+        # Make data.frame
+        N0 = pd.DataFrame(N0, index = consumer_index, columns = well_names)
+    if assumptions['monoculture'] == False and assumptions['metacommunity_sampling'] == 'Default':
+        #Default was already sampled (each species starts wtih an abundance of 1. number of species in each species pool determined by 
+        #assumptions['S']
+        N0 = plate.N
     # Monoculture plate
     elif assumptions['monoculture'] == True:
         N0 = np.eye(plate_N.shape[0]) *assumptions['n_inoc']/assumptions['scale']
         N0 = pd.DataFrame(N0, index = consumer_index, columns = ["W" + str(i) for i in range(plate_N.shape[0])])
-    
     return N0
+
+
+
 
 def sample_from_pool2(plate_N, assumptions, synthetic_community_size = 2, n = None):
     """

@@ -104,8 +104,10 @@ def make_assumptions(input_file, row):
             assumptions['r_percent'] = float(assumptions['r_percent'])
             
     # Overwrite plate
-    if pd.isnull(assumptions["overwrite_plate"]) == False:
-    #if isinstance(assumptions["overwrite_plate"], str) and assumptions["overwrite_plate"] != "NA": 
+    #if np.isnan(assumptions["overwrite_plate"]) == False:
+    #if isinstance(assumptions["overwrite_plate"], str) and assumptions["overwrite_plate"] != "NA":
+    #if pd.isnull(assumptions["overwrite_plate"]) == False:
+    if isinstance(assumptions["overwrite_plate"], str) and assumptions["overwrite_plate"] != "": 
         print("\nUpdating the n_wells with overwrite_plate")
         df = pd.read_csv(assumptions["overwrite_plate"])
         df = df[df.Transfer == np.max(df.Transfer)]
