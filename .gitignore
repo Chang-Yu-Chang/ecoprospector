@@ -7,6 +7,7 @@ __pycache__/
 deprecated/*
 tests/*
 *.ipynb
+Rreport/*
 
 # R documents
 *.Rproj
