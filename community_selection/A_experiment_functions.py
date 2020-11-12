@@ -208,7 +208,7 @@ def draw_species_function(assumptions):
     function_species, function_interaction
     """
     S_tot = int(np.sum(assumptions['SA']) + assumptions['Sgen']) 
-    
+
     if assumptions["phi_distribution"] == "Norm":
         f1_species_smooth = np.random.normal(assumptions["phi_mean"], assumptions["phi_sd"], size = S_tot)
         f1_species_rugged = f1_species_smooth * np.random.binomial(1, 1-assumptions["ruggedness"], size = S_tot)
