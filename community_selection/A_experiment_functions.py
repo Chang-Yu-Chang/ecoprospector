@@ -372,6 +372,7 @@ def sample_from_pool(plate_N, assumptions, n = None):
     N0 = np.zeros((plate_N.shape)) # Make empty plate
     consumer_index = plate_N.index
     well_names = plate_N.columns
+    print(assumptions['metacommunity_sampling'])
     if n is None:
         n = assumptions['n_inoc'] #if not specified n is n_inoc
     # Draw community
@@ -387,7 +388,7 @@ def sample_from_pool(plate_N, assumptions, n = None):
         N0 = pd.DataFrame(N0, index = consumer_index, columns = well_names)
     if assumptions['monoculture'] == False and assumptions['metacommunity_sampling'] == 'Lognormal':
         for k in range(plate_N.shape[1]):
-            pool = np.random.lognormal(assumptions['lognormal_mean'],assumptions['lognormal_sigma'], size = S_tot) # Power-law distribution
+            pool = np.random.lognormal(assumptions['lognormal_mean'], assumptions['lognormal_sd'], size = S_tot) # Power-law distribution
             pool = pool/np.sum(pool) # Normalize the pool
             consumer_list = np.random.choice(S_tot, size = n , replace = True, p = pool) # Draw from the pool
             my_tab = pd.crosstab(index = consumer_list, columns = "count") # Calculate the cell count
