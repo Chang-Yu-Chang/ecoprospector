@@ -207,17 +207,20 @@ def draw_species_function(assumptions):
     Return:
     function_species, function_interaction
     """
-    # Total number of species in the pool
     S_tot = int(np.sum(assumptions['SA']) + assumptions['Sgen']) 
     
-    # Species-specific function, 1-D array
-    f1_species_smooth = np.random.normal(0, assumptions["sigma_func"], size = S_tot)
-    f1_species_rugged = np.random.normal(0, assumptions["sigma_func"], size = S_tot) * np.random.binomial(1, 0.2, size = S_tot)
+    if assumptions["phi_distribution"] == "Norm":
+        f1_species_smooth = np.random.normal(assumptions["phi_mean"], assumptions["phi_sd"], size = S_tot)
+        f1_species_rugged = f1_species_smooth * np.random.binomial(1, 1-assumptions["ruggedness"], size = S_tot)
+        f2_species_smooth = np.random.normal(assumptions["phi_mean"], assumptions["phi_sd"] * assumptions["function_ratio"], size = S_tot**2).reshape(S_tot, S_tot)
+        f2_species_rugged = np.random.binomial(1, 1-assumptions["ruggedness"], S_tot**2).reshape(S_tot, S_tot) * np.array(f2_species_smooth)
     
-    # Interaction-specific function, 2-D n by n array
-    f2_species_smooth = np.random.normal(0, assumptions["sigma_func"] * assumptions["alpha_func"], size = S_tot * S_tot).reshape(S_tot, S_tot)
-    f2_species_rugged = np.random.binomial(1, 0.2, S_tot**2).reshape(S_tot, S_tot) * np.array(np.random.normal(0, assumptions["sigma_func"] * assumptions["alpha_func"], size = S_tot * S_tot)).reshape(S_tot, S_tot)
-    
+    elif assumptions["phi_distribution"] == "Uniform":
+        f1_species_smooth = np.random.uniform(assumptions["phi_lower"], assumptions["phi_upper"], size = S_tot)
+        f1_species_rugged = f1_species_smooth * np.random.binomial(1, 1-assumptions["ruggedness"], size = S_tot)
+        f2_species_smooth = np.random.uniform(assumptions["phi_lower"], assumptions["phi_upper"] * assumptions["function_ratio"], size = S_tot**2).reshape(S_tot, S_tot)
+        f2_species_rugged = np.random.binomial(1, 1-assumptions["ruggedness"], S_tot**2).reshape(S_tot, S_tot) * np.array(f2_species_smooth)
+        
     # Remove diagonals in the interation matrix
     np.fill_diagonal(f2_species_smooth, 0)
     np.fill_diagonal(f2_species_rugged, 0)
