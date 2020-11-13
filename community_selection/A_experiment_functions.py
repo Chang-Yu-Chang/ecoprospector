@@ -405,7 +405,7 @@ def sample_from_pool(plate_N, assumptions, n = None):
     elif assumptions['monoculture'] == False and assumptions['metacommunity_sampling'] == 'Default':
         #Default was already sampled (each species starts wtih an abundance of 1. number of species in each species pool determined by 
         #assumptions['S']
-        N0 = plate_N
+        N0 = plate_N/assumptions['S']
     # Monoculture plate
     elif assumptions['monoculture'] == True:
         N0 = np.eye(plate_N.shape[0]) *assumptions['n_inoc']/assumptions['scale']
