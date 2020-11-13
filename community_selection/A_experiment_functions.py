@@ -290,11 +290,19 @@ def add_community_function(plate, assumptions, params):
         setattr(plate_monoculture, "target_resource", assumptions["target_resource"])
         
         # Grow the invader plate to equilibrium
-        for i in range(assumptions_monoculture["n_transfer"] - assumptions_monoculture["n_transfer_selection"]):
+        if "invader_suppression" in assumptions_monoculture["selected_function"]:
             plate_monoculture.Propagate(assumptions_monoculture["n_propagation"])
             plate_monoculture = passage_monoculture(plate_monoculture, assumptions_monoculture["dilution"])
-            print("Transfer " + str(i+1))
-        plate_monoculture.Propagate(assumptions_monoculture["n_propagation"]) #  1 final growth cycle before storing data
+            print(plate_monoculture)
+            plate_monoculture_alone = plate_monoculture.copy()
+            plate_monoculture_alone.Propagate(assumptions_monoculture["n_propagation"])
+            print(plate_monoculture_alone)
+        else:
+            for i in range(assumptions_monoculture["n_transfer"] - assumptions_monoculture["n_transfer_selection"]):
+                plate_monoculture.Propagate(assumptions_monoculture["n_propagation"])
+                plate_monoculture = passage_monoculture(plate_monoculture, assumptions_monoculture["dilution"])
+                print("Transfer " + str(i+1))
+            plate_monoculture.Propagate(assumptions_monoculture["n_propagation"]) #  1 final growth cycle before storing data
         print("\nFinished stabilizing monoculture plate")
         
         print("\nMake invader plate")
@@ -311,7 +319,7 @@ def add_community_function(plate, assumptions, params):
         setattr(plate, "plate_invader_N", plate_invader_N)
         setattr(plate, "plate_invader_R", plate_invader_R)
         setattr(plate, "invader_index", invader_index)
-        setattr(plate, "invader_growth_alone", np.sum(plate_monoculture.N["W" + str(invader_index)]))
+        setattr(plate, "invader_growth_alone", np.sum(plate_monoculture_alone.N["W" + str(invader_index)]))
         
         # For knock_in isolates
         if assumptions['knock_in']:
@@ -385,7 +393,7 @@ def sample_from_pool(plate_N, assumptions, n = None):
             N0[my_tab.index.values,k] = np.ravel(my_tab.values / assumptions['scale']) # Scale to biomass
         # Make data.frame
         N0 = pd.DataFrame(N0, index = consumer_index, columns = well_names)
-    if assumptions['monoculture'] == False and assumptions['metacommunity_sampling'] == 'Lognormal':
+    elif assumptions['monoculture'] == False and assumptions['metacommunity_sampling'] == 'Lognormal':
         for k in range(plate_N.shape[1]):
             pool = np.random.lognormal(assumptions['lognormal_mean'], assumptions['lognormal_sd'], size = S_tot) # Power-law distribution
             pool = pool/np.sum(pool) # Normalize the pool
@@ -394,10 +402,10 @@ def sample_from_pool(plate_N, assumptions, n = None):
             N0[my_tab.index.values,k] = np.ravel(my_tab.values / assumptions['scale']) # Scale to biomass
         # Make data.frame
         N0 = pd.DataFrame(N0, index = consumer_index, columns = well_names)
-    if assumptions['monoculture'] == False and assumptions['metacommunity_sampling'] == 'Default':
+    elif assumptions['monoculture'] == False and assumptions['metacommunity_sampling'] == 'Default':
         #Default was already sampled (each species starts wtih an abundance of 1. number of species in each species pool determined by 
         #assumptions['S']
-        N0 = plate.N
+        N0 = plate_N
     # Monoculture plate
     elif assumptions['monoculture'] == True:
         N0 = np.eye(plate_N.shape[0]) *assumptions['n_inoc']/assumptions['scale']

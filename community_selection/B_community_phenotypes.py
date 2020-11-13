@@ -129,7 +129,7 @@ def f5_invader_suppression(plate, params_simulation):
     S_tot = plate.N.shape[0]
     n_wells = plate.N.shape[1]
     plate_test = plate.copy()
-    plate_test.N = plate.N + plate.plate_invader_N 
+    plate_test.N = plate.N + plate.plate_invader_N
     plate_test.R = plate.R + plate.plate_invader_R 
     plate_test.Propagate(params_simulation["n_propagation"])
     
