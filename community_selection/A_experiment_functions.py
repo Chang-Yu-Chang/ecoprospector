@@ -324,7 +324,7 @@ def add_community_function(plate, assumptions, params):
             print("\nknock_in_species_function ", plate.knock_in_species_function)
     
     # f6_target_resource
-    if assumptions["selected_function"] == "f6_target_resource":
+    if "target_resource" in assumptions["selected_function"]:
         setattr(plate, "target_resource", assumptions["target_resource"])
     
     return plate
@@ -549,9 +549,8 @@ def make_plate(assumptions, params):
     plate.R = make_medium(plate.R, assumptions)
     plate.R0 = make_medium(plate.R0, assumptions)
     
-    # Set the target resource to 0
-    if assumptions["selected_function"] == "f6_target_resource":
-        print(assumptions["target_resource"])
+    # Set the target resource to 0 when target function is resource production f6a
+    if assumptions["selected_function"] == "f6a_target_resource":
         plate.R.iloc[assumptions["target_resource"],:] = 0
         plate.R0.iloc[assumptions["target_resource"],:] = 0
     

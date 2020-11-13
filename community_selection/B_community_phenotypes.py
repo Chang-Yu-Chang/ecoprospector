@@ -145,8 +145,8 @@ def f6_target_resource(plate, params_simulation):
     If rich medium is provided, the target resource amount in the initial plate is set to 0
     """
     target_resource_index = plate.target_resource
-    community_function = -plate.R.iloc[target_resource_index,:].tolist()
-    
+    community_function_temp = plate.R.iloc[target_resource_index,:].tolist()
+    community_function = [-i for i in community_function_temp]
     return community_function
     
 def f6a_target_resource(plate, params_simulation):
