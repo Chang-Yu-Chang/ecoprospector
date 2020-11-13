@@ -372,7 +372,6 @@ def sample_from_pool(plate_N, assumptions, n = None):
     N0 = np.zeros((plate_N.shape)) # Make empty plate
     consumer_index = plate_N.index
     well_names = plate_N.columns
-    print(assumptions['metacommunity_sampling'])
     if n is None:
         n = assumptions['n_inoc'] #if not specified n is n_inoc
     # Draw community
@@ -552,6 +551,7 @@ def make_plate(assumptions, params):
     
     # Set the target resource to 0
     if assumptions["selected_function"] == "f6_target_resource":
+        print(assumptions["target_resource"])
         plate.R.iloc[assumptions["target_resource"],:] = 0
         plate.R0.iloc[assumptions["target_resource"],:] = 0
     

@@ -26,6 +26,21 @@ def resource_perturb(plate, params_simulation, keep):
         metabolite_choice = [x for x in old_R0.index if old_R0[x] >0]
     else: #default_resource_swap
         metabolite_choice = [(x,y) for x in old_R0.index for y in old_R0.index if x !=y]
+    
+    # If f6_target_resource, avoid target_resource
+    if "target_resource" in params_simulation["selected_function"]:
+        target_resource = old_R0.index[params_simulation["target_resource"]]
+        if params_simulation['r_type'] == 'add': #Remove from top and add to random
+            metabolite_choice = [(x,y) for x in old_R0.index for y in old_R0.index if x !=y and x ==  old_R0.idxmax() and x != target_resource and y != target_resource]
+        if params_simulation['r_type']  == 'remove': #Remove from random and add to bottom
+            metabolite_choice = [(x,y) for x in old_R0.index for y in old_R0.index if x !=y and y == old_R0.idxmin() and old_R0[x]>0 and x != target_resource and y != target_resource]
+        if params_simulation['r_type'] == 'rescale_add' or params_simulation['r_type'] == 'old':  # add to random
+            metabolite_choice = [x for x in old_R0.index if x != target_resource and y != target_resource]
+        if params_simulation['r_type'] == 'rescale_remove':  #remove from random    
+            metabolite_choice = [x for x in old_R0.index if old_R0[x] >0 and x != target_resource and y != target_resource]
+        else: #default_resource_swap
+            metabolite_choice = [(x,y) for x in old_R0.index for y in old_R0.index if x !=y and x != target_resource and y != target_resource]
+
     #next randomly pick element in list and apply pertubation 
     for k in plate.R0.columns:
         if k != plate.R0.columns[keep]:

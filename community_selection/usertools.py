@@ -115,7 +115,7 @@ def make_assumptions(input_file, row):
     
     
     # f6_target_resource
-    if assumptions["selected_function"] == "f6_target_resource":
+    if "target_resource" in assumptions["selected_function"]:
         # Default target resource is the last resource
         if pd.isnull(assumptions['target_resource']):
             assumptions["target_resource"] = int(assumptions["rn"]) * int(assumptions["rf"]) - 1

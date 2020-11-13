@@ -140,6 +140,17 @@ def f5_invader_suppression(plate, params_simulation):
 
 def f6_target_resource(plate, params_simulation):
     """
+    Function as minimized an supplied resource
+    The target resource by default is the resouce in the last index
+    If rich medium is provided, the target resource amount in the initial plate is set to 0
+    """
+    target_resource_index = plate.target_resource
+    community_function = -plate.R.iloc[target_resource_index,:].tolist()
+    
+    return community_function
+    
+def f6a_target_resource(plate, params_simulation):
+    """
     Function as maximized non-supplied resource production
     The target resource by default is the resouce in the last index
     If rich medium is provided, the target resource amount in the initial plate is set to 0
@@ -148,7 +159,8 @@ def f6_target_resource(plate, params_simulation):
     community_function = plate.R.iloc[target_resource_index,:].tolist()
     
     return community_function
-    
+
+
     
 
 def resource_distance_community_function(plate, R_target, sigma = 0.01): # Sigma is the measurement error
