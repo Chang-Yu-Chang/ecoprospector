@@ -232,16 +232,20 @@ def draw_species_cost(per_capita_function, assumptions):
     Draw species-specific function cost
     k_i is a conversion factor that specifies cost per function 
     """
+    if assumptions["cost_distribution"] == "Norm":
+        if assumptions["cost_mean"] !=0:
+            cost_var = assumptions["cost_sd"]**2
+            cost_k = assumptions["cost_mean"]**2/cost_var
+            cost_theta = cost_var/assumptions["cost_mean"]
+            cost = np.random.gamma(shape = cost_k, scale = cost_theta, size = len(per_capita_function))
+            g0 = assumptions["g0"]
+            gi = g0/(1+per_capita_function*cost)
+        else: 
+            gi = np.repeat(assumptions["g0"], len(per_capita_function))
     
-    if assumptions["cost_mean"] !=0:
-        cost_var = assumptions["cost_sd"]**2
-        cost_k = assumptions["cost_mean"]**2/cost_var
-        cost_theta = cost_var/assumptions["cost_mean"]
-        cost = np.random.gamma(shape = cost_k, scale = cost_theta, size = len(per_capita_function))
-        g0 = assumptions["g0"]
-        gi = g0/(1+per_capita_function*cost)
-    else: 
-        gi = np.repeat(assumptions["g0"], len(per_capita_function))
+    elif assumptions["cost_distribution"] == "Uniform":
+        assert assumptions["phi_distribution"] == "Uniform" "Phi should follow uniform distribution as the cost"
+        gi = 1-per_capita_function
     
     return gi
 
