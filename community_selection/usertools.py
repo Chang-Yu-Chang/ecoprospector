@@ -111,7 +111,8 @@ def make_assumptions(input_file, row):
         print("\nUpdating the n_wells with overwrite_plate")
         df = pd.read_csv(assumptions["overwrite_plate"])
         df = df[df.Transfer == np.max(df.Transfer)]
-        assumptions["n_wells"] = len(df["Well"].unique())
+        if len(df["Well"].unique()) != 1:
+            assumptions["n_wells"] = len(df["Well"].unique())
     
     
     # f6_target_resource
