@@ -244,8 +244,10 @@ def draw_species_cost(per_capita_function, assumptions):
             gi = np.repeat(assumptions["g0"], len(per_capita_function))
     
     elif assumptions["cost_distribution"] == "Uniform":
-        assert assumptions["phi_distribution"] == "Uniform" "Phi should follow uniform distribution as the cost"
+        assert assumptions["phi_distribution"] == "Uniform", "Phi should follow uniform distribution as the cost"
         gi = 1-per_capita_function
+        print(per_capita_function)
+        print(gi)
     
     return gi
 
