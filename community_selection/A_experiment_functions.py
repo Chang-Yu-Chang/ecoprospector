@@ -324,8 +324,9 @@ def add_community_function(plate, assumptions, params):
         # Add the invasion plate to the attr of community
         setattr(plate, "plate_invader_N", plate_invader_N)
         setattr(plate, "plate_invader_R", plate_invader_R)
-        setattr(plate, "invader_index", invader_index)
-        setattr(plate, "invader_growth_alone", np.sum(plate_monoculture_alone.N["W" + str(invader_index)]))
+        if "invader_suppression" in assumptions_monoculture["selected_function"]:
+            setattr(plate, "invader_index", invader_index)
+            setattr(plate, "invader_growth_alone", np.sum(plate_monoculture_alone.N["W" + str(invader_index)]))
         
         # For knock_in isolates
         if assumptions['knock_in']:
