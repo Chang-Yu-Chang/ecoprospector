@@ -411,8 +411,16 @@ def sample_from_pool(plate_N, assumptions, n = None):
         N0 = pd.DataFrame(N0, index = consumer_index, columns = well_names)
     elif assumptions['monoculture'] == False and assumptions['metacommunity_sampling'] == 'Default':
         #Default was already sampled (each species starts wtih an abundance of 1. number of species in each species pool determined by 
-        #assumptions['S']
-        N0 = plate_N/assumptions['S']
+        #N0 = plate_N/assumptions['S']
+        N0 = MakeInitialState(assumptions)[0]
+        if not isinstance(N0, pd.DataFrame):#add labels to consumer state
+            if len(np.shape(N0)) == 1:
+                N0 = N0[:,np.newaxis]
+            column_names = ['W'+str(k) for k in range(np.shape(N)[1])]
+            species_names = ['S'+str(k) for k in range(np.shape(N)[0])]
+            N0 = pd.DataFrame(N,columns=column_names)
+            N0.index = species_names
+        N0 = N0/assumptions['S']
     # Monoculture plate
     elif assumptions['monoculture'] == True:
         N0 = np.eye(plate_N.shape[0]) *assumptions['n_inoc']/assumptions['scale']
