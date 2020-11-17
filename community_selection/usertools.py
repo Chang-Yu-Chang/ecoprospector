@@ -114,6 +114,8 @@ def make_assumptions(input_file, row):
         if len(df["Well"].unique()) != 1:
             assumptions["n_wells"] = len(df["Well"].unique())
     
+    if np.isnan(assumptions["ruggedness"]):
+        assumptions["ruggedness"] = 0
     
     # f6_target_resource
     if "target_resource" in assumptions["selected_function"]:
