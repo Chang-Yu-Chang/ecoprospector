@@ -129,13 +129,12 @@ def f5_invader_suppression(plate, params_simulation):
     S_tot = plate.N.shape[0]
     n_wells = plate.N.shape[1]
     plate_test = plate.copy()
-    plate_test.N = plate.N + plate.plate_invader_N
-    plate_test.R = plate.R + plate.plate_invader_R 
+    plate_test.Passage(params_simulation['dilution']*np.eye(params_simulation['n_wells']))
+    plate_test.N.iloc[plate.invader_index,:] = plate_test.N.iloc[plate.invader_index,:] + 10 / params_simulation['scale']
     plate_test.Propagate(params_simulation["n_propagation"])
-    
-    invader_growth_alone = plate.invader_growth_alone
     invader_growth_together = plate_test.N.iloc[plate.invader_index]
-    function_invader_suppressed_growth = 1 - invader_growth_together / invader_growth_alone
+    function_invader_suppressed_growth = -invader_growth_together
+    print(function_invader_suppressed_growth)
     return function_invader_suppressed_growth
 
 def f6_target_resource(plate, params_simulation):

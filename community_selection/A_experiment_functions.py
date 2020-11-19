@@ -297,37 +297,20 @@ def add_community_function(plate, assumptions, params):
         
         # Grow the invader plate to equilibrium
         if "invader_suppression" in assumptions_monoculture["selected_function"]:
+            print("\nPropagating monoculture plate to determine invader")
             plate_monoculture.Propagate(assumptions_monoculture["n_propagation"])
-            plate_monoculture = passage_monoculture(plate_monoculture, assumptions_monoculture["dilution"])
-            print(plate_monoculture)
-            plate_monoculture_alone = plate_monoculture.copy()
-            plate_monoculture_alone.Propagate(assumptions_monoculture["n_propagation"])
-            print(plate_monoculture_alone)
+            invader_index = np.where(np.sum(plate_monoculture.N, axis = 0) == np.max(np.sum(plate_monoculture.N, axis = 0)))[0][0] # Find the well with the highest biomass
+            setattr(plate, "invader_index", invader_index)
         else:
+            print("\nStabilizing monoculture plate")
             for i in range(assumptions_monoculture["n_transfer"] - assumptions_monoculture["n_transfer_selection"]):
                 plate_monoculture.Propagate(assumptions_monoculture["n_propagation"])
                 plate_monoculture = passage_monoculture(plate_monoculture, assumptions_monoculture["dilution"])
                 print("Transfer " + str(i+1))
             plate_monoculture.Propagate(assumptions_monoculture["n_propagation"]) #  1 final growth cycle before storing data
-        print("\nFinished stabilizing monoculture plate")
-        
-        print("\nMake invader plate")
-        invader_index = np.where(np.sum(plate_monoculture.N, axis = 0) == np.max(np.sum(plate_monoculture.N, axis = 0)))[0][0] # Find the well with the highest biomass
+            print("\nFinished stabilizing monoculture plate")
+    
 
-        # Replicate the chosen monoculture well to the entire plate
-        plate_invader_N = pd.DataFrame()
-        plate_invader_R = pd.DataFrame()
-        for i in range(assumptions["n_wells"]):
-            plate_invader_N["W" + str(i)] = plate_monoculture.N["W" + str(invader_index)]
-            plate_invader_R["W" + str(i)] = plate_monoculture.R["W" + str(invader_index)]
-
-        # Add the invasion plate to the attr of community
-        setattr(plate, "plate_invader_N", plate_invader_N)
-        setattr(plate, "plate_invader_R", plate_invader_R)
-        if "invader_suppression" in assumptions_monoculture["selected_function"]:
-            setattr(plate, "invader_index", invader_index)
-            setattr(plate, "invader_growth_alone", np.sum(plate_monoculture_alone.N["W" + str(invader_index)]))
-        
         # For knock_in isolates
         if assumptions['knock_in']:
             print("\nMeasure monocultures for preparing knock_in list")
