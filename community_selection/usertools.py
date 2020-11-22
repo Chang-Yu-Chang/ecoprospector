@@ -230,6 +230,8 @@ def simulate_community(params, params_simulation, params_algorithm, plate):
             biomass = list(np.sum(plate.N, axis = 0)) # Biomass
             function_data = reshape_function_data(params_simulation, community_function, richness, biomass, transfer_loop_index =i+1)
             community_function_list.append(function_data)
+        print([biomass[i] for i in range(len(biomass))])
+        print([richness[i] for i in range(len(richness))])
 
         #Store prior state before passaging (For coalescence)
         setattr(plate, "prior_N", plate.N)

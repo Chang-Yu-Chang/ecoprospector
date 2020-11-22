@@ -134,7 +134,6 @@ def f5_invader_suppression(plate, params_simulation):
     plate_test.Propagate(params_simulation["n_propagation"])
     invader_growth_together = plate_test.N.iloc[plate.invader_index]
     function_invader_suppressed_growth = -invader_growth_together
-    print(function_invader_suppressed_growth)
     return function_invader_suppressed_growth
 
 def f6_target_resource(plate, params_simulation):
