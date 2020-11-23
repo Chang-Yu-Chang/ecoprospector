@@ -10,5 +10,5 @@ output_file_name = str(sys.argv[3])
 
 assumptions = make_assumptions(input_csv, row_number)
 species_function = extract_species_function(assumptions)
-species_function.to_csv(output_file_name)
+species_function.to_csv(output_file_name, index = False)
 print("\nGenerated per-capita species functions from: " + input_csv + "\nRow (0-based): " + str(row_number) + "\nOutput file name: " + output_file_name)
