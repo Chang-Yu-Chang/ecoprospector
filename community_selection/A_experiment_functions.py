@@ -276,7 +276,7 @@ def add_community_function(plate, assumptions, params):
 
 
     # Invasion function f5 or knock_in with a threshold requires us to grow isolates in monoculture to obtain their abundance.
-    if (assumptions["selected_function"] == 'f5_invader_suppression') or (assumptions['knock_in']):
+    if assumptions['knock_in']:
         print("\nStabilizing monoculture plate")
         # Update assumptions
         assumptions_monoculture = assumptions.copy()
@@ -284,38 +284,29 @@ def add_community_function(plate, assumptions, params):
         assumptions_monoculture.update({"n_wells": np.sum(assumptions["SA"])  + assumptions["Sgen"]})
         assumptions_monoculture.update({"monoculture":True})
 
-        # Invader plate for f5 
-        if "invader_suppression" in assumptions["selected_function"]:
-            plate_invader = make_plate(assumptions_monoculture, params_invasion)
-            print("\nPropagating monoculture plate to determine invader")
-            plate_invader.Propagate(assumptions_monoculture["n_propagation"])
-            invader_index = np.where(np.sum(plate_invader.N, axis = 0) == np.max(np.sum(plate_invader.N, axis = 0)))[0][0] # Find the well with the highest biomass
-            setattr(plate, "invader_index", invader_index)
-        
         # Monoculture plate for knock in
-        if assumptions['knock_in']:
-            plate_monoculture = make_plate(assumptions_monoculture, params_invasion)
-            print("\nStabilizing monoculture plate for knock-in")
-            for i in range(assumptions_monoculture["n_transfer"] - assumptions_monoculture["n_transfer_selection"]):
-                plate_monoculture.Propagate(assumptions_monoculture["n_propagation"])
-                plate_monoculture = passage_monoculture(plate_monoculture, assumptions_monoculture["dilution"])
-                print("Transfer " + str(i+1))
-            plate_monoculture.Propagate(assumptions_monoculture["n_propagation"]) #  1 final growth cycle before storing data
-            print("\nFinished stabilizing monoculture plate")
-            
-            print("\nMeasuring monocultures for preparing knock_in list")
-            if "invader_suppression" in assumptions["selected_function"]:
-                setattr(plate_monoculture, "invader_index", invader_index)
-            elif "f1" in assumptions["selected_function"]:
-                setattr(plate_monoculture, "f1_species_smooth", f1_species_smooth)
-                setattr(plate_monoculture, "f1_species_rugged", f1_species_rugged)
-            elif "f2" in assumptions["selected_function"]:
-                setattr(plate_monoculture, "f2_species_smooth", f2_species_smooth)
-                setattr(plate_monoculture, "f2_species_rugged", f2_species_rugged)
-            elif "f6" in assumptions["selected_function"]:
-                setattr(plate_monoculture, "target_resource", assumptions["target_resource"])
-            setattr(plate, "knock_in_species_function", globals()[assumptions["selected_function"]](plate_monoculture, params_simulation = assumptions_monoculture))
-            print("\nknock_in_species_function ", plate.knock_in_species_function)
+        plate_monoculture = make_plate(assumptions_monoculture, params_invasion)
+        print("\nStabilizing monoculture plate for knock-in")
+        for i in range(assumptions_monoculture["n_transfer"] - assumptions_monoculture["n_transfer_selection"]):
+            plate_monoculture.Propagate(assumptions_monoculture["n_propagation"])
+            plate_monoculture = passage_monoculture(plate_monoculture, assumptions_monoculture["dilution"])
+            print("Transfer " + str(i+1))
+        plate_monoculture.Propagate(assumptions_monoculture["n_propagation"]) #  1 final growth cycle before storing data
+        print("\nFinished stabilizing monoculture plate")
+        
+        print("\nMeasuring monocultures for preparing knock_in list")
+        if "invader_suppression" in assumptions["selected_function"]:
+            setattr(plate_monoculture, "invader_index", invader_index)
+        elif "f1" in assumptions["selected_function"]:
+            setattr(plate_monoculture, "f1_species_smooth", f1_species_smooth)
+            setattr(plate_monoculture, "f1_species_rugged", f1_species_rugged)
+        elif "f2" in assumptions["selected_function"]:
+            setattr(plate_monoculture, "f2_species_smooth", f2_species_smooth)
+            setattr(plate_monoculture, "f2_species_rugged", f2_species_rugged)
+        elif "f6" in assumptions["selected_function"]:
+            setattr(plate_monoculture, "target_resource", assumptions["target_resource"])
+        setattr(plate, "knock_in_species_function", globals()[assumptions["selected_function"]](plate_monoculture, params_simulation = assumptions_monoculture))
+        print("\nknock_in_species_function ", plate.knock_in_species_function)
     
 
     # f6_target_resource
@@ -324,39 +315,6 @@ def add_community_function(plate, assumptions, params):
     
     return plate
 
-# Plate
-
-# def sample_from_pool(plate_N, assumptions, n = None):
-#     """
-#     Sample communities from regional species pool.
-# 
-#     plate_N = consumer data.frame
-#     """
-#     S_tot = plate_N.shape[0] # Total number of species in the pool
-#     N0 = np.zeros((plate_N.shape)) # Make empty plate
-#     consumer_index = plate_N.index
-#     well_names = plate_N.columns
-#     if n is None:
-#         n = assumptions['n_inoc'] #if not specified n is n_inoc
-#     # Draw community
-#     if assumptions['monoculture'] == False:
-#         # Sample initial community for each well
-#         for k in range(plate_N.shape[1]):
-#             pool = np.random.power(0.01, size = S_tot) # Power-law distribution
-#             pool = pool/np.sum(pool) # Normalize the pool
-#             consumer_list = np.random.choice(S_tot, size = n , replace = True, p = pool) # Draw from the pool
-#             my_tab = pd.crosstab(index = consumer_list, columns = "count") # Calculate the cell count
-#             N0[my_tab.index.values,k] = np.ravel(my_tab.values / assumptions['scale']) # Scale to biomass
-# 
-#         # Make data.frame
-#         N0 = pd.DataFrame(N0, index = consumer_index, columns = well_names)
-# 
-#     # Monoculture plate
-#     elif assumptions['monoculture'] == True:
-#         N0 = np.eye(plate_N.shape[0]) *assumptions['n_inoc']/assumptions['scale']
-#         N0 = pd.DataFrame(N0, index = consumer_index, columns = ["W" + str(i) for i in range(plate_N.shape[0])])
-#     
-#     return N0
 
 def sample_from_pool(plate_N, assumptions, n = None):
     """
@@ -369,6 +327,7 @@ def sample_from_pool(plate_N, assumptions, n = None):
     well_names = plate_N.columns
     if n is None:
         n = int(assumptions['n_inoc']) #if not specified n is n_inoc
+    
     # Draw community
     if assumptions['monoculture'] == False and assumptions['metacommunity_sampling'] == 'Power':
         # Sample initial community for each well
@@ -405,6 +364,7 @@ def sample_from_pool(plate_N, assumptions, n = None):
     elif assumptions['monoculture'] == True:
         N0 = np.eye(plate_N.shape[0]) *assumptions['n_inoc']/assumptions['scale']
         N0 = pd.DataFrame(N0, index = consumer_index, columns = ["W" + str(i) for i in range(plate_N.shape[0])])
+    
     return N0
 
 
@@ -536,14 +496,14 @@ def make_plate(assumptions, params):
     """
     prepares the plate
     """
-    
     # Make dynamical equations
     def dNdt(N,R,params):
         return MakeConsumerDynamics(assumptions)(N,R,params)
     def dRdt(N,R,params):
         return MakeResourceDynamics(assumptions)(N,R,params)
+
     dynamics = [dNdt,dRdt]
-    
+
     # Make initial state
     init_state = MakeInitialState(assumptions)
     plate = Metacommunity(init_state, dynamics, params, scale = assumptions["scale"], parallel = False) 
@@ -560,6 +520,11 @@ def make_plate(assumptions, params):
     # If plate is to be replaced by overwritting plate, skip the sampling
     if pd.isnull(assumptions["overwrite_plate"]):
         plate.N = sample_from_pool(plate.N, assumptions)
+
+    # Remove invader in the plate 
+    if assumptions["selected_function"] == "f5_invader_suppression":
+        print("do it")
+        plate.N.iloc[assumptions["invader_index"],:] = 0
     
     return plate
 

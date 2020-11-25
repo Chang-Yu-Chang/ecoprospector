@@ -130,9 +130,9 @@ def f5_invader_suppression(plate, params_simulation):
     n_wells = plate.N.shape[1]
     plate_test = plate.copy()
     plate_test.Passage(params_simulation['dilution']*np.eye(params_simulation['n_wells']))
-    plate_test.N.iloc[plate.invader_index,:] = plate_test.N.iloc[plate.invader_index,:] + 10 / params_simulation['scale']
+    plate_test.N.iloc[params_simulation["invader_index"],:] = plate_test.N.iloc[params_simulation["invader_index"],:] + 10 / params_simulation['scale']
     plate_test.Propagate(params_simulation["n_propagation"])
-    invader_growth_together = plate_test.N.iloc[plate.invader_index]
+    invader_growth_together = plate_test.N.iloc[params_simulation["invader_index"],:]
     function_invader_suppressed_growth = -invader_growth_together
     return function_invader_suppressed_growth
 

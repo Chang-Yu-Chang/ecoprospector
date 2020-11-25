@@ -206,7 +206,6 @@ def simulate_community(params, params_simulation, params_algorithm, plate):
         community_function_list.append(function_data)
         function_filename = params_simulation['output_dir'] + params_simulation['exp_id'] + '_function.txt'   
 
-
     print("\nStart propogation")
     # Run simulation
     for i in range(0, params_simulation["n_transfer"]):
@@ -218,7 +217,7 @@ def simulate_community(params, params_simulation, params_algorithm, plate):
         plate.Propagate(params_simulation["n_propagation"])
 
         # Measure Community phenotype
-        community_function = globals()[params_algorithm["community_phenotype"][0]](plate, params_simulation = params_simulation) # Community phenotype
+        community_function = globals()[phenotype_algorithm](plate, params_simulation = params_simulation) # Community phenotype
         
         # Append the composition to a list
         if params_simulation['save_composition'] and ((i+1) % params_simulation['composition_lograte'] == 0):
@@ -230,8 +229,6 @@ def simulate_community(params, params_simulation, params_algorithm, plate):
             biomass = list(np.sum(plate.N, axis = 0)) # Biomass
             function_data = reshape_function_data(params_simulation, community_function, richness, biomass, transfer_loop_index =i+1)
             community_function_list.append(function_data)
-        print([biomass[i] for i in range(len(biomass))])
-        print([richness[i] for i in range(len(richness))])
 
         #Store prior state before passaging (For coalescence)
         setattr(plate, "prior_N", plate.N)
@@ -284,7 +281,7 @@ def extract_species_function(assumptions):
         if assumptions["selected_function"] == "f1_additive":
             per_capita_function = f1_species_smooth
             species_function = pd.DataFrame({"SelectedFunction": assumptions["selected_function"], "Seed": np.repeat(assumptions['seed'], S_tot), "ID": range(1, S_tot+1), "PerCapitaFunction": per_capita_function})
-            if assumptions["cost_mean"] != 0:
+            if "cost" in assumptions["exp_id"]: # Should read a flag instead of name
                 gi = draw_species_cost(f1_species_smooth, assumptions)
                 params.update({"g": gi})
                 species_function = pd.DataFrame({"SelectedFunction": assumptions["selected_function"], "Seed": np.repeat(assumptions['seed'], S_tot), "ID": range(1, S_tot+1), "PerCapitaFunction": per_capita_function, "g": gi})

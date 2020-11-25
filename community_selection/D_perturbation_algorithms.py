@@ -83,6 +83,9 @@ def perturb(plate, params_simulation, keep):
         plate.R = old_R.copy()  #knock_in isolates absent from all communities
     if params_simulation['knock_in']:
         knock_in_list = np.where(np.logical_and(np.array(np.sum(plate.N,axis=1)==0.0), plate.knock_in_species_function >= np.percentile(plate.knock_in_species_function, q = 100*params_simulation['knock_in_threshold'])))[0]
+        # If f5, avoid using invader
+        if "invader" in params_simulation["selected_function"]:
+            knock_in_list[params_simulation["invader_index"]] = False
         for k in plate.N.columns:
             if k == plate.N.columns[keep] or len(knock_in_list) ==0.0:
                 continue
@@ -108,6 +111,9 @@ def perturb(plate, params_simulation, keep):
             plate.N = migrate_from_pool(plate,migration_factor,params_simulation,power_law=False,n=params_simulation['n_migration'])
         else:
             plate.N = migrate_from_pool(plate,migration_factor,params_simulation,power_law = True,n=params_simulation['n_migration'])
+        # If f5, avoid using invader
+        if "invader" in params_simulation["selected_function"]:
+            plate.N.iloc[params_simulation["invader_index"],] = 0
     #Migrate taxa into the best performing community. By default migrations are done using power law model but can tune the diversity of migration using s_migration
     if params_simulation['coalescence']:
         plate.Propagate(params_simulation["n_propagation"])
