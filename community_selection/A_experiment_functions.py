@@ -295,9 +295,7 @@ def add_community_function(plate, assumptions, params):
         print("\nFinished stabilizing monoculture plate")
         
         print("\nMeasuring monocultures for preparing knock_in list")
-        if "invader_suppression" in assumptions["selected_function"]:
-            setattr(plate_monoculture, "invader_index", invader_index)
-        elif "f1" in assumptions["selected_function"]:
+        if "f1" in assumptions["selected_function"]:
             setattr(plate_monoculture, "f1_species_smooth", f1_species_smooth)
             setattr(plate_monoculture, "f1_species_rugged", f1_species_rugged)
         elif "f2" in assumptions["selected_function"]:
@@ -523,7 +521,6 @@ def make_plate(assumptions, params):
 
     # Remove invader in the plate 
     if assumptions["selected_function"] == "f5_invader_suppression":
-        print("do it")
         plate.N.iloc[assumptions["invader_index"],:] = 0
     
     return plate

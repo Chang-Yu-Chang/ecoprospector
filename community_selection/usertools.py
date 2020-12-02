@@ -138,6 +138,14 @@ def prepare_experiment(assumptions):
     print("\nGenerate species parameters")
     np.random.seed(assumptions['seed']) 
     params = MakeParams(assumptions) 
+    if "invader" in assumptions["selected_function"]:
+        print("\nDraw invader feature")
+        assumptions_invader = assumptions.copy()
+        assumptions_invader.update({"sampling": assumptions["invader_sampling"]})
+        params = MakeParams(assumptions) 
+        params_invader = MakeParams(assumptions_invader)
+        params["c"].iloc[assumptions["invader_index"],:] = params_invader["c"].iloc[assumptions["invader_index"],:] * assumptions["invader_strength"]
+    #print(params["c"].sum(1))
     
     print("\nDraw per-capita function and cost")
     f1_species_smooth, f1_species_rugged, f2_species_smooth, f2_species_rugged = draw_species_function(assumptions)
