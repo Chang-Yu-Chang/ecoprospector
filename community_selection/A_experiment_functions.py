@@ -197,6 +197,19 @@ def new_MakeMatrices(assumptions):
     return c, DT.T
 community_simulator.usertools.MakeMatrices = new_MakeMatrices
 
+def create_invader(params, assumptions):
+    """
+    Draw invader species feature
+    """
+    assumptions_invader = assumptions.copy()
+    assumptions_invader.update({"sampling": assumptions["invader_sampling"]})
+    params = MakeParams(assumptions) 
+    params_invader = MakeParams(assumptions_invader)
+    params["c"].iloc[assumptions["invader_index"],:] = params_invader["c"].iloc[assumptions["invader_index"],:] * assumptions["invader_strength"]
+    
+    return params
+
+
 def draw_species_function(assumptions):
     """
     Draw species-specific functions
