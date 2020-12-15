@@ -104,9 +104,6 @@ def make_assumptions(input_file, row):
             assumptions['r_percent'] = float(assumptions['r_percent'])
             
     # Overwrite plate
-    #if np.isnan(assumptions["overwrite_plate"]) == False:
-    #if isinstance(assumptions["overwrite_plate"], str) and assumptions["overwrite_plate"] != "NA":
-    #if pd.isnull(assumptions["overwrite_plate"]) == False:
     if isinstance(assumptions["overwrite_plate"], str) and assumptions["overwrite_plate"] != "": 
         print("\nUpdating the n_wells with overwrite_plate")
         df = pd.read_csv(assumptions["overwrite_plate"])
@@ -141,7 +138,6 @@ def prepare_experiment(assumptions):
     if assumptions["selected_function"] == "f5_invader_suppression":
         print("\nDraw invader feature")
         params = create_invader(params, assumptions)
-    print(params["c"].sum(1))
     
     print("\nDraw per-capita function and cost")
     f1_species_smooth, f1_species_rugged, f2_species_smooth, f2_species_rugged = draw_species_function(assumptions)
