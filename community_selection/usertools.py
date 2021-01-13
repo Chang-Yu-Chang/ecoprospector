@@ -32,6 +32,8 @@ def make_assumptions(input_file, row):
     #Load row dat and default assumptions
     row_dat = pd.read_csv(input_file, keep_default_na=False).iloc[row]
     assumptions = a_default.copy()
+    # load parameters used for make Params
+    assumptions.update({"sampling_D": row_dat["sampling_D"], "fss": row_dat["fss"], "fsa": row_dat["fsa"], "fsw": row_dat["fsw"], "fas": row_dat["fas"], "faa": row_dat["faa"], "faw": row_dat["faw"], "fws": row_dat["fws"], "fwa": row_dat["fwa"], "fww": row_dat["fww"]})
     original_params = MakeParams(assumptions.copy())
     #Update assumptions based on row_dat
     for k in row_dat.keys():
@@ -141,7 +143,6 @@ def prepare_experiment(assumptions):
     if assumptions["selected_function"] == "f5_invader_suppression":
         print("\nDraw invader feature")
         params = create_invader(params, assumptions)
-    print(params["c"].sum(1))
     
     print("\nDraw per-capita function and cost")
     f1_species_smooth, f1_species_rugged, f2_species_smooth, f2_species_rugged = draw_species_function(assumptions)
