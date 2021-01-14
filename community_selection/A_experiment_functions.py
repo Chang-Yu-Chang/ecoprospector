@@ -199,7 +199,6 @@ def new_MakeMatrices(assumptions):
         print("fermenter_respirator")
         if len(assumptions["MA"]) != 2:
             print("Number of family has to be 2")
-            return "Error"
         DT = pd.DataFrame(np.zeros((M,M)),index=c.keys(),columns=c.keys())
         for type_name in type_names:
             MA = len(DT.loc[type_name])
@@ -243,7 +242,6 @@ def new_MakeMatrices(assumptions):
             #     DT.loc["T2"] = dirichlet(p/assumptions['sparsity'],size=MA)
     else:
         print('Invalid distribution choice. Valid choices are sampling_D=default and sampling_D=fermenter_respirator.')
-        return "Error"
         
     return c, DT.T
 community_simulator.usertools.MakeMatrices = new_MakeMatrices
