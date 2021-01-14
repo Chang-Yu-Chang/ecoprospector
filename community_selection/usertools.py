@@ -33,6 +33,8 @@ def make_assumptions(input_file, row):
     row_dat = pd.read_csv(input_file, keep_default_na=False).iloc[row]
     assumptions = a_default.copy()
     # load parameters used for make Params
+    assumptions.update({'SA' :row_dat['sn']*np.ones(row_dat['sf'])  }) #Number of consumers in each Specialist family
+    assumptions.update({'MA' :row_dat['rn']*np.ones(row_dat['rf'])  }) #Number of resources in each class
     assumptions.update({"sampling_D": row_dat["sampling_D"], "fss": row_dat["fss"], "fsa": row_dat["fsa"], "fsw": row_dat["fsw"], "fas": row_dat["fas"], "faa": row_dat["faa"], "faw": row_dat["faw"], "fws": row_dat["fws"], "fwa": row_dat["fwa"], "fww": row_dat["fww"]})
     original_params = MakeParams(assumptions.copy())
     #Update assumptions based on row_dat

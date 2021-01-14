@@ -500,7 +500,6 @@ def passage_monoculture(plate_mono, f, scale = None, refresh_resource = True):
     #Poisson sample cells
     print(self.N)
     self.N = self.N * f *scale
-    self.N[self.N<scale] = 0
     self.N.applymap(np.random.poisson)   
     self.N = self.N/scale
 
