@@ -197,8 +197,8 @@ def new_MakeMatrices(assumptions):
                 DT.loc[type_name] = dirichlet(p/assumptions['sparsity'],size=MA)
     elif assumptions["sampling_D"] == "fermenter_respirator":
         print("fermenter_respirator")
-        if len(assumptions["MA"]) != 3:
-            print("Number of family has to be 3")
+        if len(assumptions["MA"]) != 2:
+            print("Number of family has to be 2")
             return "Error"
         DT = pd.DataFrame(np.zeros((M,M)),index=c.keys(),columns=c.keys())
         for type_name in type_names:
@@ -206,39 +206,41 @@ def new_MakeMatrices(assumptions):
             if type_name == "T0":
                 print("draw sugar")
                 # Set background secretion levels
-                p = pd.Series(np.ones(M)*(1-assumptions["fss"]-assumptions["fsa"]-assumptions["fsw"])/(M-MA-M_waste),index = DT.keys())
+                #p = pd.Series(np.ones(M)*(1-assumptions["fss"]-assumptions["fsa"]-assumptions["fsw"])/(M-MA-M_waste),index = DT.keys())
+                p = pd.Series(np.ones(M)*(1-assumptions["fss"]-assumptions["fsa"])/(M-MA),index = DT.keys())
                 # Set suger to sugar secretion level
                 p.loc["T0"] = assumptions["fss"]/MA
                 # Set sugar to acid secretion level
                 p.loc["T1"] = assumptions["fsa"]/MA
                 # Set waste secretion level
-                p.loc["T2"] = assumptions["fsw"]/M_waste
+                # p.loc["T2"] = assumptions["fsw"]/M_waste
                 # Sample from dirichlet
                 DT.loc["T0"] = dirichlet(p/assumptions['sparsity'],size=MA)
             elif type_name == "T1":
                 print("draw acid")
                 # Set background secretion levels
-                p = pd.Series(np.ones(M)*(1-assumptions["fas"]-assumptions["faa"]-assumptions["faw"])/(M-MA-M_waste),index = DT.keys())
+                #p = pd.Series(np.ones(M)*(1-assumptions["fas"]-assumptions["faa"]-assumptions["faw"])/(M-MA-M_waste),index = DT.keys())
+                p = pd.Series(np.ones(M)*(1-assumptions["fas"]-assumptions["faa"])/(M-MA),index = DT.keys())
                 # Set acid to sugar secretion level
                 p.loc["T0"] = assumptions["fas"]/MA
                 # Set acid to acid secretion level
                 p.loc["T1"] = assumptions["faa"]/MA
                 # Set waste secretion level
-                p.loc["T2"] = assumptions["faw"]/M_waste
+                #p.loc["T2"] = assumptions["faw"]/M_waste
                 # Sample from dirichlet
                 DT.loc["T1"] = dirichlet(p/assumptions['sparsity'],size=MA)
-            elif type_name == "T2":
-                print("draw waste")
-                #Set background secretion levels
-                p = pd.Series(np.ones(M)*(1-assumptions["fws"]-assumptions["fwa"]-assumptions["fww"])/(M-MA-M_waste),index = DT.keys())
-                # Set waste to sugar secretion level
-                p.loc["T0"] = assumptions["fws"]/MA
-                # Set waste to acid secretion level
-                p.loc["T1"] = assumptions["fwa"]/MA
-                # Set waste secretion level
-                p.loc["T2"] = assumptions["fww"]/M_waste
-                #Sample from dirichlet
-                DT.loc["T2"] = dirichlet(p/assumptions['sparsity'],size=MA)
+            # elif type_name == "T2":
+            #     print("draw waste")
+            #     #Set background secretion levels
+            #     p = pd.Series(np.ones(M)*(1-assumptions["fws"]-assumptions["fwa"]-assumptions["fww"])/(M-MA-M_waste),index = DT.keys())
+            #     # Set waste to sugar secretion level
+            #     p.loc["T0"] = assumptions["fws"]/MA
+            #     # Set waste to acid secretion level
+            #     p.loc["T1"] = assumptions["fwa"]/MA
+            #     # Set waste secretion level
+            #     p.loc["T2"] = assumptions["fww"]/M_waste
+            #     #Sample from dirichlet
+            #     DT.loc["T2"] = dirichlet(p/assumptions['sparsity'],size=MA)
     else:
         print('Invalid distribution choice. Valid choices are sampling_D=default and sampling_D=fermenter_respirator.')
         return "Error"
@@ -498,7 +500,9 @@ def passage_monoculture(plate_mono, f, scale = None, refresh_resource = True):
     N = np.zeros(np.shape(self.N))
     
     #Poisson sample cells
+    print(self.N)
     self.N = self.N * f *scale
+    self.N[self.N<scale] = 0
     self.N.applymap(np.random.poisson)   
     self.N = self.N/scale
 
