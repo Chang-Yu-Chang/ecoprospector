@@ -8,7 +8,11 @@ See our [preprint](https://www.biorxiv.org/content/10.1101/2020.07.24.214775v2) 
 
 ![](outline.png)
 
-## Installation
+
+
+# Installation
+
+## Anaconda
 
 A python development setup by [Anaconda](https://docs.anaconda.com/anaconda/install/) will be sufficient to implement community-simulator and ecoprospector.
 
@@ -17,6 +21,7 @@ A python development setup by [Anaconda](https://docs.anaconda.com/anaconda/inst
 Download the code or clone the github repository of community simulator to a local directory and browse to the community-simulator directory and install the package
 
 ```sh
+$ cd <your_local_directory>
 $ git clone https://github.com/Emergent-Behaviors-in-Biology/community-simulator .
 $ pip install -e .
 ```
@@ -24,6 +29,7 @@ $ pip install -e .
 Download the code or clone this github repository to a local directory and browse to the ecoprospector directory and install package 
 
 ```sh
+$ cd <your_local_directory>
 $ git clone https://github.com/Chang-Yu-Chang/ecoprospector .
 $ pip install -e .
 ```
@@ -31,6 +37,37 @@ $ pip install -e .
 ### Windows
 
 The parallelization features in community-simulator are not currently supported on Windows and as such we cannot guarantee that the current version of ecoprospector will work in a windows environment. We would recommend using a linux emulator for windows such as Cygwin instead.
+
+## pipenv
+
+Alternative to Anaconda, one can choose to use `pipenv`.
+
+```sh
+$ pip install pipenv
+$ brew install pipenv # Alternative for Mac users
+```
+
+Browse to the local directory and install dependency from Pipfile. Make sure that the Pipfile is in the current directory.
+
+```sh
+$ cd <your_local_directory>
+$ pipenv install
+```
+
+Check dependency. ecoprospector should depend on community-selection and all other dependent packages.
+
+```sh
+$ pipenv graph
+```
+
+To activate the Pipenv shell:
+
+```sh
+$ pipenv shell
+$ exit
+```
+
+
 
 ## Usage example
 
@@ -45,6 +82,8 @@ For more examples and usage, please refer to the [documentation](https://ecopros
 
 ## Release History
 
+* 0.0.2
+    * Include other non-additive functions
 * 0.0.1
     * Work in progress
 

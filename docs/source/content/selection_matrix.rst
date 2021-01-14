@@ -3,14 +3,16 @@ Selection Matrix
 
 What is a selection matrix?
 ------------------------------------
-A selection matrix is a map specifying how the parental communities are selected according to their function ranks, and how the selected communities are pooled or distributed to seed the offspring communities. It is a square matrix of size ``n_wells``. The columns are ranked parental communities and the rows are offspring communities. Each element in the selection matrix specifies the dilution factor used for the batch culture. 
+A selection matrix is a map specifying how the parental communities are selected according to their function ranks, and how the selected communities are pooled or distributed to seed the offspring communities. It is a square matrix of size ``n_wells``. The columns are ranked parental communities and the rows are offspring communities. Each element in the selection matrix specifies the dilution factor used for the batch culture.
 
+.. image:: ../images/selection_matrix_identity.png
+   :width: 600
 
-[insert the image of an example of a selection matrix]
 
 The selection matrices allow us to standardize most strategies of artificial community selection, for example, propagule and migrant pool approaches, into a regular form.
 
-[Example of selection matrices of propagule and migrant pool strategies]
+.. image:: ../images/selection_matrix_propagule_pooling.png
+    :width: 600
 
 
 How does selection matrix work in ecoprospector?
@@ -23,6 +25,6 @@ A selection matrix must be defined during the simulation setup, i.e. stored in t
 A library of selection matrices
 ----------------------------------------------------------------------
 
-We saved all the predefined selection matrices in ``C_selection_matrices.py``. These selection matrices were adapted from the selection protocols in the prior empirical and theoretical studies. 
+We saved all the predefined selection matrices in ``C_selection_matrices.py``. These selection matrices were adapted from the selection protocols in the prior empirical and theoretical studies.
 
 
